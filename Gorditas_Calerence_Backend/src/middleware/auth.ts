@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Usuario } from '../models';
 import { UserRole } from '../types';
+import { appSettings } from '../config/app-settings';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -11,13 +12,11 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
-
     if (!token) {
       return res.status(401).json({ message: 'Token no proporcionado' });
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'StAn121120360ne';
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, appSettings.jwt.secret) as any;
     const user = await Usuario.findById(decoded.id);
 
     if (!user || !user.activo) {

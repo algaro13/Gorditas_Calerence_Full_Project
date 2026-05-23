@@ -1,12 +1,14 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
 import dotenv from 'dotenv';
+dotenv.config();
+
+import { appSettings } from './composition-root';
 import { connectDB } from './config/database';
+import { runPendingMigrations } from './config/migrations';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
-import mongoose from 'mongoose';
 import Usuario from './models/Usuario';
 
 // Routes
@@ -15,9 +17,6 @@ import ordenesRoutes from './routes/ordenes';
 import inventarioRoutes from './routes/inventario';
 import reportesRoutes from './routes/reportes';
 import catalogosRoutes from './routes/catalogos';
-import Mesa from './models/Mesa';
-import Orden from './models/Orden';
-dotenv.config();
 
 async function ensureAdminUser() {
   const adminEmail = 'Encargado@gorditas.com';
@@ -39,14 +38,14 @@ async function ensureAdminUser() {
 }
 
 const app = express();
-const PORT = process.env.PORT;
+const PORT = appSettings.server.port;
 
-// Connect to MongoDB
-connectDB();
+// Connect to MongoDB using centralized config
+connectDB(appSettings.database);
+
 // Middleware
 app.use(helmet());
 
-// CORS configuration - Permitir todos los orígenes
 const corsOptions = {
   origin: true,
   credentials: true,
@@ -56,7 +55,6 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-//app.use(morgan('combined'));  //Depuracion
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -81,9 +79,18 @@ app.use(notFound);
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
+  // Run pending migrations if configured
+  if (appSettings.database.runMigrationsOnStart) {
+    try {
+      await runPendingMigrations();
+    } catch (error) {
+      console.error('❌ Migration failed:', error);
+      process.exit(1);
+    }
+  }
+
   await ensureAdminUser();
   console.log(`Server running on port ${PORT}`);
-
   console.log(`API documentation available at http://localhost:${PORT}/api/auth`);
 });
 

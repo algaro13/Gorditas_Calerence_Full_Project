@@ -1,22 +1,19 @@
 import mongoose from 'mongoose';
+import { DatabaseConfig } from '../interfaces/config';
 
-export const connectDB = async (): Promise<void> => {
+export const connectDB = async (config: DatabaseConfig): Promise<void> => {
   try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/mi_tienda_gorditas';
-
     console.log('🔄 Connecting to MongoDB...');
 
-    // Configuración de opciones de conexión
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 30000, // Aumentar timeout a 30 segundos
-      socketTimeoutMS: 45000,
+    await mongoose.connect(config.uri, {
+      serverSelectionTimeoutMS: config.options.serverSelectionTimeoutMS,
+      socketTimeoutMS: config.options.socketTimeoutMS,
     });
 
     console.log('✅ MongoDB connected successfully');
     console.log(`📊 Database: ${mongoose.connection.name}`);
     console.log(`🌐 Host: ${mongoose.connection.host}`);
 
-    // Event listeners para monitorear la conexión
     mongoose.connection.on('disconnected', () => {
       console.log('⚠️  MongoDB disconnected');
     });
@@ -29,7 +26,6 @@ export const connectDB = async (): Promise<void> => {
       console.log('✅ MongoDB reconnected');
     });
 
-    // Graceful shutdown
     process.on('SIGINT', async () => {
       await mongoose.connection.close();
       console.log('👋 MongoDB connection closed.');
@@ -41,15 +37,14 @@ export const connectDB = async (): Promise<void> => {
     console.error('Error name:', error.name);
     console.error('Error message:', error.message);
 
-    // Mensajes de ayuda específicos según el tipo de error
     if (error.name === 'MongooseServerSelectionError') {
       console.error('\n💡 Posibles soluciones:');
       console.error('1. Verifica que tu IP esté en la lista blanca de MongoDB Atlas');
-      console.error('2. Verifica las credenciales en el archivo .env');
+      console.error('2. Verifica las credenciales en appsettings.json o variables de entorno');
       console.error('3. Verifica tu conexión a internet');
       console.error('4. Verifica que el firewall no esté bloqueando la conexión');
     }
 
-    throw error; // Lanzar el error para que sea manejado por startServer
+    throw error;
   }
 };

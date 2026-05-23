@@ -57,14 +57,45 @@ npm run dev
 
 ```
 src/
-├── config/          # Configuración de base de datos
+├── config/          # Configuración (database, app-settings)
+├── controllers/     # Controladores HTTP (parsean request, formatean response)
+├── services/        # Lógica de negocio y orquestación
+├── repositories/    # Acceso a datos (Mongoose queries)
+├── domain/          # Reglas de negocio puras (sin dependencias externas)
+├── interfaces/      # Contratos TypeScript entre capas
 ├── middleware/      # Middlewares (auth, validación, errores)
-├── models/          # Modelos de MongoDB
-├── routes/          # Rutas de la API
-├── types/           # Tipos TypeScript
+├── models/          # Modelos de MongoDB (Mongoose schemas)
+├── routes/          # Definición de rutas (solo routing + middleware)
+├── types/           # Tipos TypeScript compartidos
 ├── utils/           # Utilidades y helpers
+├── composition-root.ts  # Wiring de dependencias
 └── server.ts        # Punto de entrada
 ```
+
+### Arquitectura por capas
+
+```
+Routes → Controllers → Services → Repositories → MongoDB
+                          ↓
+                       Domain (reglas puras)
+```
+
+- **Routes**: Solo definen endpoints y aplican middleware
+- **Controllers**: Extraen datos del request, delegan al service, formatean response HTTP
+- **Services**: Contienen la lógica de negocio, reciben repositories por constructor
+- **Repositories**: Abstraen las queries de Mongoose, implementan interfaces
+- **Domain**: Funciones puras sin dependencias (transiciones de estatus, cálculos)
+
+### Configuración
+
+La app usa `appsettings.json` como fuente de configuración centralizada. Las variables de entorno sobreescriben los valores del archivo:
+
+| Variable de entorno | Sección en appsettings.json | Descripción |
+|---------------------|----------------------------|-------------|
+| `MONGODB_URI` | `database.uri` | URI de MongoDB |
+| `JWT_SECRET` | `jwt.secret` | Secreto para JWT |
+| `JWT_EXPIRES_IN` | `jwt.expiresIn` | Duración del token (ej: "7d") |
+| `PORT` | `server.port` | Puerto del servidor |
 
 ## 🔗 API Endpoints
 
@@ -143,6 +174,79 @@ src/
 ```bash
 npm test
 ```
+
+## 🗄️ Migraciones de Base de Datos
+
+El proyecto usa `migrate-mongo` para controlar cambios al schema de MongoDB.
+
+### ¿Cuándo crear una migración?
+
+- Cuando agregas un campo nuevo a documentos existentes y necesitas un valor default
+- Cuando renombras un campo
+- Cuando cambias el tipo de dato de un campo
+- Cuando necesitas crear o eliminar índices
+- Cuando mueves datos entre colecciones
+
+**NO necesitas migración** si solo agregas un campo nuevo al schema de Mongoose sin afectar documentos existentes.
+
+### Comandos
+
+```bash
+# Ver estado de migraciones (cuáles están aplicadas/pendientes)
+npm run migrate:status
+
+# Aplicar todas las migraciones pendientes
+npm run migrate:up
+
+# Revertir la última migración
+npm run migrate:down
+
+# Crear una nueva migración
+npm run migrate:create -- "descripcion-del-cambio"
+```
+
+### Convención de nombres
+
+Formato: `YYYYMMDD-descripcion-kebab-case.js`
+
+Ejemplos:
+- `20260523-baseline.js`
+- `20260601-agregar-telefono-a-usuarios.js`
+- `20260615-renombrar-campo-fecha.js`
+
+### Ejemplo de migración
+
+```javascript
+module.exports = {
+  async up(db) {
+    await db.collection('usuarios').updateMany(
+      { telefono: { $exists: false } },
+      { $set: { telefono: '' } }
+    );
+  },
+
+  async down(db) {
+    await db.collection('usuarios').updateMany(
+      {},
+      { $unset: { telefono: '' } }
+    );
+  },
+};
+```
+
+### Auto-migración al startup
+
+Se puede habilitar en `appsettings.json`:
+
+```json
+{
+  "database": {
+    "runMigrationsOnStart": true
+  }
+}
+```
+
+⚠️ **Recomendación**: Mantener en `false` para producción. Ejecutar migraciones manualmente antes del deploy.
 
 ## 📝 Contribuir
 
