@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthUser, UserRole } from '../types';
-import { apiService } from '../services/api';
+import { authService } from '../services/auth.service';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -10,7 +10,6 @@ interface AuthContextType {
   hasPermission: (roles: UserRole[]) => boolean;
   getDefaultRoute: () => string;
 }
-
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -28,18 +27,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = localStorage.getItem('token');
+      const token = authService.getToken();
       if (token) {
         try {
-          const response = await apiService.getProfile();
+          const response = await authService.getProfile();
           if (response.success && response.data) {
             setUser(response.data as AuthUser);
           } else {
-            localStorage.removeItem('token');
+            authService.logout();
           }
         } catch (error) {
           console.error('Auth initialization failed:', error);
-          localStorage.removeItem('token');
+          authService.logout();
         }
       }
       setLoading(false);
@@ -49,27 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-  try {
-    const response = await apiService.login(email, password);
-    // response debe tener { success, data: { token, user } }
-    if (
-      response.success &&
-      response.data &&
-      response.data.token &&
-      response.data.user
-    ) {
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user as unknown as AuthUser);
-      return true;
+    try {
+      const response = await authService.login(email, password);
+      if (response.success && response.data && response.data.token && response.data.user) {
+        authService.setToken(response.data.token);
+        setUser(response.data.user as unknown as AuthUser);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      return false;
     }
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
+  };
 
   const logout = () => {
-    apiService.logout();
+    authService.logout();
     setUser(null);
   };
 
@@ -80,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getDefaultRoute = (): string => {
     if (!user) return '/login';
-    
+
     switch (user.nombreTipoUsuario) {
       case 'Despachador':
         return '/surtir-orden';
