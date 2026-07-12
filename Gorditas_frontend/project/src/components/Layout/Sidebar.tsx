@@ -10,7 +10,8 @@ import {
   BarChart3, 
   BookOpen,
   ChefHat,
-  PlusCircle
+  PlusCircle,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { MenuItem } from '../../types';
@@ -25,6 +26,7 @@ const menuItems: MenuItem[] = [
   { id: 'cobrar', label: 'Cobrar', icon: 'CreditCard', path: '/cobrar', roles: ['Admin', 'Encargado', 'Mesero'] },
   { id: 'catalogos', label: 'Catálogos', icon: 'BookOpen', path: '/catalogos', roles: ['Admin'] },
   { id: 'reportes', label: 'Reportes', icon: 'BarChart3', path: '/reportes', roles: ['Admin'] },
+  { id: 'configuracion', label: 'Configuración', icon: 'Settings', path: '/configuracion', roles: ['Admin', 'Encargado'] },
 ];
 
 const iconMap: { [key: string]: React.ComponentType<any> } = {
@@ -38,6 +40,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   BookOpen,
   ChefHat,
   PlusCircle,
+  Settings,
 };
 
 
@@ -70,9 +73,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const showToggleButton = !isIconBar;
 
   return (
-    <aside className={`bg-gray-900 min-h-screen transition-all duration-200 ${
+    <aside className={`min-h-screen transition-all duration-200 ${
       isMobile ? 'w-64' : (minimized ? 'w-16' : 'w-64')
-    }`}>
+    }`} style={{ backgroundColor: 'var(--color-sidebar-bg, #111827)' }}>
       {showToggleButton && (
         <div className="flex items-center justify-end p-2">
           <button
@@ -97,10 +100,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                     className={({ isActive }) =>
                       `flex items-center space-x-3 px-2 py-3 rounded-lg text-sm font-medium transition-colors ${
                         isActive
-                          ? 'bg-orange-600 text-white'
+                          ? 'text-white'
                           : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                       }`
                     }
+                    style={({ isActive }) => isActive ? { backgroundColor: 'var(--color-sidebar-active, #ea580c)' } : {}}
                   >
                     <Icon className="w-5 h-5" />
                     {(!minimized || isMobile) && <span>{item.label}</span>}

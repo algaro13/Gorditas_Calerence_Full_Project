@@ -4,6 +4,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import Plans from './pages/Plans';
+import BillingSuccess from './pages/BillingSuccess';
+import Onboarding from './pages/Onboarding';
+import Landing from './pages/Landing';
+import Configuracion from './pages/Configuracion';
 import Dashboard from './pages/Dashboard';
 import NuevaOrden from './pages/NuevaOrden';
 import SurtirOrden from './pages/SurtirOrden';
@@ -28,6 +33,11 @@ const AuthenticatedApp: React.FC = () => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Redirect to onboarding if user has no tenant
+  if (user.nombreTipoUsuario === 'NeedOnboarding') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return (
@@ -132,6 +142,16 @@ const AuthenticatedApp: React.FC = () => {
             </ProtectedRoute>
           } 
         />
+
+        {/* Configuración - Admin */}
+        <Route 
+          path="/configuracion" 
+          element={
+            <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
+              <Configuracion />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </Layout>
   );
@@ -148,7 +168,7 @@ const BasicProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }
 
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  return user ? <>{children}</> : <Navigate to="/landing" replace />;
 };
 
 function App() {
@@ -157,6 +177,17 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/landing" element={<Landing />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/billing/success" element={<BillingSuccess />} />
+          <Route
+            path="/planes"
+            element={
+              <BasicProtectedRoute>
+                <Plans />
+              </BasicProtectedRoute>
+            }
+          />
           <Route
             path="/*"
             element={

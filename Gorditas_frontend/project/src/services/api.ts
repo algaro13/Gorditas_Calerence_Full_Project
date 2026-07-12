@@ -1,8 +1,8 @@
 // ...otros métodos...
 import { ApiResponse } from '../types';
 import { mockApiService } from './mockApi';
-//const API_BASE_URL = `http://localhost:5000/api`;
-const API_BASE_URL = `https://calerence-api.neuralmane.com/api`;
+//const API_BASE_URL = `https://calerence-api.neuralmane.com/api`;
+const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:5000/api`;
 
 class ApiService {
   /**
@@ -17,7 +17,7 @@ class ApiService {
   async getOrden(ordenId: string) {
     return this.request(`/ordenes/${ordenId}`);
   }
-  private token: string | null = localStorage.getItem('token');
+  private token: string | null = localStorage.getItem('msalToken') || localStorage.getItem('token');
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -26,7 +26,7 @@ class ApiService {
     
     const url = `${API_BASE_URL}${endpoint}`;
     // Siempre obtener el token actualizado de localStorage
-    this.token = localStorage.getItem('token');
+    this.token = localStorage.getItem('msalToken') || localStorage.getItem('token');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),

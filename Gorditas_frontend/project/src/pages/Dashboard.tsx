@@ -19,6 +19,58 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { Orden } from '../types';
 
+// Subscription status banner
+const SubscriptionBanner: React.FC = () => {
+  const plan = localStorage.getItem('tenantPlan') || 'trial';
+  const planStatus = localStorage.getItem('tenantPlanStatus') || 'trial';
+  const trialEndsAt = localStorage.getItem('tenantTrialEndsAt');
+
+  if (planStatus === 'active') {
+    const planName = plan === 'basico' ? 'Básico' : plan === 'profesional' ? 'Profesional' : plan === 'empresarial' ? 'Empresarial' : plan;
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-5 h-5 text-green-600" />
+          <span className="text-sm text-green-800 font-medium">Plan {planName} activo</span>
+        </div>
+        <Link to="/planes" className="text-sm text-green-700 hover:text-green-900 font-medium">Gestionar →</Link>
+      </div>
+    );
+  }
+
+  if (planStatus === 'trial' && trialEndsAt) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    const urgent = daysLeft <= 3;
+    return (
+      <div className={`${urgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg px-4 py-3 flex items-center justify-between`}>
+        <div className="flex items-center gap-2">
+          <Clock className={`w-5 h-5 ${urgent ? 'text-red-600' : 'text-blue-600'}`} />
+          <span className={`text-sm font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
+            Prueba gratuita — {daysLeft} {daysLeft === 1 ? 'día' : 'días'} restantes
+          </span>
+        </div>
+        <Link to="/planes" className={`text-sm font-medium ${urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900'}`}>
+          Elegir plan →
+        </Link>
+      </div>
+    );
+  }
+
+  if (planStatus === 'trial') {
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5 text-blue-600" />
+          <span className="text-sm text-blue-800 font-medium">Prueba gratuita activa — 14 días</span>
+        </div>
+        <Link to="/planes" className="text-sm text-blue-700 hover:text-blue-900 font-medium">Ver planes →</Link>
+      </div>
+    );
+  }
+
+  return null;
+};
+
 interface DashboardStats {
   ordenesHoy: number;
   ventasHoy: number;
@@ -438,6 +490,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Subscription Banner */}
+      <SubscriptionBanner />
+      
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">

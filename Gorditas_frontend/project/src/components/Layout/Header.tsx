@@ -9,6 +9,11 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { user, logout } = useAuth();
 
+  // Load tenant config from localStorage
+  const tenantConfig = JSON.parse(localStorage.getItem('tenantConfig') || '{}');
+  const tenantNombre = localStorage.getItem('tenantNombre') || 'Sistema Restaurante';
+  const tenantImagen = tenantConfig.imagen || null;
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
       <div className="max-w-full mx-auto px-6 py-4">
@@ -24,11 +29,20 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             </button>
 
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                <Settings className="w-6 h-6 text-white" />
-              </div>
+              {tenantImagen ? (
+                <img
+                  src={`http://localhost:5000${tenantImagen}`}
+                  alt="Logo"
+                  className="w-10 h-10 rounded-lg object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">Sistema Restaurante</h1>
+                <h1 className="text-xl font-bold text-gray-900">{tenantNombre}</h1>
                 <p className="text-sm text-gray-600">Panel de Administración</p>
               </div>
             </div>
