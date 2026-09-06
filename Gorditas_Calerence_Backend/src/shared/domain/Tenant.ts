@@ -45,3 +45,7 @@ export function accessBlockReason(t: Pick<TenantInfo, 'planStatus' | 'trialEndsA
       return 'SUBSCRIPTION_INACTIVE';
   }
 }
+
+/** Paletas de color disponibles para el branding del tenant. */
+export const PALETAS = ['orange', 'red', 'green', 'blue', 'purple', 'brown', 'dark'] as const;
+export type Paleta = (typeof PALETAS)[number];

@@ -52,7 +52,8 @@ export class ZitadelIdentityProvider implements IdentityProvider {
         {
           human: {
             profile: { givenName: input.admin.givenName, familyName: input.admin.familyName },
-            email: { email: input.admin.email, isVerified: false },
+            // sendCode: Zitadel envía el correo de verificación con el SMTP activo
+            email: { email: input.admin.email, sendCode: {} },
             password: { password: input.admin.password, changeRequired: false },
           },
           roles: ['ORG_OWNER'],

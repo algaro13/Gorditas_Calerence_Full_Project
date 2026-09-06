@@ -4,27 +4,34 @@
  */
 import type { PrismaClient } from '@prisma/client';
 import { createLocalJWKSet, createRemoteJWKSet, type JSONWebKeySet, type JWTVerifyGetKey } from 'jose';
+import type { RequestHandler, ErrorRequestHandler } from 'express';
+import type { Logger as PinoLogger } from 'pino';
 import { env as defaultEnv, type Env } from './shared/config/env';
 import { createDomainUrls, type DomainUrls } from './shared/config/domain';
 import type { Clock } from './shared/application/ports/Clock';
+import type { FileStorage } from './shared/application/ports/FileStorage';
 import type { IdentityProvider } from './shared/application/ports/IdentityProvider';
 import type { Logger } from './shared/application/ports/Logger';
+import type { PaymentProvider, WebhookVerifier } from './shared/application/ports/PaymentProvider';
 import type { UnitOfWork } from './shared/application/ports/UnitOfWork';
 import { createPrismaClient } from './shared/infrastructure/prisma/client';
 import { PrismaUnitOfWork } from './shared/infrastructure/prisma/unit-of-work';
 import { createLogger } from './shared/infrastructure/logger/pino-logger';
 import { SystemClock } from './shared/infrastructure/clock/SystemClock';
+import { LocalFileStorage } from './shared/infrastructure/storage/LocalFileStorage';
 import { createAuthenticate } from './shared/http/express/authenticate';
 import { createTenantContext, type TenantContextMiddleware } from './shared/http/express/tenant-context';
 import { createPlanGuard } from './shared/http/express/plan-guard';
 import { createErrorHandler } from './shared/http/express/error-handler';
 import { ZitadelIdentityProvider } from './infrastructure/zitadel/ZitadelIdentityProvider';
 import { FakeIdentityProvider } from './infrastructure/zitadel/FakeIdentityProvider';
+import { createStripeClient, StripePaymentProvider, StripeWebhookVerifier } from './infrastructure/stripe/StripePaymentProvider';
+import { FakePaymentProvider } from './infrastructure/stripe/FakePaymentProvider';
 import { PrismaTenantRepository } from './modules/tenants/infrastructure/PrismaTenantRepository';
-import type { TenantRepository } from './modules/tenants/application/ports/TenantRepository';
+import type { TenantRepository } from './shared/application/ports/TenantRepository';
 import { touchMember } from './modules/usuarios/infrastructure/member-mirror';
-import type { RequestHandler, ErrorRequestHandler } from 'express';
-import type { Logger as PinoLogger } from 'pino';
+import type { BillingConfig } from './modules/billing/application/use-cases/Billing';
+import type { PaidPlanId } from './modules/billing/domain/plans';
 
 export interface ContainerOverrides {
   env?: Partial<Env>;
@@ -32,6 +39,9 @@ export interface ContainerOverrides {
   clock?: Clock;
   logger?: Logger;
   identityProvider?: IdentityProvider;
+  paymentProvider?: PaymentProvider;
+  webhookVerifier?: WebhookVerifier;
+  storage?: FileStorage;
   /** JWKS local (pruebas). Si se pasa, ignora ZITADEL_JWKS_MODE. */
   localJwks?: JSONWebKeySet;
   silentLogs?: boolean;
@@ -46,6 +56,10 @@ export interface Container {
   clock: Clock;
   uow: UnitOfWork;
   identityProvider: IdentityProvider;
+  paymentProvider: PaymentProvider;
+  webhookVerifier: WebhookVerifier;
+  storage: FileStorage;
+  billingConfig: BillingConfig;
   tenants: TenantRepository;
   middlewares: {
     authenticate: RequestHandler;
@@ -54,6 +68,12 @@ export interface Container {
     errorHandler: ErrorRequestHandler;
   };
   shutdown(): Promise<void>;
+}
+
+class UnverifiedWebhook implements WebhookVerifier {
+  construct(): never {
+    throw new Error('Webhook de pagos no configurado (STRIPE_WEBHOOK_SECRET)');
+  }
 }
 
 export function buildContainer(overrides: ContainerOverrides = {}): Container {
@@ -70,6 +90,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const prisma = overrides.prisma ?? createPrismaClient({ url: env.DATABASE_URL, logQueries: false });
   const uow = new PrismaUnitOfWork(prisma);
   const urls = createDomainUrls({ appDomain: env.APP_DOMAIN, scheme: env.APP_SCHEME, localFrontendOrigin: env.FRONTEND_BASE_URL });
+  const storage = overrides.storage ?? new LocalFileStorage(env.UPLOADS_DIR);
 
   const identityProvider: IdentityProvider =
     overrides.identityProvider ??
@@ -85,6 +106,22 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
           },
           logger.child({ component: 'zitadel' }),
         ));
+
+  const stripe = env.PAYMENT_PROVIDER === 'stripe' && env.STRIPE_SECRET_KEY ? createStripeClient(env.STRIPE_SECRET_KEY) : null;
+  const paymentProvider: PaymentProvider = overrides.paymentProvider ?? (stripe ? new StripePaymentProvider(stripe) : new FakePaymentProvider());
+  const webhookVerifier: WebhookVerifier =
+    overrides.webhookVerifier ??
+    (env.STRIPE_WEBHOOK_SECRET ? new StripeWebhookVerifier(stripe ?? createStripeClient('sk_test_placeholder'), env.STRIPE_WEBHOOK_SECRET) : new UnverifiedWebhook());
+
+  const priceIds: Partial<Record<PaidPlanId, string>> = {
+    ...(env.STRIPE_PRICE_BASICO ? { basico: env.STRIPE_PRICE_BASICO } : {}),
+    ...(env.STRIPE_PRICE_PROFESIONAL ? { profesional: env.STRIPE_PRICE_PROFESIONAL } : {}),
+    ...(env.STRIPE_PRICE_EMPRESARIAL ? { empresarial: env.STRIPE_PRICE_EMPRESARIAL } : {}),
+  };
+  const billingConfig: BillingConfig = {
+    priceIds,
+    priceToPlan: Object.fromEntries(Object.entries(priceIds).map(([plan, price]) => [price, plan as PaidPlanId])),
+  };
 
   const tenants = new PrismaTenantRepository(prisma);
 
@@ -120,6 +157,10 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     clock,
     uow,
     identityProvider,
+    paymentProvider,
+    webhookVerifier,
+    storage,
+    billingConfig,
     tenants,
     middlewares: { authenticate, tenantContext, planGuard, errorHandler },
     shutdown: async () => {

@@ -13,6 +13,8 @@ export default tseslint.config(
     files: ['src/**/*.ts', 'test/**/*.ts', 'scripts/**/*.ts'],
     plugins: { boundaries },
     settings: {
+      // Sin esto el resolvedor por defecto no encuentra imports .ts y todo import resulta 'unknown'
+      'import/resolver': { node: { extensions: ['.ts', '.js', '.mjs', '.json'] } },
       'boundaries/include': ['src/**/*'],
       'boundaries/elements': [
         { type: 'shared-domain', pattern: 'src/shared/domain/**', mode: 'full' },
@@ -58,7 +60,7 @@ export default tseslint.config(
             { from: 'module-domain', allow: [...sharedLow, ['module-domain', { module: '${from.module}' }]] },
             {
               from: 'module-application',
-              allow: [...sharedLow, 'shared-application', ['module-domain', { module: '${from.module}' }], ['module-application', { module: '${from.module}' }]],
+              allow: [...sharedLow, 'shared-application', 'shared-config', ['module-domain', { module: '${from.module}' }], ['module-application', { module: '${from.module}' }]],
             },
             {
               from: 'module-infrastructure',
@@ -87,7 +89,7 @@ export default tseslint.config(
             { from: 'infrastructure', allow: ['infrastructure', ...sharedLow, 'shared-application', 'shared-config', 'shared-infrastructure'] },
             {
               from: 'root',
-              allow: ['root', ...sharedLow, 'shared-application', 'shared-config', 'shared-infrastructure', 'shared-http', 'infrastructure', 'module-application', 'module-infrastructure', 'module-http'],
+              allow: ['root', ...sharedLow, 'shared-application', 'shared-config', 'shared-infrastructure', 'shared-http', 'infrastructure', 'module-domain', 'module-application', 'module-infrastructure', 'module-http'],
             },
           ],
         },

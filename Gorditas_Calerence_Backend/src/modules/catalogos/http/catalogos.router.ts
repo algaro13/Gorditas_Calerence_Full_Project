@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from 'express';
 import Joi from 'joi';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
 import { paginationOf, sendCreated, sendError, sendOk } from '../../../shared/http/express/respond';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import { validateQuery } from '../../../shared/http/express/validate';
 import { ROLES } from '../../../shared/domain/Auth';
 import type { ActualizarRegistro, CrearRegistro, EliminarRegistro, ListarCatalogo } from '../application/use-cases/CatalogoCrud';

@@ -1,15 +1,30 @@
 import { Router, type RequestHandler } from 'express';
+import Joi from 'joi';
 import type { DomainUrls } from '../../../shared/config/domain';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
-import { sendOk } from '../../../shared/http/express/respond';
-import type { TenantRepository } from '../application/ports/TenantRepository';
+import { isAdmin } from '../../../shared/http/express/authenticate';
+import { sendError, sendOk } from '../../../shared/http/express/respond';
+import { singleImageUpload } from '../../../shared/http/express/upload';
+import { validateBody } from '../../../shared/http/express/validate';
+import type { TenantRepository } from '../../../shared/application/ports/TenantRepository';
+import type { ActualizarConfigTenant, SubirLogoTenant } from '../application/use-cases/ConfiguracionTenant';
+import { PALETAS } from '../../../shared/domain/Tenant';
 
 export interface TenantsRouterDeps {
   tenants: TenantRepository;
   urls: DomainUrls;
   authenticate: RequestHandler;
   tenantContext: RequestHandler;
+  actualizarConfig: ActualizarConfigTenant;
+  subirLogo: SubirLogoTenant;
 }
+
+const configSchema = Joi.object({
+  paleta: Joi.string()
+    .valid(...PALETAS)
+    .optional(),
+  imagen: Joi.string().max(300).allow('', null).optional(),
+}).min(1);
 
 export function createTenantsRouter(deps: TenantsRouterDeps): Router {
   const router = Router();
@@ -21,7 +36,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
       const slug = String(req.params.slug).toLowerCase();
       const tenant = deps.urls.isValidSlug(slug) ? await deps.tenants.findBySlug(slug) : null;
       if (!tenant || !tenant.activo) {
-        res.status(404).json({ success: false, data: null, message: 'Restaurante no encontrado', code: 'TENANT_NOT_FOUND' });
+        sendError(res, 404, 'Restaurante no encontrado', 'TENANT_NOT_FOUND');
         return;
       }
       sendOk(res, { slug: tenant.slug, nombre: tenant.nombre, orgId: tenant.zitadelOrgId, config: tenant.config, url: deps.urls.tenantUrl(tenant.slug) });
@@ -71,6 +86,34 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           roles: auth.roles,
         },
       });
+    }),
+  );
+
+  router.put(
+    '/me/config',
+    deps.authenticate,
+    deps.tenantContext,
+    isAdmin,
+    validateBody(configSchema, { stripUnknown: true }),
+    asyncHandler(async (req, res) => {
+      const config = await deps.actualizarConfig.execute(req.tenant!, req.body);
+      sendOk(res, { config }, 'Configuración actualizada');
+    }),
+  );
+
+  router.post(
+    '/me/logo',
+    deps.authenticate,
+    deps.tenantContext,
+    isAdmin,
+    singleImageUpload('image'),
+    asyncHandler(async (req, res) => {
+      if (!req.file) {
+        sendError(res, 400, 'No se recibió imagen', 'NO_IMAGE');
+        return;
+      }
+      const result = await deps.subirLogo.execute(req.tenant!, { buffer: req.file.buffer, mimeType: req.file.mimetype, size: req.file.size });
+      sendOk(res, result, 'Logo actualizado');
     }),
   );
 

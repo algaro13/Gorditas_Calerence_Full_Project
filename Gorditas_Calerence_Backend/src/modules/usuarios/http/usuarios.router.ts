@@ -4,7 +4,7 @@ import { ROLES } from '../../../shared/domain/Auth';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
 import { isEncargado } from '../../../shared/http/express/authenticate';
 import { sendCreated, sendOk } from '../../../shared/http/express/respond';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import { validateBody } from '../../../shared/http/express/validate';
 import type { ActualizarUsuario, EliminarUsuario, InvitarUsuario, ListarPersonal, ReenviarInvitacion } from '../application/use-cases/Personal';
 import type { StaffMember } from '../application/ports/StaffRepository';

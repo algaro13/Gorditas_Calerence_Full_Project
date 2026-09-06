@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
 import { isEncargado } from '../../../shared/http/express/authenticate';
 import { paginationOf, sendError, sendOk } from '../../../shared/http/express/respond';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import { validateBody, validateQuery } from '../../../shared/http/express/validate';
 import type { AjustarInventario, ConsultarInventario, RecibirProductos } from '../application/use-cases/Inventario';
 

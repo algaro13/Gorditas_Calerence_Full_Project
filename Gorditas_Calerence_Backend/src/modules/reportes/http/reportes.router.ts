@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
 import { isEncargado } from '../../../shared/http/express/authenticate';
 import { sendCreated, sendError, sendOk } from '../../../shared/http/express/respond';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import { validateBody, validateQuery } from '../../../shared/http/express/validate';
 import { dayRange } from '../../../shared/utils/dates';
 import type { CrearGasto, EliminarGasto, ProductosMasVendidos, ReporteGastos, ReporteInventario, ReporteVentas } from '../application/use-cases/Reportes';

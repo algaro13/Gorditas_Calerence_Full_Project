@@ -7,11 +7,14 @@ import type { Container } from './container';
 import { notFound } from './shared/http/express/error-handler';
 import { nextPedidoNumber } from './shared/infrastructure/prisma/counters';
 import { createTenantsRouter } from './modules/tenants/http/tenants.router';
+import { ActualizarConfigTenant, SubirLogoTenant } from './modules/tenants/application/use-cases/ConfiguracionTenant';
 import { createOrdenesModule } from './modules/ordenes';
 import { createCatalogosModule } from './modules/catalogos';
 import { createUsuariosModule } from './modules/usuarios';
 import { createInventarioModule } from './modules/inventario';
 import { createReportesModule } from './modules/reportes';
+import { createOnboardingModule } from './modules/onboarding';
+import { createBillingModule } from './modules/billing';
 
 export function createApp(c: Container): Express {
   const app = express();
@@ -50,15 +53,58 @@ export function createApp(c: Container): Express {
     res.json({ status: 'ok', env: c.env.NODE_ENV, time: c.clock.now().toISOString() });
   });
 
-  // El webhook de Stripe necesita el body crudo: se monta ANTES de express.json (change de billing).
+  const { authenticate, tenantContext, planGuard } = c.middlewares;
+  const invalidateTenant = (tenant: { zitadelOrgId: string | null }) => {
+    if (tenant.zitadelOrgId) tenantContext.invalidate(tenant.zitadelOrgId);
+  };
+
+  const billing = createBillingModule({
+    prisma: c.prisma,
+    tenants: c.tenants,
+    payments: c.paymentProvider,
+    verifier: c.webhookVerifier,
+    urls: c.urls,
+    config: c.billingConfig,
+    logger: c.logger.child({ module: 'billing' }),
+    authenticate,
+    tenantContext,
+    onTenantChanged: invalidateTenant,
+  });
+
+  // El webhook de Stripe necesita el body crudo: se monta ANTES de express.json.
+  app.post('/api/billing/webhook', express.raw({ type: 'application/json', limit: '1mb' }), billing.webhookHandler);
+
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  const { authenticate, tenantContext, planGuard } = c.middlewares;
   const pos = [authenticate, tenantContext, planGuard];
   const timeZone = c.env.APP_TZ;
 
-  app.use('/api/tenants', createTenantsRouter({ tenants: c.tenants, urls: c.urls, authenticate, tenantContext }));
+  app.use(
+    '/api/tenants',
+    createTenantsRouter({
+      tenants: c.tenants,
+      urls: c.urls,
+      authenticate,
+      tenantContext,
+      actualizarConfig: new ActualizarConfigTenant(c.tenants, c.storage, invalidateTenant),
+      subirLogo: new SubirLogoTenant(c.tenants, c.storage, invalidateTenant),
+    }),
+  );
+
+  const onboarding = createOnboardingModule({
+    prisma: c.prisma,
+    tenants: c.tenants,
+    identity: c.identityProvider,
+    storage: c.storage,
+    urls: c.urls,
+    clock: c.clock,
+    logger: c.logger.child({ module: 'onboarding' }),
+    rateLimitEnabled: c.env.NODE_ENV !== 'test',
+    onProvisioned: invalidateTenant,
+  });
+  app.use('/api/onboarding', onboarding.router);
+  app.use('/api/billing', billing.router);
 
   const ordenes = createOrdenesModule({ uow: c.uow, clock: c.clock, timeZone });
   const usuarios = createUsuariosModule({ uow: c.uow, identity: c.identityProvider, logger: c.logger.child({ module: 'usuarios' }) });

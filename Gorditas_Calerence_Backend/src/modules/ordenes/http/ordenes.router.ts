@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
 import { isMesero } from '../../../shared/http/express/authenticate';
 import { paginationOf, sendCreated, sendOk } from '../../../shared/http/express/respond';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import { validateBody, validateQuery } from '../../../shared/http/express/validate';
 import { dayRange } from '../../../shared/utils/dates';
 import { isOrdenEstatus, type OrdenEstatus } from '../domain/OrdenStatus';

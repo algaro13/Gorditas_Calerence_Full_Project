@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createDomainUrls, RESERVED_SLUGS } from '../../src/shared/config/domain';
 import { accessBlockReason } from '../../src/shared/domain/Tenant';
-import { toApi } from '../../src/shared/http/express/serialize';
+import { toApi } from '../../src/shared/utils/serialize';
 import { multiply, sum, toMoney } from '../../src/shared/domain/Money';
 import { formatDateKey } from '../../src/shared/utils/dates';
 

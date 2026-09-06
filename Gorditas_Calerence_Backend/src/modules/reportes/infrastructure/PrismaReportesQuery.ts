@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { toMoney } from '../../../shared/domain/Money';
 import { currentDb } from '../../../shared/infrastructure/prisma/unit-of-work';
-import { toApi } from '../../../shared/http/express/serialize';
+import { toApi } from '../../../shared/utils/serialize';
 import type { GastoRow, GastosReporte, Rango, ReportesQuery, VendidoRow, VentasReporte } from '../application/ports/ReportesQuery';
 
 /** Consultas de reportes. El corte de día se calcula en la zona horaria del negocio. */
