@@ -1,0 +1,22 @@
+{
+  "name": "kustodela-pos",
+  "private": true,
+  "description": "Orquestación del entorno local de Kustodela POS (backend + frontend + Zitadel + PostgreSQL)",
+  "scripts": {
+    "dev:up": "docker compose -f docker-compose.dev.yaml up -d --wait && tsx scripts/zitadel-bootstrap.ts && npm --prefix Gorditas_Calerence_Backend run migrate:deploy",
+    "dev:bootstrap": "tsx scripts/zitadel-bootstrap.ts",
+    "dev:tools": "docker compose -f docker-compose.dev.yaml --profile tools up -d --wait",
+    "dev:down": "docker compose -f docker-compose.dev.yaml down",
+    "dev:reset": "docker compose -f docker-compose.dev.yaml down -v && rimraf .local",
+    "dev:logs": "docker compose -f docker-compose.dev.yaml logs -f --tail=100",
+    "dev:seed": "tsx scripts/dev-seed.ts",
+    "dev:backend": "npm --prefix Gorditas_Calerence_Backend run dev",
+    "dev:frontend": "npm --prefix Gorditas_frontend/project run dev",
+    "test": "npm --prefix Gorditas_Calerence_Backend test",
+    "test:unit": "npm --prefix Gorditas_Calerence_Backend run test:unit"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.3"
+  }
+}

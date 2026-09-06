@@ -1,0 +1,487 @@
+// Kustodela POS: una sola base PostgreSQL, tenant_id en toda tabla de negocio y
+// Row Level Security forzada (ver prisma/sql/rls.sql). La aplicación nunca escribe
+// tenant_id: lo pone el DEFAULT current_tenant_id() a partir de SET LOCAL app.tenant_id.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum OrdenEstatus {
+  Pendiente
+  Recepcion
+  Preparacion
+  Surtida
+  Entregada
+  Pagada
+  Cancelado
+}
+
+enum Plan {
+  trial
+  basico
+  profesional
+  empresarial
+}
+
+enum PlanStatus {
+  trial
+  active
+  past_due
+  canceled
+  expired
+}
+
+enum TenantRole {
+  Admin
+  Encargado
+  Mesero
+  Despachador
+  Cocinero
+}
+
+enum ProvisioningStatus {
+  pending
+  ready
+  failed
+}
+
+// ----------------------------------------------------------------------------
+// Plataforma (sin RLS)
+// ----------------------------------------------------------------------------
+
+model Tenant {
+  id                    String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug                  String             @unique
+  nombre                String
+  zitadelOrgId          String?            @unique @map("zitadel_org_id")
+  zitadelProjectGrantId String?            @map("zitadel_project_grant_id")
+  provisioningStatus    ProvisioningStatus @default(pending) @map("provisioning_status")
+  plan                  Plan               @default(trial)
+  planStatus            PlanStatus         @default(trial) @map("plan_status")
+  trialEndsAt           DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
+  maxUsuarios           Int                @default(3) @map("max_usuarios")
+  stripeCustomerId      String?            @unique @map("stripe_customer_id")
+  stripeSubscriptionId  String?            @unique @map("stripe_subscription_id")
+  config                Json               @default("{}")
+  activo                Boolean            @default(true)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  users                 TenantUser[]
+  counters              Counter[]
+  guisos                Guiso[]
+  tiposProducto         TipoProducto[]
+  productos             Producto[]
+  tiposPlatillo         TipoPlatillo[]
+  platillos             Platillo[]
+  tiposExtra            TipoExtra[]
+  extras                Extra[]
+  tiposOrden            TipoOrden[]
+  mesas                 Mesa[]
+  tiposGasto            TipoGasto[]
+  gastos                Gasto[]
+  ordenes               Orden[]
+  subordenes            Suborden[]
+  detallesPlatillo      OrdenDetallePlatillo[]
+  detallesProducto      OrdenDetalleProducto[]
+  detallesExtra         OrdenDetalleExtra[]
+
+  @@index([activo])
+  @@map("tenants")
+}
+
+model StripeEvent {
+  id          String    @id
+  type        String
+  receivedAt  DateTime  @default(now()) @map("received_at") @db.Timestamptz(3)
+  processedAt DateTime? @map("processed_at") @db.Timestamptz(3)
+  error       String?
+
+  @@map("stripe_events")
+}
+
+// ----------------------------------------------------------------------------
+// Tenant (con RLS)
+// ----------------------------------------------------------------------------
+
+model TenantUser {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String     @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  zitadelUserId String     @map("zitadel_user_id")
+  email         String
+  nombre        String
+  role          TenantRole @default(Mesero)
+  grantId       String?    @map("grant_id")
+  activo        Boolean    @default(true)
+  lastSeenAt    DateTime?  @map("last_seen_at") @db.Timestamptz(3)
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, zitadelUserId])
+  @@unique([tenantId, email])
+  @@index([tenantId, activo])
+  @@map("tenant_users")
+}
+
+model Counter {
+  tenantId String @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  key      String
+  value    BigInt @default(0)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([tenantId, key])
+  @@map("counters")
+}
+
+// ---------- Catálogos ----------
+
+model Guiso {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  detallesPlatillo OrdenDetallePlatillo[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, activo])
+  @@map("guisos")
+}
+
+model TipoProducto {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productos Producto[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, activo])
+  @@map("tipos_producto")
+}
+
+model Producto {
+  id             Int      @id @default(autoincrement())
+  tenantId       String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idTipoProducto Int      @map("id_tipo_producto")
+  nombre         String
+  cantidad       Int      @default(0)
+  costo          Decimal  @default(0) @db.Decimal(12, 2)
+  variantes      Json     @default("[]")
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoProducto     TipoProducto           @relation(fields: [tenantId, idTipoProducto], references: [tenantId, id])
+  detallesProducto OrdenDetalleProducto[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, idTipoProducto])
+  @@index([tenantId, activo])
+  @@index([tenantId, cantidad])
+  @@map("productos")
+}
+
+model TipoPlatillo {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platillos Platillo[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, activo])
+  @@map("tipos_platillo")
+}
+
+model Platillo {
+  id             Int      @id @default(autoincrement())
+  tenantId       String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idTipoPlatillo Int      @map("id_tipo_platillo")
+  nombre         String
+  descripcion    String?
+  costo          Decimal  @default(0) @db.Decimal(12, 2)
+  precio         Decimal  @default(0) @db.Decimal(12, 2)
+  notas          String?
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoPlatillo     TipoPlatillo           @relation(fields: [tenantId, idTipoPlatillo], references: [tenantId, id])
+  detallesPlatillo OrdenDetallePlatillo[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, idTipoPlatillo])
+  @@index([tenantId, activo])
+  @@map("platillos")
+}
+
+model TipoExtra {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre      String
+  descripcion String?
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  extras Extra[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, activo])
+  @@map("tipos_extra")
+}
+
+model Extra {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idTipoExtra Int      @map("id_tipo_extra")
+  nombre      String
+  descripcion String?
+  costo       Decimal  @default(0) @db.Decimal(12, 2)
+  activo      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoExtra     TipoExtra           @relation(fields: [tenantId, idTipoExtra], references: [tenantId, id])
+  detallesExtra OrdenDetalleExtra[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, idTipoExtra])
+  @@index([tenantId, activo])
+  @@map("extras")
+}
+
+model TipoOrden {
+  id        Int      @id @default(autoincrement())
+  tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre    String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ordenes Orden[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@map("tipos_orden")
+}
+
+model Mesa {
+  id        Int      @id @default(autoincrement())
+  tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre    String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  ordenes Orden[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@index([tenantId, activo])
+  @@map("mesas")
+}
+
+model TipoGasto {
+  id        Int      @id @default(autoincrement())
+  tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre    String
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  gastos Gasto[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, nombre])
+  @@map("tipos_gasto")
+}
+
+model Gasto {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idTipoGasto Int      @map("id_tipo_gasto")
+  nombre      String
+  gastoTotal  Decimal  @default(0) @map("gasto_total") @db.Decimal(12, 2)
+  descripcion String?
+  fecha       DateTime @default(now()) @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoGasto TipoGasto @relation(fields: [tenantId, idTipoGasto], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@index([tenantId, fecha(sort: Desc)])
+  @@index([tenantId, idTipoGasto])
+  @@map("gastos")
+}
+
+// ---------- Órdenes ----------
+
+model Orden {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String       @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  folio           String
+  idTipoOrden     Int          @map("id_tipo_orden")
+  nombreTipoOrden String       @map("nombre_tipo_orden")
+  estatus         OrdenEstatus @default(Recepcion)
+  idMesa          Int?         @map("id_mesa")
+  nombreMesa      String?      @map("nombre_mesa")
+  nombreCliente   String?      @map("nombre_cliente")
+  fechaHora       DateTime     @default(now()) @map("fecha_hora") @db.Timestamptz(3)
+  fechaPago       DateTime?    @map("fecha_pago") @db.Timestamptz(3)
+  total           Decimal      @default(0) @db.Decimal(12, 2)
+  notas           String?
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant     Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoOrden  TipoOrden              @relation(fields: [tenantId, idTipoOrden], references: [tenantId, id])
+  mesa       Mesa?                  @relation(fields: [tenantId, idMesa], references: [tenantId, id])
+  subordenes Suborden[]
+  productos  OrdenDetalleProducto[]
+
+  @@unique([tenantId, folio])
+  @@unique([tenantId, id])
+  @@index([tenantId, estatus])
+  @@index([tenantId, fechaHora(sort: Desc)])
+  @@index([tenantId, idMesa])
+  @@map("ordenes")
+}
+
+model Suborden {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idOrden   String   @map("id_orden") @db.Uuid
+  nombre    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orden     Orden                  @relation(fields: [tenantId, idOrden], references: [tenantId, id], onDelete: Cascade)
+  platillos OrdenDetallePlatillo[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idOrden])
+  @@map("subordenes")
+}
+
+model OrdenDetallePlatillo {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idSuborden     String   @map("id_suborden") @db.Uuid
+  idPlatillo     Int      @map("id_platillo")
+  nombrePlatillo String   @map("nombre_platillo")
+  idGuiso        Int      @map("id_guiso")
+  nombreGuiso    String   @map("nombre_guiso")
+  costoPlatillo  Decimal  @map("costo_platillo") @db.Decimal(12, 2)
+  cantidad       Int      @default(1)
+  importe        Decimal  @db.Decimal(12, 2)
+  notas          String?
+  listo          Boolean  @default(false)
+  entregado      Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  suborden Suborden            @relation(fields: [tenantId, idSuborden], references: [tenantId, id], onDelete: Cascade)
+  platillo Platillo            @relation(fields: [tenantId, idPlatillo], references: [tenantId, id])
+  guiso    Guiso               @relation(fields: [tenantId, idGuiso], references: [tenantId, id])
+  extras   OrdenDetalleExtra[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idSuborden])
+  @@index([tenantId, idPlatillo])
+  @@map("orden_detalle_platillos")
+}
+
+model OrdenDetalleProducto {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idOrden        String   @map("id_orden") @db.Uuid
+  idProducto     Int      @map("id_producto")
+  nombreProducto String   @map("nombre_producto")
+  costoProducto  Decimal  @map("costo_producto") @db.Decimal(12, 2)
+  cantidad       Int      @default(1)
+  importe        Decimal  @db.Decimal(12, 2)
+  listo          Boolean  @default(false)
+  entregado      Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orden    Orden    @relation(fields: [tenantId, idOrden], references: [tenantId, id], onDelete: Cascade)
+  producto Producto @relation(fields: [tenantId, idProducto], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idOrden])
+  @@index([tenantId, idProducto])
+  @@map("orden_detalle_productos")
+}
+
+model OrdenDetalleExtra {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId               String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idOrdenDetallePlatillo String   @map("id_orden_detalle_platillo") @db.Uuid
+  idExtra                Int      @map("id_extra")
+  nombreExtra            String   @map("nombre_extra")
+  costoExtra             Decimal  @map("costo_extra") @db.Decimal(12, 2)
+  cantidad               Int      @default(1)
+  importe                Decimal  @db.Decimal(12, 2)
+  listo                  Boolean  @default(false)
+  entregado              Boolean  @default(false)
+  createdAt              DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  detallePlatillo OrdenDetallePlatillo @relation(fields: [tenantId, idOrdenDetallePlatillo], references: [tenantId, id], onDelete: Cascade)
+  extra           Extra                @relation(fields: [tenantId, idExtra], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idOrdenDetallePlatillo])
+  @@index([tenantId, idExtra])
+  @@map("orden_detalle_extras")
+}

@@ -1,0 +1,24 @@
+{
+	auto_https off
+	admin off
+}
+
+# Proxy local de Zitadel: un solo origen (http://localhost:8080) para API, consola y Login v2.
+# Replica el enrutamiento del compose oficial de Zitadel (Traefik) con Caddy.
+:8080 {
+	@login path /ui/v2/login /ui/v2/login/*
+	handle @login {
+		reverse_proxy http://zitadel-login:3000
+	}
+
+	handle / {
+		redir /ui/v2/login/ 302
+	}
+
+	handle {
+		# gRPC / Connect-RPC / REST de Zitadel viajan por h2c. El header TE rompe el gateway gRPC.
+		reverse_proxy h2c://zitadel-api:8080 {
+			header_up -TE
+		}
+	}
+}

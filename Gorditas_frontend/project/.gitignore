@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Entorno (los escribe scripts/zitadel-bootstrap.ts)
+.env.development
+.env.production
+.env.test

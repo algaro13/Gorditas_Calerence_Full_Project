@@ -1,0 +1,140 @@
+name: kustodela-dev
+
+# Entorno local: PostgreSQL + Zitadel (API + Login v2 detrás de Caddy) + Mailpit.
+# Uso: npm run dev:up   (ver docs/local-testing.md)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
+      POS_APP_PASSWORD: ${POS_APP_PASSWORD}
+      POS_MIGRATOR_PASSWORD: ${POS_MIGRATOR_PASSWORD}
+      POS_MIGRATOR_CREATEDB: "true"
+      ZITADEL_DB_PASSWORD: ${ZITADEL_DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+
+  zitadel-api:
+    image: ghcr.io/zitadel/zitadel:${ZITADEL_VERSION}
+    restart: unless-stopped
+    user: "0"
+    command: start-from-init --masterkey "${ZITADEL_MASTERKEY}" --tlsMode disabled
+    environment:
+      ZITADEL_PORT: 8080
+      ZITADEL_EXTERNALDOMAIN: ${ZITADEL_EXTERNAL_DOMAIN}
+      ZITADEL_EXTERNALPORT: ${ZITADEL_EXTERNAL_PORT}
+      ZITADEL_EXTERNALSECURE: "false"
+      ZITADEL_TLS_ENABLED: "false"
+
+      ZITADEL_DATABASE_POSTGRES_DSN: postgresql://zitadel:${ZITADEL_DB_PASSWORD}@postgres:5432/zitadel?sslmode=disable
+
+      ZITADEL_FIRSTINSTANCE_INSTANCENAME: Kustodela
+      ZITADEL_FIRSTINSTANCE_DEFAULTLANGUAGE: es
+      ZITADEL_FIRSTINSTANCE_ORG_NAME: Kustodela
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME: admin
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD: ${ZITADEL_ADMIN_PASSWORD}
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED: "false"
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_ADDRESS: admin@kustodela.local
+      ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_VERIFIED: "true"
+
+      # Usuario máquina para el backend (IAM_OWNER). Su PAT se escribe en el volumen de bootstrap.
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_USERNAME: kustodela-backend
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_MACHINE_NAME: Kustodela backend
+      ZITADEL_FIRSTINSTANCE_ORG_MACHINE_PAT_EXPIRATIONDATE: "2099-01-01T00:00:00Z"
+      ZITADEL_FIRSTINSTANCE_PATPATH: /zitadel/bootstrap/backend.pat
+
+      # Cliente del Login v2
+      ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH: /zitadel/bootstrap/login-client.pat
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME: login-client
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME: Automatically Initialized IAM_LOGIN_CLIENT
+      ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE: "2099-01-01T00:00:00Z"
+
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED: "true"
+      ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI: http://${ZITADEL_EXTERNAL_DOMAIN}:${ZITADEL_EXTERNAL_PORT}/ui/v2/login/
+      ZITADEL_OIDC_DEFAULTLOGINURLV2: http://${ZITADEL_EXTERNAL_DOMAIN}:${ZITADEL_EXTERNAL_PORT}/ui/v2/login/login?authRequest=
+      ZITADEL_OIDC_DEFAULTLOGOUTURLV2: http://${ZITADEL_EXTERNAL_DOMAIN}:${ZITADEL_EXTERNAL_PORT}/ui/v2/login/logout?post_logout_redirect=
+
+      ZITADEL_LOGSTORE_ACCESS_STDOUT_ENABLED: "false"
+    volumes:
+      - ./.local/zitadel-bootstrap:/zitadel/bootstrap:rw
+    healthcheck:
+      test: ["CMD", "/app/zitadel", "ready"]
+      interval: 10s
+      timeout: 30s
+      retries: 18
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  zitadel-login:
+    image: ghcr.io/zitadel/zitadel-login:${ZITADEL_VERSION}
+    restart: unless-stopped
+    user: "0"
+    environment:
+      ZITADEL_API_URL: http://zitadel-api:8080
+      NEXT_PUBLIC_BASE_PATH: /ui/v2/login
+      ZITADEL_SERVICE_USER_TOKEN_FILE: /zitadel/bootstrap/login-client.pat
+      CUSTOM_REQUEST_HEADERS: Host:${ZITADEL_EXTERNAL_DOMAIN},X-Forwarded-Proto:http
+    volumes:
+      - ./.local/zitadel-bootstrap:/zitadel/bootstrap:ro
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "node /app/healthcheck.mjs http://localhost:3000/ui/v2/login/healthy"]
+      interval: 10s
+      timeout: 30s
+      retries: 12
+      start_period: 20s
+    depends_on:
+      zitadel-api:
+        condition: service_healthy
+
+  # Un solo origen http://localhost:8080 para API, consola y login (igual que Caddy en producción).
+  zitadel-proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${ZITADEL_EXTERNAL_PORT}:8080"
+    volumes:
+      - ./infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
+    depends_on:
+      zitadel-api:
+        condition: service_healthy
+      zitadel-login:
+        condition: service_healthy
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    profiles: ["tools"]
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      PGWEB_DATABASE_URL: postgres://postgres:${POSTGRES_ADMIN_PASSWORD}@postgres:5432/kustodela?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_dev_data:

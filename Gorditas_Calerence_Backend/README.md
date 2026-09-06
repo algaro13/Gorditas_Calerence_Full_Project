@@ -1,161 +1,65 @@
-# Restaurant API
+# Kustodela POS API
 
-API REST para gestión de restaurante desarrollada con Node.js, Express, TypeScript y MongoDB.
+API del punto de venta multi-tenant para restaurantes. Express + TypeScript, PostgreSQL con Prisma y Row Level Security, identidad con Zitadel.
 
-## 🚀 Características
+## Arranque local
 
-- **Gestión completa de restaurante**: Órdenes, inventario, catálogos y reportes
-- **Autenticación JWT**: Sistema de autenticación seguro con roles
-- **Base de datos MongoDB**: Usando Mongoose para modelado de datos
-- **TypeScript**: Tipado estático para mayor robustez
-- **Arquitectura modular**: Código organizado y mantenible
-- **Validaciones**: Usando Joi para validación de datos
-- **Seguridad**: Helmet, CORS y manejo de errores
+Todo el entorno (PostgreSQL, Zitadel, correo capturado) se levanta desde la raíz del repositorio. Ver [docs/local-testing.md](../docs/local-testing.md).
 
-## 📋 Requisitos
-
-- Node.js 18+
-- MongoDB 4.4+
-- npm o yarn
-
-## 🛠️ Instalación
-
-1. Clonar el repositorio:
 ```bash
-git clone <repository-url>
-cd restaurant-api
+npm run dev:up          # en la raíz: docker + bootstrap de Zitadel + migraciones
+npm run dev:backend     # este API en http://localhost:5000
 ```
 
-2. Instalar dependencias:
-```bash
-npm install
-```
+## Arquitectura
 
-3. Configurar variables de entorno:
-```bash
-cp .env.example .env
-```
-
-4. Editar el archivo `.env` con tus configuraciones:
-```env
-MONGODB_URI=mongodb://localhost:27017/mi_tienda_gorditas
-JWT_SECRET=tu-jwt-secret-muy-seguro
-PORT=5000
-```
-
-5. Construir el proyecto:
-```bash
-npm run build
-```
-
-6. Iniciar el servidor de desarrollo:
-```bash
-npm run dev
-```
-
-## 📁 Estructura del Proyecto
+Módulos por contexto de negocio con cuatro capas y dependencias hacia adentro (verificadas por ESLint con `eslint-plugin-boundaries`):
 
 ```
 src/
-├── config/          # Configuración de base de datos
-├── middleware/      # Middlewares (auth, validación, errores)
-├── models/          # Modelos de MongoDB
-├── routes/          # Rutas de la API
-├── types/           # Tipos TypeScript
-├── utils/           # Utilidades y helpers
-└── server.ts        # Punto de entrada
+  main.ts / app.ts / container.ts     arranque, Express y composition root (inyección manual)
+  shared/
+    domain/         errores, dinero, roles, reglas de tenant y plan
+    application/    puertos: UnitOfWork, Clock, Logger, IdentityProvider
+    infrastructure/ Prisma (contexto de tenant, unidad de trabajo, contadores), logger, reloj
+    http/express/   authenticate (jose + JWKS), tenantContext, planGuard, errorHandler, respond, serialize
+    config/         env.ts (validación) y domain.ts (APP_DOMAIN, URLs, slugs reservados)
+  modules/<contexto>/{domain,application,infrastructure,http}
+  infrastructure/zitadel/   ZitadelIdentityProvider y FakeIdentityProvider
 ```
 
-## 🔗 API Endpoints
+## Aislamiento de tenants
 
-### Autenticación
-- `POST /api/v1/auth/login` - Iniciar sesión
-- `GET /api/v1/auth/profile` - Obtener perfil del usuario
+- Una sola base `kustodela`; toda tabla de negocio tiene `tenant_id` con `DEFAULT current_tenant_id()`.
+- Row Level Security forzada en cada tabla (`prisma/sql/rls.sql`). El rol de runtime `pos_app` no tiene `BYPASSRLS`.
+- Cada request corre dentro de una transacción con `SET LOCAL app.tenant_id` (`PrismaUnitOfWork`). Los repositorios usan `currentDb()`; fuera de una transacción de tenant lanzan `No tenant context`.
+- Claves foráneas compuestas `(tenant_id, id)`: la base rechaza referencias cruzadas.
 
-### Órdenes
-- `GET /api/v1/ordenes` - Listar órdenes
-- `POST /api/v1/ordenes/nueva` - Crear nueva orden
-- `POST /api/v1/ordenes/:id/suborden` - Agregar suborden
-- `POST /api/v1/ordenes/suborden/:id/platillo` - Agregar platillo
-- `POST /api/v1/ordenes/:id/producto` - Agregar producto
-- `PUT /api/v1/ordenes/:id/estatus` - Cambiar estatus
+## Autenticación
 
-### Inventario
-- `GET /api/v1/inventario` - Consultar inventario
-- `POST /api/v1/inventario/recibir` - Recibir productos
-- `PUT /api/v1/inventario/ajustar/:id` - Ajustar inventario
+- Tokens JWT de Zitadel validados contra su JWKS (`jose`). `orgId` = `urn:zitadel:iam:user:resourceowner:id`; roles desde el claim del proyecto filtrados por organización.
+- Roles: `Admin`, `Encargado`, `Mesero`, `Despachador`, `Cocinero`. Guards: `isAdmin`, `isEncargado`, `isMesero`, `isDespachador`, `isCocinero`.
+- El tenant se resuelve por `tenants.zitadel_org_id`; sin tenant → 404 `NO_TENANT`; inactivo → 403 `TENANT_INACTIVE`.
+- `planGuard` bloquea las rutas de negocio con 403 `TRIAL_EXPIRED` o `SUBSCRIPTION_INACTIVE`.
 
-### Reportes
-- `GET /api/v1/reportes/ventas` - Reporte de ventas
-- `GET /api/v1/reportes/inventario` - Reporte de inventario
-- `GET /api/v1/reportes/gastos` - Reporte de gastos
-- `GET /api/v1/reportes/productos-vendidos` - Productos más vendidos
+## Configuración
 
-### Catálogos (CRUD)
-- `GET /api/v1/catalogos/{modelo}` - Listar
-- `POST /api/v1/catalogos/{modelo}` - Crear
-- `PUT /api/v1/catalogos/{modelo}/:id` - Actualizar
-- `DELETE /api/v1/catalogos/{modelo}/:id` - Eliminar
+Variables en `.env.<NODE_ENV>` (las escribe `scripts/zitadel-bootstrap.ts` en local). Ver `src/shared/config/env.ts` para la lista completa y valores por defecto. El dominio se define una sola vez en `APP_DOMAIN`; ningún archivo debe contener el dominio literal.
 
-**Modelos disponibles**: `guiso`, `tipoproducto`, `producto`, `tipoplatillo`, `platillo`, `tipousuario`, `usuario`, `tipoorden`, `mesa`, `tipogasto`
+## Scripts
 
-## 🔒 Roles y Permisos
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | ts-node-dev con `.env.development` |
+| `npm run build` | `prisma generate` + `tsc` a `dist/` |
+| `npm run migrate:dev` | `prisma migrate dev` (crea migraciones) |
+| `npm run migrate:deploy` | aplica migraciones a la base de desarrollo |
+| `npm run migrate:test` | aplica migraciones a `kustodela_test` |
+| `npm run lint` | ESLint (incluye reglas de arquitectura) |
+| `npm run typecheck` | `tsc --noEmit` sobre src, test y scripts |
+| `npm run test:unit` | pruebas sin base de datos |
+| `npm test` | unit + integración + e2e (requiere `dev:up`) |
 
-### Admin
-- Acceso completo a todas las funcionalidades
+## Migraciones
 
-### Encargado
-- Gestión de catálogos, inventario y reportes
-- No puede eliminar registros críticos
-
-### Mesero
-- Crear y editar órdenes en estatus "Recepcion"
-
-### Despachador
-- Surtir órdenes y marcar productos como entregados
-
-### Cocinero
-- Ver órdenes en preparación
-
-## 📊 Modelos de Datos
-
-### Catálogos Maestros
-- **Guisos**: Tipos de guisos disponibles
-- **TipoProducto**: Categorías de productos
-- **Productos**: Inventario de productos
-- **TipoPlatillo**: Tipos de platillos
-- **Platillos**: Platillos del menú
-- **TipoUsuario**: Roles de usuarios
-- **Usuarios**: Usuarios del sistema
-- **TipoOrden**: Tipos de orden (mesa, para llevar, etc.)
-- **Mesas**: Mesas del restaurante
-- **TipoGasto**: Categorías de gastos
-
-### Transaccionales
-- **Ordenes**: Órdenes principales
-- **Subordenes**: Subórdenes para organizar platillos
-- **OrdenDetalleProducto**: Productos en órdenes
-- **OrdenDetallePlatillo**: Platillos en subórdenes
-- **Gastos**: Registro de gastos
-
-## 🧪 Testing
-
-```bash
-npm test
-```
-
-## 📝 Contribuir
-
-1. Fork el proyecto
-2. Crear una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE.md](LICENSE.md) para más detalles.
-
-## 🤝 Soporte
-
-Para soporte, envía un email a [tu-email@ejemplo.com] o crea un issue en GitHub.
+`prisma/migrations/0001_init/migration.sql` = `prisma/sql/functions.sql` + tablas generadas por Prisma + `prisma/sql/rls.sql`. Al agregar una tabla con `tenant_id`, inclúyela en la lista de `rls.sql` y vuelve a ejecutarlo dentro de la nueva migración (es idempotente).
