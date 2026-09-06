@@ -12,6 +12,7 @@ import {
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { BaseEntity } from '../types';
+import UsuariosPanel from '../components/UsuariosPanel';
 
 interface CatalogItem extends BaseEntity {
   nombre: string;
@@ -29,7 +30,7 @@ const catalogModels = [
   { id: 'extra', name: 'Extras', fields: ['nombre', 'idTipoExtra', 'descripcion', 'costo'], hasActivo: true },
   { id: 'tipogasto', name: 'Tipos de Gasto', fields: ['nombre'], hasActivo: true },
   { id: 'tipousuario', name: 'Tipos de Usuario', fields: ['nombre', 'descripcion'], hasActivo: false },
-  { id: 'usuario', name: 'Usuarios', fields: ['nombre', 'email', 'password', 'nombreTipoUsuario'], hasActivo: true },
+  { id: 'usuario', name: 'Usuarios', fields: [], hasActivo: true },
   { id: 'mesa', name: 'Mesas', fields: ['nombre'], hasActivo: false },
 ];
 
@@ -158,6 +159,11 @@ const Catalogos: React.FC = () => {
   }, [items, searchTerm, showActiveOnly]);
 
   const loadItems = async () => {
+    if (selectedModel.id === 'usuario') {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.getCatalog<CatalogItem>(selectedModel.id);
@@ -870,7 +876,7 @@ const Catalogos: React.FC = () => {
             <p className="text-gray-600 mt-1 text-sm sm:text-base">Gestiona los catálogos maestros del sistema</p>
           </div>
           {/* Solo mostrar botón de nuevo si NO es tipos de usuario */}
-          {selectedModel.id !== 'tipousuario' && (
+          {!['tipousuario', 'usuario'].includes(selectedModel.id) && (
             <button
               onClick={handleCreate}
               className="flex-shrink-0 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center"
@@ -923,7 +929,7 @@ const Catalogos: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-6">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{selectedModel.name}</h2>
               {/* Solo mostrar búsqueda y filtro si NO es tipos de usuario */}
-              {selectedModel.id !== 'tipousuario' && (
+              {!['tipousuario', 'usuario'].includes(selectedModel.id) && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
                   <div className="flex items-center space-x-1 sm:space-x-2 min-w-0 flex-1 sm:flex-initial">
                     <Search className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
@@ -954,7 +960,9 @@ const Catalogos: React.FC = () => {
             </div>
 
             {/* Panel especial para tipos de usuario */}
-            {selectedModel.id === 'tipousuario' ? (
+            {selectedModel.id === 'usuario' ? (
+              <UsuariosPanel />
+            ) : selectedModel.id === 'tipousuario' ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -1056,7 +1064,7 @@ const Catalogos: React.FC = () => {
         </div>
 
         {/* Modal solo si NO es tipos de usuario */}
-        {showModal && selectedModel.id !== 'tipousuario' && (
+        {showModal && !['tipousuario', 'usuario'].includes(selectedModel.id) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-1 py-2 sm:p-4">
             <div className="bg-white rounded-xl px-2 py-3 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 truncate break-words hyphens-auto">

@@ -1,35 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Upload, Check, Save } from 'lucide-react';
 import { palettes, applyPalette, getPalette } from '../config/palettes';
+import { useAuth } from '../context/AuthContext';
+import { apiService } from '../services/api';
+import { assetUrl } from '../config/app-config';
 
 const Configuracion: React.FC = () => {
-  const [tenantConfig, setTenantConfig] = useState<any>({});
-  const [tenantNombre, setTenantNombre] = useState('');
+  const { tenant, hasPermission, refreshTenant } = useAuth();
+  const canEdit = hasPermission(['Admin']);
   const [selectedPalette, setSelectedPalette] = useState('orange');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const config = JSON.parse(localStorage.getItem('tenantConfig') || '{}');
-    const nombre = localStorage.getItem('tenantNombre') || '';
-    setTenantConfig(config);
-    setTenantNombre(nombre);
-    setSelectedPalette(config.paleta || 'orange');
-    if (config.imagen) {
-      const baseUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
-      setImagePreview(`${baseUrl}${config.imagen}`);
-    }
-  }, []);
+    setSelectedPalette(tenant?.config?.paleta || 'orange');
+    setImagePreview(assetUrl(tenant?.config?.imagen));
+  }, [tenant]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 2 * 1024 * 1024) {
-        alert('La imagen no debe exceder 2MB');
+        setError('La imagen no debe exceder 2MB');
         return;
       }
+      setError('');
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -38,57 +36,30 @@ const Configuracion: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     setSuccess('');
-    const token = localStorage.getItem('msalToken') || localStorage.getItem('token');
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
+    setError('');
     try {
-      // Upload image if changed
-      let imagenUrl = tenantConfig.imagen || null;
       if (imageFile) {
-        const formData = new FormData();
-        formData.append('image', imageFile);
-        formData.append('slug', tenantNombre.toLowerCase().replace(/\s+/g, '-'));
-
-        const uploadRes = await fetch(`${baseUrl}/onboarding/upload-image`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (uploadData.success) {
-          imagenUrl = uploadData.data.url;
+        const up = await apiService.uploadTenantLogo(imageFile);
+        if (!up.success) {
+          setError(up.error || 'No se pudo subir la imagen');
+          setSaving(false);
+          return;
         }
       }
-
-      // Save config
-      const res = await fetch(`${baseUrl}/tenants/me/config`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ paleta: selectedPalette, imagen: imagenUrl }),
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        // Update local storage
-        const newConfig = { ...tenantConfig, paleta: selectedPalette, imagen: imagenUrl };
-        localStorage.setItem('tenantConfig', JSON.stringify(newConfig));
-        setTenantConfig(newConfig);
-
-        // Apply palette immediately
-        applyPalette(getPalette(selectedPalette));
-        setSuccess('Configuración guardada exitosamente');
-        setImageFile(null);
-
-        // Reload to apply changes to header
-        setTimeout(() => window.location.reload(), 1000);
-      } else {
-        alert(data.message || 'Error al guardar');
+      if (selectedPalette !== (tenant?.config?.paleta || 'orange')) {
+        const res = await apiService.updateTenantConfig({ paleta: selectedPalette });
+        if (!res.success) {
+          setError(res.error || 'Error al guardar');
+          setSaving(false);
+          return;
+        }
       }
-    } catch (error) {
-      alert('Error de conexión');
+      applyPalette(getPalette(selectedPalette));
+      setImageFile(null);
+      await refreshTenant();
+      setSuccess('Configuración guardada exitosamente');
+    } catch {
+      setError('Error de conexión');
     }
     setSaving(false);
   };
@@ -100,11 +71,24 @@ const Configuracion: React.FC = () => {
         <h1 className="text-2xl font-bold text-gray-900">Configuración del negocio</h1>
       </div>
 
+      {tenant && (
+        <p className="text-sm text-gray-500">
+          {tenant.nombre} · <span className="font-mono">{tenant.url}</span>
+        </p>
+      )}
+
+      {!canEdit && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+          Solo un administrador puede modificar la configuración.
+        </div>
+      )}
+
       {success && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
           <Check className="w-5 h-5" /> {success}
         </div>
       )}
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
 
       {/* Business Image */}
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -118,9 +102,9 @@ const Configuracion: React.FC = () => {
             </div>
           )}
           <div>
-            <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium">
+            <label className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium ${canEdit ? 'cursor-pointer hover:bg-gray-200' : 'opacity-50'}`}>
               <Upload className="w-4 h-4" /> Cambiar imagen
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" />
+              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" disabled={!canEdit} />
             </label>
             <p className="text-xs text-gray-500 mt-2">JPG, PNG o WebP. Máximo 2MB.</p>
           </div>
@@ -134,8 +118,9 @@ const Configuracion: React.FC = () => {
           {palettes.map((p) => (
             <button
               key={p.id}
-              onClick={() => setSelectedPalette(p.id)}
-              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+              onClick={() => canEdit && setSelectedPalette(p.id)}
+              disabled={!canEdit}
+              className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all disabled:cursor-not-allowed ${
                 selectedPalette === p.id ? 'border-gray-800 bg-gray-50' : 'border-gray-200 hover:border-gray-300'
               }`}
             >
@@ -154,7 +139,7 @@ const Configuracion: React.FC = () => {
       <div className="flex justify-end">
         <button
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !canEdit}
           className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
         >
           <Save className="w-4 h-4" />

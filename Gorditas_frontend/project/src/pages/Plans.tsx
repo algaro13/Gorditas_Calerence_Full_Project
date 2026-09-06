@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import type { PlanId } from '../types';
 
-const plans = [
+const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; features: string[]; popular: boolean }[] = [
   {
     id: 'basico',
     name: 'Básico',
@@ -35,30 +37,33 @@ const plans = [
 
 const Plans: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
-  const { user } = useAuth();
+  const [error, setError] = useState('');
+  const { tenant, hasPermission } = useAuth();
+  const navigate = useNavigate();
+  const isAdmin = hasPermission(['Admin']);
 
-  const handleSelectPlan = async (planId: string) => {
+  const handleSelectPlan = async (planId: PlanId) => {
     setLoading(planId);
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/billing/create-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('msalToken') || localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ plan: planId }),
-      });
-      const data = await response.json();
-      if (data.success && data.data?.url) {
-        window.location.href = data.data.url;
-      } else {
-        alert(data.message || 'Error al crear sesión de pago');
-      }
-    } catch (error) {
-      alert('Error de conexión');
-    } finally {
-      setLoading(null);
+    setError('');
+    const res = await apiService.createCheckout(planId);
+    if (res.success && res.data?.url) {
+      window.location.href = res.data.url;
+      return;
     }
+    setError(res.error || 'Error al crear sesión de pago');
+    setLoading(null);
+  };
+
+  const handlePortal = async () => {
+    setLoading('portal');
+    setError('');
+    const res = await apiService.createPortal();
+    if (res.success && res.data?.url) {
+      window.location.href = res.data.url;
+      return;
+    }
+    setError(res.error || 'No se pudo abrir el portal de facturación');
+    setLoading(null);
   };
 
   return (
@@ -67,6 +72,23 @@ const Plans: React.FC = () => {
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-3">Elige tu plan</h1>
           <p className="text-gray-600 text-lg">14 días de prueba gratis. Cancela cuando quieras.</p>
+          {tenant && (
+            <p className="text-sm text-gray-500 mt-2">
+              Plan actual: <span className="font-medium">{tenant.plan}</span> ({tenant.planStatus})
+            </p>
+          )}
+          <div className="mt-4 flex justify-center gap-4 text-sm">
+            <button onClick={() => navigate('/')} className="text-gray-600 hover:text-gray-900 underline">
+              Volver al panel
+            </button>
+            {tenant?.planStatus !== 'trial' && isAdmin && (
+              <button onClick={handlePortal} disabled={loading !== null} className="text-orange-700 hover:text-orange-900 underline disabled:opacity-50">
+                Gestionar suscripción
+              </button>
+            )}
+          </div>
+          {!isAdmin && <p className="text-sm text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
+          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -102,7 +124,7 @@ const Plans: React.FC = () => {
 
               <button
                 onClick={() => handleSelectPlan(plan.id)}
-                disabled={loading !== null}
+                disabled={loading !== null || !isAdmin}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${
                   plan.popular
                     ? 'bg-orange-600 text-white hover:bg-orange-700'

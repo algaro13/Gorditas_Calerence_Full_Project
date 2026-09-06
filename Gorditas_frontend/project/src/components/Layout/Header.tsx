@@ -1,18 +1,17 @@
 import React from 'react';
 import { LogOut, User, Settings, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { assetUrl } from '../../config/app-config';
 
 interface HeaderProps {
   onToggleSidebar?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
-  const { user, logout } = useAuth();
+  const { user, tenant, logout } = useAuth();
 
-  // Load tenant config from localStorage
-  const tenantConfig = JSON.parse(localStorage.getItem('tenantConfig') || '{}');
-  const tenantNombre = localStorage.getItem('tenantNombre') || 'Sistema Restaurante';
-  const tenantImagen = tenantConfig.imagen || null;
+  const tenantNombre = tenant?.nombre || 'Sistema Restaurante';
+  const tenantImagen = assetUrl(tenant?.config?.imagen);
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -31,7 +30,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <div className="flex items-center space-x-2">
               {tenantImagen ? (
                 <img
-                  src={`http://localhost:5000${tenantImagen}`}
+                  src={tenantImagen}
                   alt="Logo"
                   className="w-10 h-10 rounded-lg object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -54,14 +53,14 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 <div className="hidden sm:flex items-center space-x-3">
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">{user.nombre}</p>
-                    <p className="text-xs text-gray-600">{user.nombreTipoUsuario}</p>
+                    <p className="text-xs text-gray-600">{user.roles.join(' · ')}</p>
                   </div>
                   <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-orange-600" />
                   </div>
                 </div>
                 <button
-                  onClick={logout}
+                  onClick={() => void logout()}
                   className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <LogOut className="w-4 h-4" />

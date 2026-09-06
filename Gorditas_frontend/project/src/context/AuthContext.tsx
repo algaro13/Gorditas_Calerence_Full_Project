@@ -1,15 +1,26 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useMsal, useIsAuthenticated } from '@azure/msal-react';
-import { InteractionStatus } from '@azure/msal-browser';
-import { loginRequest } from '../config/msal-config';
-import { AuthUser, UserRole } from '../types';
-import { apiClient } from '../services/api-client';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth as useOidc } from 'react-oidc-context';
+import { apiService } from '../services/api';
+import { scopesForOrg } from '../config/auth-config';
+import { getTenantSlug } from '../config/tenant-host';
+import { applyPalette, getPalette } from '../config/palettes';
+import { decodeJwtPayload, orgIdFromClaims, primaryRoleOf, rolesForOrg } from '../utils/claims';
+import type { AuthUser, TenantInfo, UserRole } from '../types';
+import { LoginError } from './login-error';
+
+type TenantState = 'idle' | 'loading' | 'ready' | 'missing' | 'error';
 
 interface AuthContextType {
   user: AuthUser | null;
+  tenant: TenantInfo | null;
+  /** Sesión válida pero la organización no tiene restaurante registrado. */
+  tenantMissing: boolean;
   loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
   login: () => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshTenant: () => Promise<void>;
   hasPermission: (roles: UserRole[]) => boolean;
   getDefaultRoute: () => string;
 }
@@ -25,113 +36,113 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { instance, accounts, inProgress } = useMsal();
-  const isAuthenticated = useIsAuthenticated();
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const oidc = useOidc();
+  const [tenant, setTenant] = useState<TenantInfo | null>(null);
+  const [tenantState, setTenantState] = useState<TenantState>('idle');
+  const [error, setError] = useState<string | null>(null);
+  const oidcRef = useRef(oidc);
+  oidcRef.current = oidc;
 
+  const accessToken = oidc.user?.access_token ?? null;
+
+  // El cliente HTTP siempre lee el token vigente (la renovación silenciosa lo actualiza).
   useEffect(() => {
-    const loadUserProfile = async () => {
-      if (isAuthenticated && accounts.length > 0 && inProgress === InteractionStatus.None) {
-        try {
-          // Get token silently
-          const tokenResponse = await instance.acquireTokenSilent({
-            ...loginRequest,
-            account: accounts[0],
-          });
-
-          // Store ID token for API calls (not access token which is for Graph)
-          localStorage.setItem('msalToken', tokenResponse.idToken);
-
-          // Check if user has a tenant
-          const token = tokenResponse.idToken;
-          const tenantRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/tenants/me`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-          const tenantData = await tenantRes.json();
-
-          if (tenantData.success && tenantData.data) {
-            // User has a tenant — load profile
-            const tenantInfo = tenantData.data;
-            setUser({
-              _id: accounts[0].localAccountId,
-              nombre: tenantInfo.user?.nombre || accounts[0].name || '',
-              email: tenantInfo.user?.email || accounts[0].username || '',
-              idTipoUsuario: 1,
-              nombreTipoUsuario: tenantInfo.user?.role || 'Admin',
-              activo: true,
-            });
-            // Store tenant config for palette etc.
-            localStorage.setItem('tenantConfig', JSON.stringify(tenantInfo.tenant?.config || {}));
-            localStorage.setItem('tenantNombre', tenantInfo.tenant?.nombre || '');
-            localStorage.setItem('tenantPlan', tenantInfo.tenant?.plan || 'trial');
-            localStorage.setItem('tenantPlanStatus', tenantInfo.tenant?.planStatus || 'trial');
-            localStorage.setItem('tenantTrialEndsAt', tenantInfo.tenant?.trialEndsAt || '');
-
-            // Apply palette
-            if (tenantInfo.tenant?.config?.paleta) {
-              const { getPalette, applyPalette } = await import('../config/palettes');
-              applyPalette(getPalette(tenantInfo.tenant.config.paleta));
-            }
-          } else {
-            // User has NO tenant — needs onboarding
-            setUser({
-              _id: accounts[0].localAccountId,
-              nombre: accounts[0].name || accounts[0].username || '',
-              email: accounts[0].username || '',
-              idTipoUsuario: 0,
-              nombreTipoUsuario: 'NeedOnboarding',
-              activo: true,
-            });
-          }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-          setUser({
-            _id: accounts[0].localAccountId,
-            nombre: accounts[0].name || accounts[0].username || '',
-            email: accounts[0].username || '',
-            idTipoUsuario: 1,
-            nombreTipoUsuario: 'Admin',
-            activo: true,
-          });
-        }
-      } else if (!isAuthenticated && inProgress === InteractionStatus.None) {
-        setUser(null);
-        localStorage.removeItem('msalToken');
-      }
-      setLoading(false);
-    };
-
-    if (inProgress === InteractionStatus.None) {
-      loadUserProfile();
-    }
-  }, [isAuthenticated, accounts, inProgress, instance]);
-
-  const login = async () => {
-    try {
-      await instance.loginRedirect(loginRequest);
-    } catch (error) {
-      console.error('Login failed:', error);
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem('msalToken');
-    instance.logoutRedirect({
-      postLogoutRedirectUri: window.location.origin,
+    apiService.setTokenProvider(() => oidcRef.current.user?.access_token ?? null);
+    apiService.setOnUnauthorized(() => {
+      void oidcRef.current.removeUser();
     });
-  };
+    return () => apiService.setOnUnauthorized(null);
+  }, []);
 
-  const hasPermission = (roles: UserRole[]): boolean => {
-    if (!user) return false;
-    return roles.includes(user.nombreTipoUsuario as UserRole);
-  };
+  const user = useMemo<AuthUser | null>(() => {
+    if (!oidc.user || !accessToken) return null;
+    const claims = decodeJwtPayload(accessToken);
+    const profile = (oidc.user.profile ?? {}) as Record<string, unknown>;
+    const orgId = orgIdFromClaims(claims) ?? orgIdFromClaims(profile);
+    const roles = rolesForOrg(claims, orgId).length > 0 ? rolesForOrg(claims, orgId) : rolesForOrg(profile, orgId);
+    const primary = primaryRoleOf(roles);
+    if (!primary) return null;
+    return {
+      _id: (claims.sub as string) || oidc.user.profile.sub,
+      nombre: (profile.name as string) || (claims.name as string) || (profile.email as string) || '',
+      email: (profile.email as string) || (claims.email as string) || '',
+      idTipoUsuario: 1,
+      nombreTipoUsuario: primary,
+      roles,
+      activo: true,
+    };
+  }, [oidc.user, accessToken]);
 
-  const getDefaultRoute = (): string => {
+  const loadTenant = useCallback(async () => {
+    setTenantState('loading');
+    const res = await apiService.getTenantMe();
+    if (res.success && res.data) {
+      setTenant(res.data.tenant);
+      setError(null);
+      setTenantState('ready');
+      applyPalette(getPalette(res.data.tenant.config?.paleta || 'orange'));
+      return;
+    }
+    if (res.status === 404 && res.code === 'NO_TENANT') {
+      setTenant(null);
+      setTenantState('missing');
+      return;
+    }
+    if (res.status === 401) {
+      setTenant(null);
+      setTenantState('idle');
+      return;
+    }
+    setError(res.error ?? 'No se pudo cargar el restaurante');
+    setTenantState('error');
+  }, []);
+
+  const sub = oidc.user?.profile.sub ?? null;
+  useEffect(() => {
+    if (oidc.isLoading) return;
+    if (!sub || !accessToken) {
+      setTenant(null);
+      setTenantState('idle');
+      return;
+    }
+    void loadTenant();
+    // Solo recargar cuando cambia la identidad, no en cada renovación de token.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sub, oidc.isLoading, loadTenant]);
+
+  const login = useCallback(async () => {
+    const slug = getTenantSlug();
+    if (!slug) throw new LoginError('NO_SLUG', 'No se pudo determinar el restaurante desde la dirección');
+    const res = await apiService.getTenantBySlug(slug);
+    if (!res.success || !res.data?.orgId) {
+      throw new LoginError(res.status === 0 ? 'NETWORK' : 'TENANT_NOT_FOUND', res.error ?? 'Restaurante no encontrado');
+    }
+    await oidc.signinRedirect({ scope: scopesForOrg(res.data.orgId), state: { slug } });
+  }, [oidc]);
+
+  const logout = useCallback(async () => {
+    setTenant(null);
+    setTenantState('idle');
+    try {
+      await oidc.signoutRedirect();
+    } catch {
+      await oidc.removeUser();
+    }
+  }, [oidc]);
+
+  const hasPermission = useCallback(
+    (roles: UserRole[]): boolean => {
+      if (!user) return false;
+      return user.roles.some((r) => roles.includes(r));
+    },
+    [user],
+  );
+
+  const getDefaultRoute = useCallback((): string => {
     if (!user) return '/login';
-
     switch (user.nombreTipoUsuario) {
       case 'Despachador':
+      case 'Cocinero':
         return '/surtir-orden';
       case 'Mesero':
         return '/nueva-orden';
@@ -140,13 +151,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       default:
         return '/';
     }
-  };
+  }, [user]);
 
-  const value = {
-    user,
-    loading: loading || inProgress !== InteractionStatus.None,
+  const authenticated = Boolean(oidc.isAuthenticated && accessToken);
+  const loading = oidc.isLoading || (authenticated && (tenantState === 'idle' || tenantState === 'loading'));
+
+  const value: AuthContextType = {
+    user: authenticated && tenantState === 'ready' ? user : null,
+    tenant: tenantState === 'ready' ? tenant : null,
+    tenantMissing: authenticated && (tenantState === 'missing' || (tenantState === 'ready' && user === null)),
+    loading,
+    error: oidc.error?.message ?? error,
+    isAuthenticated: authenticated,
     login,
     logout,
+    refreshTenant: loadTenant,
     hasPermission,
     getDefaultRoute,
   };

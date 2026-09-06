@@ -21,9 +21,10 @@ import { Orden } from '../types';
 
 // Subscription status banner
 const SubscriptionBanner: React.FC = () => {
-  const plan = localStorage.getItem('tenantPlan') || 'trial';
-  const planStatus = localStorage.getItem('tenantPlanStatus') || 'trial';
-  const trialEndsAt = localStorage.getItem('tenantTrialEndsAt');
+  const { tenant } = useAuth();
+  const plan = tenant?.plan || 'trial';
+  const planStatus = tenant?.planStatus || 'trial';
+  const trialEndsAt = tenant?.trialEndsAt || null;
 
   if (planStatus === 'active') {
     const planName = plan === 'basico' ? 'Básico' : plan === 'profesional' ? 'Profesional' : plan === 'empresarial' ? 'Empresarial' : plan;

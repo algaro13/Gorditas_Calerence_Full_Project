@@ -46,12 +46,15 @@ export interface TipoUsuario extends BaseEntity {
   permisos: string[];
 }
 
+/** Miembro del personal (espejo de Zitadel en `tenant_users`). */
 export interface Usuario extends BaseEntity {
+  _id: string;
   nombre: string;
   email: string;
-  password: string;
-  tipoUsuario: string;
-  telefono?: string;
+  role: UserRole;
+  nombreTipoUsuario: UserRole;
+  lastSeenAt?: string | null;
+  createdAt?: string;
 }
 
 export interface TipoOrden extends BaseEntity {
@@ -147,18 +150,45 @@ export interface ApiResponse<T> {
 }
 
 // Auth types
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
 export interface AuthUser {
   _id: string;
   nombre: string;
   email: string;
   idTipoUsuario: number;
-  nombreTipoUsuario: string;
+  /** Rol principal (compatibilidad con las pantallas existentes). */
+  nombreTipoUsuario: UserRole;
+  roles: UserRole[];
   activo: boolean;
+}
+
+export type PlanId = 'trial' | 'basico' | 'profesional' | 'empresarial';
+export type PlanStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'expired';
+
+export interface TenantConfig {
+  paleta?: string;
+  imagen?: string | null;
+}
+
+export interface TenantInfo {
+  id: string;
+  slug: string;
+  nombre: string;
+  plan: PlanId;
+  planStatus: PlanStatus;
+  trialEndsAt: string | null;
+  maxUsuarios: number;
+  activo: boolean;
+  config: TenantConfig;
+  url: string;
+}
+
+/** Datos públicos de un restaurante (antes del login). */
+export interface TenantPublicInfo {
+  slug: string;
+  nombre: string;
+  orgId: string | null;
+  config: TenantConfig;
+  url: string;
 }
 
 // Report types

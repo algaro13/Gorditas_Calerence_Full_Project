@@ -1,336 +1,274 @@
-// ...otros métodos...
-import { ApiResponse } from '../types';
-import { mockApiService } from './mockApi';
-//const API_BASE_URL = `https://calerence-api.neuralmane.com/api`;
-const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:5000/api`;
+import { appConfig } from '../config/app-config';
+import type { ApiResponse, PlanId, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
+type TokenProvider = () => string | null | undefined;
+
+export interface OnboardingPayload {
+  admin: { nombre: string; apellido: string; email: string; password: string };
+  nombre: string;
+  slug: string;
+  paleta: string;
+  imagen: string | null;
+  mesas: { nombre: string }[];
+  platillos: { nombre: string; precio: number }[];
+  guisos: { nombre: string }[];
+}
+
+export interface TenantMeResponse {
+  tenant: TenantInfo;
+  user: { id: string; email: string | null; nombre: string | null; role: UserRole | null; roles: UserRole[] };
+}
+
+/**
+ * Cliente HTTP único del SPA. El token lo entrega el contexto de autenticación
+ * (`setTokenProvider`); un 401 dispara `onUnauthorized` para reiniciar la sesión.
+ */
 class ApiService {
-  /**
-   * Elimina una orden por su ID.
-   * @param ordenId El ID de la orden a eliminar.
-   */
-  async deleteOrden(ordenId: string) {
-    return this.request(`/ordenes/${ordenId}`, {
-      method: 'DELETE',
-    });
+  private tokenProvider: TokenProvider = () => null;
+  private onUnauthorized: (() => void) | null = null;
+
+  setTokenProvider(provider: TokenProvider) {
+    this.tokenProvider = provider;
   }
-  async getOrden(ordenId: string) {
+
+  setOnUnauthorized(handler: (() => void) | null) {
+    this.onUnauthorized = handler;
+  }
+
+  private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    const url = `${appConfig.apiBaseUrl}${endpoint}`;
+    const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
+    if (!(options.body instanceof FormData) && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    const token = this.tokenProvider();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    try {
+      const response = await fetch(url, { ...options, headers });
+      let body: { success?: boolean; data?: unknown; message?: string; code?: string } | null = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
+      if (response.status === 401) this.onUnauthorized?.();
+      if (!response.ok || !body?.success) {
+        return {
+          success: false,
+          status: response.status,
+          code: body?.code,
+          error: body?.message || `Error ${response.status}`,
+          data: body?.data,
+        };
+      }
+      return { success: true, status: response.status, data: body.data as T, message: body.message };
+    } catch (error) {
+      console.error('Error de conexión con el API:', error);
+      return { success: false, status: 0, error: 'Error de conexión con el servidor' };
+    }
+  }
+
+  private json(method: string, body: unknown): RequestInit {
+    return { method, body: JSON.stringify(body) };
+  }
+
+  // ---------- Tenants ----------
+  getTenantBySlug(slug: string) {
+    return this.request<TenantPublicInfo>(`/tenants/by-slug/${encodeURIComponent(slug)}`);
+  }
+  checkSlug(slug: string) {
+    return this.request<{ slug: string; available: boolean; url?: string; reason?: string }>(`/tenants/check-slug/${encodeURIComponent(slug)}`);
+  }
+  getTenantMe() {
+    return this.request<TenantMeResponse>('/tenants/me');
+  }
+  updateTenantConfig(config: Partial<TenantConfig>) {
+    return this.request<{ config: TenantConfig }>('/tenants/me/config', this.json('PUT', config));
+  }
+  uploadTenantLogo(file: File) {
+    const form = new FormData();
+    form.append('image', file);
+    return this.request<{ url: string; config: TenantConfig }>('/tenants/me/logo', { method: 'POST', body: form });
+  }
+
+  // ---------- Onboarding (público) ----------
+  uploadOnboardingImage(file: File) {
+    const form = new FormData();
+    form.append('image', file);
+    return this.request<{ url: string }>('/onboarding/upload-image', { method: 'POST', body: form });
+  }
+  completeOnboarding(payload: OnboardingPayload) {
+    return this.request<{ tenant: { slug: string; nombre: string; url: string }; url: string }>('/onboarding/complete', this.json('POST', payload));
+  }
+
+  // ---------- Billing ----------
+  getPlans() {
+    return this.request('/billing/plans');
+  }
+  createCheckout(plan: PlanId) {
+    return this.request<{ url: string; sessionId: string }>('/billing/create-checkout', this.json('POST', { plan }));
+  }
+  createPortal() {
+    return this.request<{ url: string }>('/billing/create-portal', { method: 'POST' });
+  }
+  getBillingStatus() {
+    return this.request<{ plan: PlanId; planStatus: string; trialEndsAt: string | null; maxUsuarios: number }>('/billing/status');
+  }
+
+  // ---------- Usuarios (personal) ----------
+  getUsuarios() {
+    return this.request<Usuario[]>('/usuarios');
+  }
+  invitarUsuario(data: { nombre: string; apellido: string; email: string; role: UserRole }) {
+    return this.request<Usuario>('/usuarios', this.json('POST', data));
+  }
+  updateUsuario(id: string, data: { nombre?: string; role?: UserRole; activo?: boolean }) {
+    return this.request<Usuario>(`/usuarios/${id}`, this.json('PUT', data));
+  }
+  deleteUsuario(id: string) {
+    return this.request(`/usuarios/${id}`, { method: 'DELETE' });
+  }
+  resendInvite(id: string) {
+    return this.request(`/usuarios/${id}/resend-invite`, { method: 'POST' });
+  }
+
+  // ---------- Órdenes ----------
+  deleteOrden(ordenId: string) {
+    return this.request(`/ordenes/${ordenId}`, { method: 'DELETE' });
+  }
+  getOrden(ordenId: string) {
     return this.request(`/ordenes/${ordenId}`);
   }
-  private token: string | null = localStorage.getItem('msalToken') || localStorage.getItem('token');
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    // Use mock API if enabled and in development mode
-    
-    const url = `${API_BASE_URL}${endpoint}`;
-    // Siempre obtener el token actualizado de localStorage
-    this.token = localStorage.getItem('msalToken') || localStorage.getItem('token');
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string>),
-    };
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-    }
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
-      const data = await response.json();
-      // Cambia aquí: respeta el campo success del backend
-      if (!data.success) {
-        return {
-        success: false,
-        error: data.message || 'Request failed',
-        data: data.data,
-      };
-    }
-    return {
-      success: true,
-      data: data.data,
-    };
-  } catch (error) {
-    console.error('❌ Error connecting to backend:', error);
-    return {
-      success: false,
-      error: 'Error de conexión con el servidor',
-    };
-  }
-}
-  
-  // Auth methods
-  async login(email: string, password: string) {
-  const response = await this.request<{ token: string; user: any }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  });
-  if (response.success && response.data?.token) {
-    this.token = response.data.token;
-    if (this.token !== null) {
-      localStorage.setItem('token', this.token);
-    }
-  }
-  return response;
-}
-  async getProfile() {
-    return this.request('/auth/profile');
-  }
-  logout() {
-    this.token = null;
-    localStorage.removeItem('token');
-  }
-  // Orders methods
-  /**
-   * Trae todas las órdenes (para reportes, historial, etc.)
-   */
-  async getOrdenes() {
+  /** Todas las órdenes (reportes, historial). */
+  getOrdenes() {
     return this.request('/ordenes?limit=1000');
   }
-
-  /**
-   * Trae solo órdenes activas (no pagadas ni canceladas) para gestión diaria
-   */
-  async getOrdenesActivas() {
-    // El backend debe soportar el filtro por estatus con query string
+  /** Solo órdenes activas (no pagadas ni canceladas). */
+  getOrdenesActivas() {
     return this.request('/ordenes?limit=1000&estatusNo=Pagada,Cancelado');
   }
-  async createOrden(orden: any) {
-    return this.request('/ordenes/nueva', {
-      method: 'POST',
-      body: JSON.stringify(orden),
-    });
+  createOrden(orden: unknown) {
+    return this.request('/ordenes/nueva', this.json('POST', orden));
   }
-  async addSuborden(ordenId: string, suborden: any) {
-    return this.request(`/ordenes/${ordenId}/suborden`, {
-      method: 'POST',
-      body: JSON.stringify(suborden),
-    });
+  addSuborden(ordenId: string, suborden: unknown) {
+    return this.request(`/ordenes/${ordenId}/suborden`, this.json('POST', suborden));
   }
-  async addPlatillo(subordenId: string, platillo: any) {
-    return this.request(`/ordenes/suborden/${subordenId}/platillo`, {
-      method: 'POST',
-      body: JSON.stringify(platillo),
-    });
+  addPlatillo(subordenId: string, platillo: unknown) {
+    return this.request(`/ordenes/suborden/${subordenId}/platillo`, this.json('POST', platillo));
   }
-  async addProducto(ordenId: string, producto: any) {
-    return this.request(`/ordenes/${ordenId}/producto`, {
-      method: 'POST',
-      body: JSON.stringify(producto),
-    });
+  addProducto(ordenId: string, producto: unknown) {
+    return this.request(`/ordenes/${ordenId}/producto`, this.json('POST', producto));
   }
-  async addExtra(platilloId: string, extra: any) {
-    return this.request(`/ordenes/platillo/${platilloId}/extra`, {
-      method: 'POST',
-      body: JSON.stringify(extra),
-    });
+  addExtra(platilloId: string, extra: unknown) {
+    return this.request(`/ordenes/platillo/${platilloId}/extra`, this.json('POST', extra));
   }
-  async updateExtraStatus(extraDetalleId: string, estatus: string) {
-    return this.request(`/ordenes/extra/${extraDetalleId}/estatus`, {
-      method: 'PUT',
-      body: JSON.stringify({ estatus }),
-    });
+  updateExtraStatus(extraDetalleId: string, estatus: string) {
+    return this.request(`/ordenes/extra/${extraDetalleId}/estatus`, this.json('PUT', { estatus }));
   }
-  async deleteExtra(extraDetalleId: string) {
-    return this.request(`/ordenes/extra/${extraDetalleId}`, {
-      method: 'DELETE',
-    });
+  deleteExtra(extraDetalleId: string) {
+    return this.request(`/ordenes/extra/${extraDetalleId}`, { method: 'DELETE' });
   }
-
-  async removeExtra(extraDetalleId: string) {
+  removeExtra(extraDetalleId: string) {
     return this.deleteExtra(extraDetalleId);
   }
-  async updateOrdenStatus(ordenId: string, estatus: string) {
-    // Forzar el rol admin para evitar restricciones de transición de estatus
-    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-    let role = userInfo?.role || 'admin';
-    // Solo permitir estos roles
-    const allowedRoles = ['admin', 'encargado', 'mesero', 'empleado'];
-    if (!allowedRoles.includes(role)) {
-      role = 'admin';
-    }
-    // Intentar con el rol del usuario primero
-    const payload = { estatus, role };
-    let response = await this.request(`/ordenes/${ordenId}/estatus`, {
-      method: 'PUT',
-      body: JSON.stringify(payload),
-    });
-    if (!response.success) {
-      console.warn('[updateOrdenStatus] Falló con rol', role, 'Respuesta:', response);
-    }
-    // Si falla por restricción de rol, reintentar con admin
-    if (!response.success && response.error && response.error.toLowerCase().includes('rol')) {
-      const adminPayload = { estatus, role: 'admin' };
-      response = await this.request(`/ordenes/${ordenId}/estatus`, {
-        method: 'PUT',
-        body: JSON.stringify(adminPayload),
-      });
-      if (!response.success) {
-        console.error('[updateOrdenStatus] También falló con admin', response);
-      }
-    }
-    return response;
+  /** El backend decide la transición según los roles del token; no se envía rol. */
+  updateOrdenStatus(ordenId: string, estatus: string) {
+    return this.request(`/ordenes/${ordenId}/estatus`, this.json('PUT', { estatus }));
   }
-  async verifyOrden(ordenId: string, isComplete: boolean) {
-    return this.request(`/ordenes/${ordenId}/verificar`, {
-      method: 'PUT',
-      body: JSON.stringify({ isComplete }),
-    });
+  verifyOrden(ordenId: string, isComplete: boolean) {
+    return this.request(`/ordenes/${ordenId}/verificar`, this.json('PUT', { isComplete }));
   }
-
-  async getOrdenDetails(ordenId: string) {
+  getOrdenDetails(ordenId: string) {
     return this.request(`/ordenes/${ordenId}`);
   }
-
-  async markProductoListo(productoId: string) {
-    return this.request(`/ordenes/producto/${productoId}/listo`, {
-      method: 'PUT',
-    });
+  markProductoListo(productoId: string) {
+    return this.request(`/ordenes/producto/${productoId}/listo`, { method: 'PUT' });
+  }
+  markPlatilloListo(platilloId: string) {
+    return this.request(`/ordenes/platillo/${platilloId}/listo`, { method: 'PUT' });
+  }
+  markProductoEntregado(productoId: string) {
+    return this.request(`/ordenes/producto/${productoId}/entregado`, { method: 'PUT' });
+  }
+  markPlatilloEntregado(platilloId: string) {
+    return this.request(`/ordenes/platillo/${platilloId}/entregado`, { method: 'PUT' });
+  }
+  removePlatillo(platilloId: string) {
+    return this.request(`/ordenes/platillo/${platilloId}`, { method: 'DELETE' });
+  }
+  removeProducto(productoId: string) {
+    return this.request(`/ordenes/producto/${productoId}`, { method: 'DELETE' });
+  }
+  addDetalleExtra(data: { idOrdenDetallePlatillo: string; idExtra: string; nombreExtra: string; costoExtra: number; cantidad?: number }) {
+    return this.request(
+      `/ordenes/platillo/${data.idOrdenDetallePlatillo}/extra`,
+      this.json('POST', { idExtra: data.idExtra, nombreExtra: data.nombreExtra, costoExtra: data.costoExtra, cantidad: data.cantidad || 1 }),
+    );
+  }
+  removeDetalleExtra(detalleExtraId: string) {
+    return this.request(`/ordenes/extra/${detalleExtraId}`, { method: 'DELETE' });
+  }
+  updatePlatilloNota(platilloId: string, notas: string) {
+    return this.request(`/ordenes/platillo/${platilloId}/nota`, this.json('PUT', { notas }));
+  }
+  updateOrdenFechaHora(ordenId: string) {
+    return this.request(`/ordenes/${ordenId}/fecha-hora`, this.json('PUT', { fechaHora: new Date().toISOString() }));
   }
 
-  async markPlatilloListo(platilloId: string) {
-    return this.request(`/ordenes/platillo/${platilloId}/listo`, {
-      method: 'PUT',
-    });
-  }
-
-  async markProductoEntregado(productoId: string) {
-    return this.request(`/ordenes/producto/${productoId}/entregado`, {
-      method: 'PUT',
-    });
-  }
-
-  async markPlatilloEntregado(platilloId: string) {
-    return this.request(`/ordenes/platillo/${platilloId}/entregado`, {
-      method: 'PUT',
-    });
-  }
-  // Inventory methods
-  async getInventario() {
+  // ---------- Inventario ----------
+  getInventario() {
     return this.request('/inventario');
   }
-  async recibirProductos(productos: any) {
-    return this.request('/inventario/recibir', {
-      method: 'POST',
-      body: JSON.stringify(productos),
-    });
+  recibirProductos(productos: unknown) {
+    return this.request('/inventario/recibir', this.json('POST', productos));
   }
-  async ajustarInventario(productoId: string, ajuste: any) {
-    return this.request(`/inventario/ajustar/${productoId}`, {
-      method: 'PUT',
-      body: JSON.stringify(ajuste),
-    });
+  ajustarInventario(productoId: string, ajuste: unknown) {
+    return this.request(`/inventario/ajustar/${productoId}`, this.json('PUT', ajuste));
   }
-  // Reports methods
-  async getReporteVentas(fechaInicio?: string, fechaFin?: string) {
+
+  // ---------- Reportes ----------
+  getReporteVentas(fechaInicio?: string, fechaFin?: string) {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
-    
     return this.request(`/reportes/ventas?${params.toString()}`);
   }
-  async getReporteInventario() {
+  getReporteInventario() {
     return this.request('/reportes/inventario');
   }
-  async getReporteGastos(fechaInicio?: string, fechaFin?: string) {
+  getReporteGastos(fechaInicio?: string, fechaFin?: string) {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
     if (fechaFin) params.append('fechaFin', fechaFin);
-    
     return this.request(`/reportes/gastos?${params.toString()}`);
   }
-  async getProductosVendidos() {
+  getProductosVendidos() {
     return this.request('/reportes/productos-vendidos');
   }
-  
-  async createGasto(gasto: {
-    nombre: string;
-    idTipoGasto: string;
-    gastoTotal: number;
-    descripcion: string;
-  }) {
-    return this.request('/reportes/gastos', {
-      method: 'POST',
-      body: JSON.stringify(gasto),
-    });
+  createGasto(gasto: { nombre: string; idTipoGasto: string; gastoTotal: number; descripcion: string }) {
+    return this.request('/reportes/gastos', this.json('POST', gasto));
+  }
+  deleteGasto(gastoId: string) {
+    return this.request(`/reportes/gastos/${gastoId}`, { method: 'DELETE' });
   }
 
-  async deleteGasto(gastoId: string) {
-    return this.request(`/reportes/gastos/${gastoId}`, {
-      method: 'DELETE',
-    });
-  }
-  
-  // Catalogs methods
-  async getCatalog<T>(modelo: string): Promise<ApiResponse<T[]>> {
+  // ---------- Catálogos ----------
+  getCatalog<T>(modelo: string): Promise<ApiResponse<T[]>> {
     return this.request(`/catalogos/${modelo}`);
   }
-  async createCatalogItem<T>(modelo: string, item: Partial<T>) {
-    return this.request(`/catalogos/${modelo}`, {
-      method: 'POST',
-      body: JSON.stringify(item),
-    });
+  createCatalogItem<T>(modelo: string, item: Partial<T>) {
+    return this.request(`/catalogos/${modelo}`, this.json('POST', item));
   }
-  async updateCatalogItem<T>(modelo: string, id: string, item: Partial<T>) {
-    return this.request(`/catalogos/${modelo}/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(item),
-    });
+  updateCatalogItem<T>(modelo: string, id: string, item: Partial<T>) {
+    return this.request(`/catalogos/${modelo}/${id}`, this.json('PUT', item));
   }
-  async deleteCatalogItem(modelo: string, id: string) {
-    return this.request(`/catalogos/${modelo}/${id}`, {
-      method: 'DELETE',
-    });
+  deleteCatalogItem(modelo: string, id: string) {
+    return this.request(`/catalogos/${modelo}/${id}`, { method: 'DELETE' });
   }
-
-  async removePlatillo(platilloId: string) {
-    return this.request(`/ordenes/platillo/${platilloId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async removeProducto(productoId: string) {
-    return this.request(`/ordenes/producto/${productoId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async addDetalleExtra(data: { idOrdenDetallePlatillo: string; idExtra: string; nombreExtra: string; costoExtra: number; cantidad?: number }) {
-    return this.request(`/ordenes/platillo/${data.idOrdenDetallePlatillo}/extra`, {
-      method: 'POST',
-      body: JSON.stringify({
-        idExtra: data.idExtra,
-        nombreExtra: data.nombreExtra,
-        costoExtra: data.costoExtra,
-        cantidad: data.cantidad || 1
-      }),
-    });
-  }
-
-  async removeDetalleExtra(detalleExtraId: string) {
-    return this.request(`/ordenes/extra/${detalleExtraId}`, {
-      method: 'DELETE',
-    });
-  }
-
-  async updatePlatilloNota(platilloId: string, notas: string) {
-    return this.request(`/ordenes/platillo/${platilloId}/nota`, {
-      method: 'PUT',
-      body: JSON.stringify({ notas }),
-    });
-  }
-
-  async updateOrdenFechaHora(ordenId: string) {
-    return this.request(`/ordenes/${ordenId}/fecha-hora`, {
-      method: 'PUT',
-      body: JSON.stringify({ fechaHora: new Date().toISOString() }),
-    });
-  }
-
-  async getNextPedidoNumber() {
+  getNextPedidoNumber() {
     return this.request<{ nextNumber: number }>('/catalogos/pedido/next-number');
   }
 }
+
 export const apiService = new ApiService();

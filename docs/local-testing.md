@@ -43,7 +43,16 @@ Roles de PostgreSQL: `pos_migrator` (migraciones, `DIRECT_URL`) y `pos_app` (run
 
 ## Multi-tenant en localhost
 
-En producción el restaurante se identifica por el subdominio `<slug>.<APP_DOMAIN>`. En local no hay subdominios, así que el frontend lee el slug de `localStorage.devTenantSlug`. `npm run dev:seed` crea el restaurante `demo` y fija ese valor.
+En producción el restaurante se identifica por el subdominio `<slug>.<APP_DOMAIN>`. En local no hay subdominios, así que el frontend lee el slug de `localStorage.devTenantSlug`. La página `/login` muestra un campo "Entorno local: restaurante de pruebas" para fijarlo sin abrir la consola; el wizard de registro también lo fija al terminar. `npm run dev:seed` crea el restaurante `demo` (`demo@kustodela.local` / `Demo1234!`).
+
+## Flujo del SPA
+
+1. `/login` consulta `GET /api/tenants/by-slug/:slug`, muestra nombre y logo del restaurante y redirige a Zitadel con el scope `urn:zitadel:iam:org:id:<orgId>`.
+2. Zitadel (login v2) pide usuario y contraseña y regresa a `/callback`; el SPA carga `GET /api/tenants/me` y entra a la ruta del rol (Admin/Encargado → `/`, Mesero → `/nueva-orden`, Despachador/Cocinero → `/surtir-orden`).
+3. Los roles salen del access token (claim `urn:zitadel:iam:org:project:<PROJECT_ID>:roles`); el backend nunca confía en el rol enviado por el cliente.
+4. Una organización sin restaurante (`NO_TENANT`) lleva a `/sin-restaurante`.
+5. Los correos de verificación e invitación llegan a Mailpit (http://localhost:8025). La política de contraseñas de Zitadel exige 8+ caracteres con mayúscula, minúscula, número y símbolo.
+6. Sin claves de Stripe, "Elegir plan" responde `PLAN_NO_CONFIGURADO`; para probar cobros usa Stripe en modo test (sección siguiente) y define `STRIPE_PRICE_*`.
 
 ## Pruebas
 

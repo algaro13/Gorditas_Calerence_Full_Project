@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import Callback from './pages/Callback';
+import SinRestaurante from './pages/SinRestaurante';
 import Plans from './pages/Plans';
 import BillingSuccess from './pages/BillingSuccess';
 import Onboarding from './pages/Onboarding';
@@ -20,155 +22,144 @@ import Catalogos from './pages/Catalogos';
 import Reportes from './pages/Reportes';
 import Inventario from './pages/Inventario';
 
+const Spinner: React.FC = () => (
+  <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
+  </div>
+);
+
 const AuthenticatedApp: React.FC = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated, tenantMissing } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Redirect to onboarding if user has no tenant
-  if (user.nombreTipoUsuario === 'NeedOnboarding') {
-    return <Navigate to="/onboarding" replace />;
-  }
+  if (loading) return <Spinner />;
+  if (isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;
+  if (!user) return <Navigate to="/login" replace />;
 
   return (
     <Layout>
       <Routes>
         {/* Dashboard - Only Admin and Encargado */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <Dashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Nueva Orden - Admin, Encargado, Mesero */}
-        <Route 
-          path="/nueva-orden" 
+        <Route
+          path="/nueva-orden"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero']}>
               <NuevaOrden />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Editar Orden - Admin, Encargado, Mesero */}
-        <Route 
-          path="/editar-orden" 
+        <Route
+          path="/editar-orden"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero']}>
               <EditarOrden />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Surtir Orden - Admin, Encargado, Despachador, Cocinero */}
-        <Route 
-          path="/surtir-orden" 
+        <Route
+          path="/surtir-orden"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Despachador', 'Cocinero']}>
               <SurtirOrden />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Despachar - Admin, Encargado, Mesero, Despachador */}
-        <Route 
-          path="/despachar" 
+        <Route
+          path="/despachar"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero', 'Despachador']}>
               <Despachar />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Recibir Productos - Admin, Encargado */}
-        <Route 
-          path="/recibir-productos" 
+        <Route
+          path="/recibir-productos"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <RecibirProducto />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Cobrar - Admin, Encargado, Mesero */}
-        <Route 
-          path="/cobrar" 
+        <Route
+          path="/cobrar"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero']}>
               <Cobrar />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Catálogos - Admin, Encargado, Mesero, Despachador */}
-        <Route 
-          path="/catalogos" 
+        <Route
+          path="/catalogos"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero', 'Despachador']}>
               <Catalogos />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Reportes - Admin, Encargado */}
-        <Route 
-          path="/reportes" 
+        <Route
+          path="/reportes"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <Reportes />
             </ProtectedRoute>
-          } 
+          }
         />
-        
+
         {/* Inventario - Admin, Encargado */}
-        <Route 
-          path="/inventario" 
+        <Route
+          path="/inventario"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <Inventario />
             </ProtectedRoute>
-          } 
+          }
         />
 
-        {/* Configuración - Admin */}
-        <Route 
-          path="/configuracion" 
+        {/* Configuración - Admin y Encargado (el API restringe la escritura a Admin) */}
+        <Route
+          path="/configuracion"
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <Configuracion />
             </ProtectedRoute>
-          } 
+          }
         />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );
 };
 
 const BasicProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated, tenantMissing } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600"></div>
-      </div>
-    );
-  }
-
-  return user ? <>{children}</> : <Navigate to="/landing" replace />;
+  if (loading) return <Spinner />;
+  if (isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -177,6 +168,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/callback" element={<Callback />} />
+          <Route path="/sin-restaurante" element={<SinRestaurante />} />
           <Route path="/landing" element={<Landing />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/billing/success" element={<BillingSuccess />} />

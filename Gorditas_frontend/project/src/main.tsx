@@ -1,17 +1,19 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { PublicClientApplication } from '@azure/msal-browser';
-import { MsalProvider } from '@azure/msal-react';
-import { msalConfig } from './config/msal-config';
+import { AuthProvider as OidcProvider } from 'react-oidc-context';
+import { oidcConfig } from './config/auth-config';
 import App from './App.tsx';
 import './index.css';
 
-const msalInstance = new PublicClientApplication(msalConfig);
+// Tras el retorno de Zitadel se limpian code/state de la URL; la ruta /callback decide a dónde ir.
+const onSigninCallback = () => {
+  window.history.replaceState({}, document.title, '/callback');
+};
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <MsalProvider instance={msalInstance}>
+    <OidcProvider {...oidcConfig} onSigninCallback={onSigninCallback}>
       <App />
-    </MsalProvider>
+    </OidcProvider>
   </StrictMode>
 );
