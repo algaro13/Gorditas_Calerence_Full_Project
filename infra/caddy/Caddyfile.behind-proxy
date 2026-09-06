@@ -1,0 +1,64 @@
+# Router interno para un VPS donde otro proxy (Nginx Proxy Manager, Traefik...) ya ocupa 80/443
+# y termina el TLS. Aquí no hay certificados ni ACME: solo enrutado por Host sobre HTTP.
+#
+#   proxy externo (TLS)  ──►  kustodela_router:80  ──►  zitadel / backend / SPA
+{
+	auto_https off
+	admin off
+	servers {
+		# El proxy del host y las redes de docker son de confianza para X-Forwarded-For.
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode gzip zstd
+
+	# ---- auth.<dominio>: Zitadel (Login v2 + API/consola) ----
+	@auth host auth.{$APP_DOMAIN}
+	handle @auth {
+		@login path /ui/v2/login /ui/v2/login/*
+		handle @login {
+			reverse_proxy http://zitadel-login:3000
+		}
+		handle / {
+			redir /ui/console 302
+		}
+		handle {
+			# gRPC / Connect-RPC / REST viajan por h2c; el header TE rompe el gateway gRPC.
+			# Públicamente siempre se llega por https, así que se fija el esquema para que
+			# Zitadel genere URLs correctas aunque la llamada interna sea en claro.
+			reverse_proxy h2c://zitadel-api:8080 {
+				header_up -TE
+				header_up X-Forwarded-Proto https
+			}
+		}
+	}
+
+	# ---- api.<dominio>: backend Express ----
+	@api host api.{$APP_DOMAIN}
+	handle @api {
+		reverse_proxy http://backend:5000 {
+			header_up X-Forwarded-Proto https
+		}
+	}
+
+	# ---- mail.<dominio>: bandeja de pruebas (Mailpit), protegida con usuario y contraseña ----
+	@mail host mail.{$APP_DOMAIN}
+	handle @mail {
+		basic_auth {
+			{$MAILPIT_USER:kustodela} {$MAILPIT_PASSWORD_HASH}
+		}
+		reverse_proxy http://mailpit:8025
+	}
+
+	# ---- app.<dominio> y <slug>.<dominio>: SPA estática ----
+	handle {
+		root * /srv/pos
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

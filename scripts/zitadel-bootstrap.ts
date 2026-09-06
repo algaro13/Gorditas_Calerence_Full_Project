@@ -10,6 +10,7 @@
  *   tsx scripts/zitadel-bootstrap.ts --env production
  *
  * Variables (raíz .env): APP_DOMAIN, APP_SCHEME, ZITADEL_EXTERNAL_DOMAIN, ZITADEL_EXTERNAL_PORT
+ * Opcionales: ZITADEL_API_BASE_URL (llamar a Zitadel por una URL interna), --smtp mailpit|skip
  * Opcionales: ZITADEL_PAT (si no, se lee de .local/zitadel-bootstrap/backend.pat)
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -45,6 +46,17 @@ const ZITADEL_URL =
     ? `${ZITADEL_SCHEME}://${ZITADEL_DOMAIN}`
     : `${ZITADEL_SCHEME}://${ZITADEL_DOMAIN}:${ZITADEL_PORT}`;
 
+/**
+ * Base para las llamadas de administración. Por defecto la URL pública; en un VPS detrás de un proxy
+ * ajeno se apunta al router interno (`ZITADEL_API_BASE_URL=http://auth.<dominio>`) para no salir a
+ * internet y volver. El Host debe seguir siendo el dominio externo o Zitadel no resuelve la instancia.
+ */
+const ZITADEL_API_BASE = (rootEnv.ZITADEL_API_BASE_URL ?? ZITADEL_URL).replace(/\/+$/, '');
+
+/** Dónde apunta el SMTP de Zitadel: mailpit (captura local) o nada (se configura a mano en la consola). */
+const SMTP_MODE = args.includes('--smtp') ? args[args.indexOf('--smtp') + 1] : IS_PROD ? 'skip' : 'mailpit';
+const SMTP_HOST = rootEnv.SMTP_HOST ?? 'mailpit:1025';
+
 const PROJECT_NAME = 'Kustodela POS';
 const ROLES = ['Admin', 'Encargado', 'Mesero', 'Despachador', 'Cocinero'];
 const FRONTEND_ORIGIN = IS_PROD ? `${APP_SCHEME}://app.${APP_DOMAIN}` : 'http://localhost:5173';
@@ -76,7 +88,7 @@ async function api<T = Json>(
   body?: unknown,
   orgId?: string,
 ): Promise<T> {
-  const res = await fetch(`${ZITADEL_URL}${path}`, {
+  const res = await fetch(`${ZITADEL_API_BASE}${path}`, {
     method,
     headers: {
       Authorization: `Bearer ${pat}`,
@@ -92,7 +104,7 @@ async function api<T = Json>(
 }
 
 async function waitForZitadel(): Promise<void> {
-  const url = `${ZITADEL_URL}/.well-known/openid-configuration`;
+  const url = `${ZITADEL_API_BASE}/.well-known/openid-configuration`;
   for (let i = 0; i < 60; i++) {
     try {
       const res = await fetch(url);
@@ -213,8 +225,8 @@ async function ensureSpaApp(pat: string, orgId: string, projectId: string): Prom
 }
 
 async function ensureSmtp(pat: string): Promise<void> {
-  if (IS_PROD) {
-    log('Producción: configura el SMTP real en la consola (Instance > SMTP). Omitido.');
+  if (SMTP_MODE !== 'mailpit') {
+    log('SMTP: omitido (configúralo en la consola: Instance > SMTP).');
     return;
   }
   const list = await api<{ result?: Array<{ id: string; description?: string; state?: string }> }>(
@@ -227,9 +239,9 @@ async function ensureSmtp(pat: string): Promise<void> {
   let id = mailpit?.id;
   if (!id) {
     const created = await api<{ id: string }>(pat, 'POST', '/admin/v1/email/smtp', {
-      senderAddress: 'no-reply@kustodela.local',
-      senderName: 'Kustodela POS (dev)',
-      host: 'mailpit:1025',
+      senderAddress: rootEnv.SMTP_SENDER ?? `no-reply@${APP_DOMAIN}`,
+      senderName: 'Kustodela POS',
+      host: SMTP_HOST,
       tls: false,
       description: 'mailpit',
     });
@@ -300,7 +312,7 @@ function upsertEnvFile(path: string, values: Record<string, string>): void {
 
 // ---------- main ----------
 async function main(): Promise<void> {
-  log(`Entorno: ${ENV_NAME}. Zitadel: ${ZITADEL_URL}. Frontend: ${FRONTEND_ORIGIN}`);
+  log(`Entorno: ${ENV_NAME}. Zitadel: ${ZITADEL_URL}${ZITADEL_API_BASE === ZITADEL_URL ? '' : ` (API por ${ZITADEL_API_BASE})`}. Frontend: ${FRONTEND_ORIGIN}`);
   await waitForZitadel();
   const pat = readPat();
   const orgId = await getDefaultOrgId(pat);
