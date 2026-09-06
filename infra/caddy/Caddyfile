@@ -1,0 +1,64 @@
+{
+	email {$ACME_EMAIL}
+	# Para probar la emisión sin gastar cuota de Let's Encrypt: ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory
+	acme_ca {$ACME_CA:https://acme-v02.api.letsencrypt.org/directory}
+}
+
+# Un solo certificado wildcard para todos los subdominios (DNS-01 con Cloudflare).
+*.{$APP_DOMAIN}, {$APP_DOMAIN} {
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+		resolvers 1.1.1.1 1.0.0.1
+	}
+
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# ---- auth.<dominio>: Zitadel (Login v2 + API/consola) ----
+	@auth host auth.{$APP_DOMAIN}
+	handle @auth {
+		@login path /ui/v2/login /ui/v2/login/*
+		handle @login {
+			reverse_proxy http://zitadel-login:3000
+		}
+		handle / {
+			redir /ui/console 302
+		}
+		handle {
+			# gRPC / Connect-RPC / REST de Zitadel viajan por h2c; el header TE rompe el gateway gRPC.
+			reverse_proxy h2c://zitadel-api:8080 {
+				header_up -TE
+			}
+		}
+	}
+
+	# ---- api.<dominio>: backend Express ----
+	@api host api.{$APP_DOMAIN}
+	handle @api {
+		reverse_proxy http://backend:5000
+	}
+
+	# ---- www y raíz: redirigen a la app ----
+	@www host www.{$APP_DOMAIN} {$APP_DOMAIN}
+	handle @www {
+		redir https://app.{$APP_DOMAIN}{uri} permanent
+	}
+
+	# ---- app.<dominio> (landing y registro) y <slug>.<dominio> (POS de cada restaurante): SPA estática ----
+	# Los handle se evalúan en orden: auth/api/www ya fueron atendidos; aquí cae cualquier otro subdominio
+	# del wildcard (la dirección del sitio ya limita los hosts a *.APP_DOMAIN).
+	handle {
+		root * /srv/pos
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

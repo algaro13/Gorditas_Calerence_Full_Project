@@ -1,22 +1,13 @@
-# Construye el SPA y deja `dist` en /out. Caddy sirve los archivos estáticos en producción
-# (ver infra/); esta imagen no ejecuta ningún servidor.
-FROM node:22-alpine AS build
+# Imagen de construcción del SPA. No sirve nada: en producción Caddy sirve los archivos estáticos.
+# El contenedor construye al arrancar, leyendo las variables VITE_* de su entorno
+# (docker compose: env_file Gorditas_frontend/project/.env.production), y copia `dist` a /srv/pos.
+FROM node:22-alpine
 WORKDIR /app
 
 COPY project/package*.json ./
 RUN npm ci
 
 COPY project/ ./
-# Las variables VITE_* se inyectan en build (docker compose: build.args) y quedan en el bundle.
-ARG VITE_APP_DOMAIN
-ARG VITE_API_URL
-ARG VITE_ZITADEL_AUTHORITY
-ARG VITE_ZITADEL_CLIENT_ID
-ARG VITE_ZITADEL_PROJECT_ID
-ARG VITE_BRAND_NAME="Kustodela POS"
-RUN npm run build
 
-FROM alpine:3.20 AS dist
-COPY --from=build /app/dist /out
-# Copia el build al volumen montado en /srv/pos y termina.
-CMD ["sh", "-c", "rm -rf /srv/pos/* && cp -r /out/. /srv/pos/ && echo 'frontend dist publicado'"]
+VOLUME ["/srv/pos"]
+CMD ["sh", "-c", "npm run build && rm -rf /srv/pos/* && cp -r dist/. /srv/pos/ && echo 'frontend publicado en /srv/pos'"]

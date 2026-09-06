@@ -63,3 +63,15 @@ Variables en `.env.<NODE_ENV>` (las escribe `scripts/zitadel-bootstrap.ts` en lo
 ## Migraciones
 
 `prisma/migrations/0001_init/migration.sql` = `prisma/sql/functions.sql` + tablas generadas por Prisma + `prisma/sql/rls.sql`. Al agregar una tabla con `tenant_id`, inclúyela en la lista de `rls.sql` y vuelve a ejecutarlo dentro de la nueva migración (es idempotente).
+
+## Despliegue
+
+En producción el API corre en el contenedor `backend` de `docker-compose.yaml` (raíz), detrás de Caddy en `https://api.<APP_DOMAIN>`. Migra al arrancar (`prisma migrate deploy` con `DIRECT_URL`). Los ids de Zitadel llegan por `.env.production` (los escribe `npm run prod:bootstrap`) y las URLs de base de datos por el compose. Guía completa: [infra/README.md](../infra/README.md).
+
+Scripts de operación:
+
+| Script | Uso |
+|--------|-----|
+| `npm run sync:redirect-uris` | reconstruye las redirect URIs de la app SPA en Zitadel desde `tenants` (cambio de dominio) |
+| `npx tsx scripts/setup-stripe-products.ts` | crea productos y precios en Stripe y muestra los `STRIPE_PRICE_*` |
+

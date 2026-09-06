@@ -22,7 +22,8 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:e2e": "vitest run --project e2e",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "sync:redirect-uris": "tsx scripts/sync-redirect-uris.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

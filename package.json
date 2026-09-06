@@ -13,7 +13,14 @@
     "dev:backend": "npm --prefix Gorditas_Calerence_Backend run dev",
     "dev:frontend": "npm --prefix Gorditas_frontend/project run dev",
     "test": "npm --prefix Gorditas_Calerence_Backend test",
-    "test:unit": "npm --prefix Gorditas_Calerence_Backend run test:unit"
+    "test:unit": "npm --prefix Gorditas_Calerence_Backend run test:unit",
+    "prod:up": "docker compose up -d --build --wait postgres zitadel-api zitadel-login caddy pg-backup backend && docker compose run --rm --build frontend-build",
+    "prod:bootstrap": "tsx scripts/zitadel-bootstrap.ts --env production",
+    "prod:build-frontend": "docker compose run --rm --build frontend-build",
+    "prod:logs": "docker compose logs -f --tail=100",
+    "prod:backup": "docker compose exec pg-backup /backup.sh",
+    "prod:down": "docker compose down",
+    "prod:sync-redirects": "docker compose exec backend npx tsx scripts/sync-redirect-uris.ts"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
