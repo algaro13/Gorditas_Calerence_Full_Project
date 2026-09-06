@@ -81,9 +81,13 @@ export class FakeIdentityProvider implements IdentityProvider {
     input.postLogout.forEach((u) => this.postLogoutUris.add(u));
   }
 
+  /** Las organizaciones desconocidas se crean al vuelo (tenants sembrados directamente en la base). */
   private requireOrg(orgId: string): FakeOrg {
-    const org = this.orgs.get(orgId);
-    if (!org) throw new Error(`FakeIdentityProvider: org ${orgId} no existe`);
+    let org = this.orgs.get(orgId);
+    if (!org) {
+      org = { id: orgId, name: orgId, users: new Map() };
+      this.orgs.set(orgId, org);
+    }
     return org;
   }
 

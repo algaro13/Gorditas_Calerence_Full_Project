@@ -2,13 +2,19 @@
  * Convierte filas de Prisma al contrato JSON histórico del frontend:
  *  - `id` -> `_id`
  *  - Decimal / bigint -> number
+ *  - `tenantId` nunca sale al cliente
  *  - joins aplanados según `flatten` ("tipoProducto.nombre" -> "nombreTipoProducto");
  *    la relación aplanada se elimina del resultado.
  */
 export type FlattenMap = Record<string, string>;
 
+const HIDDEN_KEYS = new Set(['tenantId', 'tenant_id']);
+
+/** Prisma.Decimal (decimal.js): por nombre de clase o por su forma interna { d[], e, s } + toFixed. */
 function isDecimalLike(v: object): boolean {
-  return (v as { constructor?: { name?: string } }).constructor?.name === 'Decimal';
+  const o = v as { constructor?: { name?: string }; d?: unknown; e?: unknown; s?: unknown; toFixed?: unknown };
+  if (o.constructor?.name === 'Decimal') return true;
+  return Array.isArray(o.d) && typeof o.e === 'number' && typeof o.s === 'number' && typeof o.toFixed === 'function';
 }
 
 export function toApi<T = unknown>(value: unknown, flatten?: FlattenMap): T {
@@ -26,6 +32,7 @@ function convert(value: unknown, flatten?: FlattenMap): unknown {
   const src = value as Record<string, unknown>;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(src)) {
+    if (HIDDEN_KEYS.has(k)) continue;
     out[k === 'id' ? '_id' : k] = convert(v, flatten);
   }
   if (flatten) {

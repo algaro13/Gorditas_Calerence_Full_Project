@@ -5,7 +5,13 @@ import pinoHttp from 'pino-http';
 import { randomUUID } from 'node:crypto';
 import type { Container } from './container';
 import { notFound } from './shared/http/express/error-handler';
+import { nextPedidoNumber } from './shared/infrastructure/prisma/counters';
 import { createTenantsRouter } from './modules/tenants/http/tenants.router';
+import { createOrdenesModule } from './modules/ordenes';
+import { createCatalogosModule } from './modules/catalogos';
+import { createUsuariosModule } from './modules/usuarios';
+import { createInventarioModule } from './modules/inventario';
+import { createReportesModule } from './modules/reportes';
 
 export function createApp(c: Container): Express {
   const app = express();
@@ -48,11 +54,27 @@ export function createApp(c: Container): Express {
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  const { authenticate, tenantContext } = c.middlewares;
+  const { authenticate, tenantContext, planGuard } = c.middlewares;
+  const pos = [authenticate, tenantContext, planGuard];
+  const timeZone = c.env.APP_TZ;
+
   app.use('/api/tenants', createTenantsRouter({ tenants: c.tenants, urls: c.urls, authenticate, tenantContext }));
 
-  // Rutas de negocio (ordenes, catalogos, inventario, reportes, usuarios, onboarding, billing)
-  // se montan en los changes siguientes sobre [authenticate, tenantContext, planGuard].
+  const ordenes = createOrdenesModule({ uow: c.uow, clock: c.clock, timeZone });
+  const usuarios = createUsuariosModule({ uow: c.uow, identity: c.identityProvider, logger: c.logger.child({ module: 'usuarios' }) });
+  const catalogos = createCatalogosModule({
+    uow: c.uow,
+    nextPedidoNumber: () => c.uow.run(() => nextPedidoNumber(c.clock.now(), timeZone)),
+    listarPersonal: () => usuarios.listar.execute(),
+  });
+  const inventario = createInventarioModule({ uow: c.uow });
+  const reportes = createReportesModule({ uow: c.uow, clock: c.clock, timeZone });
+
+  app.use('/api/ordenes', pos, ordenes.router);
+  app.use('/api/catalogos', pos, catalogos.router);
+  app.use('/api/usuarios', pos, usuarios.router);
+  app.use('/api/inventario', pos, inventario.router);
+  app.use('/api/reportes', pos, reportes.router);
 
   app.use(notFound);
   app.use(c.middlewares.errorHandler);
