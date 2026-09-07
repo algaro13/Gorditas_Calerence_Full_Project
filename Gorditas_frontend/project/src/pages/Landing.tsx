@@ -20,7 +20,12 @@ const plans = [
 const Landing: React.FC = () => {
   const navigate = useNavigate();
 
+  /** Los botones de prueba llevan al registro; solo el del encabezado va al inicio de sesión. */
   const handleStart = () => {
+    navigate('/onboarding');
+  };
+
+  const handleLogin = () => {
     navigate('/login');
   };
 
@@ -38,7 +43,7 @@ const Landing: React.FC = () => {
           <div className="hidden md:flex items-center gap-6 text-sm text-gray-600">
             <a href="#features" className="hover:text-orange-500">Funciones</a>
             <a href="#pricing" className="hover:text-orange-500">Precios</a>
-            <button onClick={handleStart} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium">
+            <button onClick={handleLogin} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium">
               Iniciar sesión
             </button>
           </div>

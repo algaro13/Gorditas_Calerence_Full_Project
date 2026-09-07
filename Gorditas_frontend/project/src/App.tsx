@@ -21,6 +21,7 @@ import Cobrar from './pages/Cobrar';
 import Catalogos from './pages/Catalogos';
 import Reportes from './pages/Reportes';
 import Inventario from './pages/Inventario';
+import { getTenantSlug } from './config/tenant-host';
 
 const Spinner: React.FC = () => (
   <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -171,6 +172,9 @@ function App() {
           <Route path="/callback" element={<Callback />} />
           <Route path="/sin-restaurante" element={<SinRestaurante />} />
           <Route path="/landing" element={<Landing />} />
+          {/* En el host de la plataforma (o el dominio a secas) la raíz es la página de venta.
+              En el subdominio de un restaurante la raíz sigue siendo el POS. */}
+          {getTenantSlug() === null && <Route path="/" element={<Landing />} />}
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/billing/success" element={<BillingSuccess />} />
           <Route
