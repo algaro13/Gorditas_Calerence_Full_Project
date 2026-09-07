@@ -114,11 +114,9 @@ export class ZitadelIdentityProvider implements IdentityProvider {
   }
 
   async resendEmailVerification(userId: string): Promise<void> {
-    const res = await this.call<{ user?: { human?: { email?: { email?: string } } } }>('GET', `/v2/users/${userId}`);
-    const email = res.user?.human?.email?.email;
-    if (!email) throw new ExternalServiceError('El usuario no tiene correo registrado', 'ZITADEL');
-    // Reponer el correo con sendCode vuelve a emitir el código de verificación.
-    await this.call('POST', `/v2/users/${userId}/email`, { email, sendCode: {} });
+    // Endpoint dedicado: reponer el mismo correo con `sendCode` lo rechaza Zitadel
+    // con "el email no ha cambiado".
+    await this.call('POST', `/v2/users/${userId}/email/resend`, {});
   }
 
   async setUserActive(userId: string, active: boolean): Promise<void> {
