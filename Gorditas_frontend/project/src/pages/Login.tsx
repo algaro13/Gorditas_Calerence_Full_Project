@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { ChefHat, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,17 @@ const Login: React.FC = () => {
   const [devSlug, setDevSlug] = useState(slug ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  // Al venir del dominio principal ya hay sesión abierta en Zitadel: se completa el acceso al
+  // restaurante sin pedir nada de nuevo. Se intenta una sola vez para no dar vueltas.
+  const ssoIntentado = useRef(false);
+  useEffect(() => {
+    const pedido = new URLSearchParams(window.location.search).get('sso') === '1';
+    if (!pedido || ssoIntentado.current || authLoading || isAuthenticated || !slug || !tenant) return;
+    ssoIntentado.current = true;
+    setBusy(true);
+    login().catch(() => setBusy(false));
+  }, [slug, tenant, authLoading, isAuthenticated, login]);
 
   useEffect(() => {
     if (!slug) {
@@ -77,7 +88,9 @@ const Login: React.FC = () => {
               </div>
             )}
             <h1 className="text-2xl font-bold text-gray-900">{tenant?.nombre ?? appConfig.brandName}</h1>
-            <p className="text-gray-600 mt-2">{tenant ? appConfig.brandName : 'Sistema de gestión para restaurantes'}</p>
+            <p className="text-gray-600 mt-2">
+              {tenant ? appConfig.brandName : 'Entra con tu correo y te llevamos a tu restaurante'}
+            </p>
             {slug && <p className="text-xs text-gray-400 mt-1 font-mono">{tenantHostLabel(slug)}</p>}
           </div>
 
@@ -85,7 +98,7 @@ const Login: React.FC = () => {
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">{error || tenantError}</div>
           )}
 
-          {slug && tenant ? (
+          {(!slug || tenant) && (
             <button
               onClick={handleLogin}
               disabled={busy || authLoading}
@@ -94,18 +107,15 @@ const Login: React.FC = () => {
               <LogIn className="w-5 h-5" />
               {busy ? 'Redirigiendo...' : 'Iniciar sesión'}
             </button>
-          ) : (
-            !slug && (
-              <div className="text-sm text-gray-600 text-center space-y-2">
-                <p>Abre la dirección de tu restaurante para iniciar sesión.</p>
-                <p>
-                  ¿Aún no tienes uno?{' '}
-                  <a href={`${appUrl()}/onboarding`} className="text-orange-600 font-medium hover:underline">
-                    Regístralo gratis
-                  </a>
-                </p>
-              </div>
-            )
+          )}
+
+          {!slug && (
+            <p className="text-sm text-gray-600 text-center mt-4">
+              ¿Aún no tienes restaurante?{' '}
+              <a href={`${appUrl()}/onboarding`} className="text-orange-600 font-medium hover:underline">
+                Regístralo gratis
+              </a>
+            </p>
           )}
 
           {isLocalHost() && (

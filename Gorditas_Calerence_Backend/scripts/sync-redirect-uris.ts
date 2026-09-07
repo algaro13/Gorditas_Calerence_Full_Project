@@ -13,10 +13,13 @@ async function main(): Promise<void> {
   const c = buildContainer();
   try {
     const tenants = await c.prisma.tenant.findMany({ where: { activo: true }, select: { slug: true } });
-    const redirect = [`${c.urls.appUrl()}/callback`, ...tenants.map((t) => c.urls.tenantCallbackUrl(t.slug))];
-    const postLogout = [c.urls.appUrl(), ...tenants.map((t) => c.urls.tenantUrl(t.slug))];
+    // La plataforma se alcanza por su subdominio, por el dominio a secas y por www: desde cualquiera
+    // de los tres se puede iniciar sesión, así que las tres direcciones de retorno deben existir.
+    const plataforma = [c.urls.appUrl(), `${c.env.APP_SCHEME}://${c.env.APP_DOMAIN}`, `${c.env.APP_SCHEME}://www.${c.env.APP_DOMAIN}`];
+    const redirect = [...plataforma.map((u) => `${u}/callback`), ...tenants.map((t) => c.urls.tenantCallbackUrl(t.slug))];
+    const postLogout = [...plataforma, ...tenants.map((t) => c.urls.tenantUrl(t.slug))];
     await c.identityProvider.registerRedirectUris({ redirect, postLogout });
-    c.logger.info(`Redirect URIs sincronizadas en Zitadel: ${tenants.length} restaurantes activos en ${c.env.APP_DOMAIN}`);
+    c.logger.info(`Redirect URIs sincronizadas en Zitadel: ${redirect.length} direcciones (${tenants.length} restaurantes) en ${c.env.APP_DOMAIN}`);
   } finally {
     await c.prisma.$disconnect();
   }

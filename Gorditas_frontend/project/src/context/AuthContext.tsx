@@ -112,7 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async () => {
     const slug = getTenantSlug();
-    if (!slug) throw new LoginError('NO_SLUG', 'No se pudo determinar el restaurante desde la dirección');
+    // Host de la plataforma: no se sabe el restaurante todavía. Se pide un acceso general y Zitadel
+    // identifica a la persona por su correo; después se le lleva a su restaurante (ver Callback).
+    if (!slug) {
+      await oidc.signinRedirect();
+      return;
+    }
     const res = await apiService.getTenantBySlug(slug);
     if (!res.success || !res.data?.orgId) {
       throw new LoginError(res.status === 0 ? 'NETWORK' : 'TENANT_NOT_FOUND', res.error ?? 'Restaurante no encontrado');

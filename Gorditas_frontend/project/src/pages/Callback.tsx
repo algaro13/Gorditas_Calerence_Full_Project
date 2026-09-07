@@ -1,11 +1,25 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getTenantSlug } from '../config/tenant-host';
 
 /** Retorno de Zitadel: espera a que la sesión y el restaurante estén listos y redirige. */
 const Callback: React.FC = () => {
-  const { user, loading, error, tenantMissing, isAuthenticated, getDefaultRoute } = useAuth();
+  const { user, tenant, loading, error, tenantMissing, isAuthenticated, getDefaultRoute } = useAuth();
+
+  // Cuando el acceso fue por el dominio principal no hay restaurante en la dirección, así que se
+  // lleva a la persona al suyo. `sso=1` hace que allá el acceso se complete sin volver a pedir nada,
+  // aprovechando la sesión que Zitadel ya tiene abierta.
+  const enPlataforma = getTenantSlug() === null;
+  const destino = enPlataforma && tenant?.url ? new URL(tenant.url) : null;
+  const hayQueSaltar = destino !== null && destino.origin !== window.location.origin;
+
+  useEffect(() => {
+    if (!loading && user && hayQueSaltar && destino) {
+      window.location.replace(`${destino.origin}/login?sso=1`);
+    }
+  }, [loading, user, hayQueSaltar, destino]);
 
   if (error && !loading) {
     return (
@@ -22,11 +36,11 @@ const Callback: React.FC = () => {
     );
   }
 
-  if (loading) {
+  if (loading || (user && hayQueSaltar)) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600"></div>
-        <p className="text-sm text-gray-600">Iniciando sesión...</p>
+        <p className="text-sm text-gray-600">{user && hayQueSaltar ? 'Entrando a tu restaurante...' : 'Iniciando sesión...'}</p>
       </div>
     );
   }
