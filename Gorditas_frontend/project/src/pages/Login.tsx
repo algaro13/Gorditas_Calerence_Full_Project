@@ -6,10 +6,11 @@ import { LoginError } from '../context/login-error';
 import { apiService } from '../services/api';
 import { appConfig, assetUrl } from '../config/app-config';
 import { appUrl, getTenantSlug, isLocalHost, isValidSlug, setDevTenantSlug, tenantHostLabel } from '../config/tenant-host';
+import { saltoAlRestaurante } from '../utils/salto-tenant';
 import type { TenantPublicInfo } from '../types';
 
 const Login: React.FC = () => {
-  const { user, loading: authLoading, isAuthenticated, tenantMissing, login, getDefaultRoute } = useAuth();
+  const { user, tenant: miRestaurante, loading: authLoading, isAuthenticated, tenantMissing, login, getDefaultRoute } = useAuth();
   const [slug, setSlug] = useState<string | null>(() => getTenantSlug());
   const [tenant, setTenant] = useState<TenantPublicInfo | null>(null);
   const [tenantError, setTenantError] = useState('');
@@ -47,6 +48,21 @@ const Login: React.FC = () => {
       active = false;
     };
   }, [slug]);
+
+  // Sesión ya abierta en el dominio principal: se salta al restaurante en vez de mostrar nada.
+  const destinoRestaurante = user ? saltoAlRestaurante(miRestaurante?.url) : null;
+  useEffect(() => {
+    if (destinoRestaurante) window.location.replace(destinoRestaurante);
+  }, [destinoRestaurante]);
+
+  if (destinoRestaurante) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex flex-col items-center justify-center gap-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600"></div>
+        <p className="text-sm text-gray-600">Entrando a tu restaurante...</p>
+      </div>
+    );
+  }
 
   if (user) return <Navigate to={getDefaultRoute()} replace />;
   if (!authLoading && isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;

@@ -2,24 +2,19 @@ import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getTenantSlug } from '../config/tenant-host';
+import { saltoAlRestaurante } from '../utils/salto-tenant';
 
 /** Retorno de Zitadel: espera a que la sesión y el restaurante estén listos y redirige. */
 const Callback: React.FC = () => {
   const { user, tenant, loading, error, tenantMissing, isAuthenticated, getDefaultRoute } = useAuth();
 
-  // Cuando el acceso fue por el dominio principal no hay restaurante en la dirección, así que se
-  // lleva a la persona al suyo. `sso=1` hace que allá el acceso se complete sin volver a pedir nada,
-  // aprovechando la sesión que Zitadel ya tiene abierta.
-  const enPlataforma = getTenantSlug() === null;
-  const destino = enPlataforma && tenant?.url ? new URL(tenant.url) : null;
-  const hayQueSaltar = destino !== null && destino.origin !== window.location.origin;
+  // Si el acceso fue por el dominio principal, se lleva a la persona a su restaurante.
+  const destino = saltoAlRestaurante(tenant?.url);
+  const hayQueSaltar = destino !== null;
 
   useEffect(() => {
-    if (!loading && user && hayQueSaltar && destino) {
-      window.location.replace(`${destino.origin}/login?sso=1`);
-    }
-  }, [loading, user, hayQueSaltar, destino]);
+    if (!loading && user && destino) window.location.replace(destino);
+  }, [loading, user, destino]);
 
   if (error && !loading) {
     return (
