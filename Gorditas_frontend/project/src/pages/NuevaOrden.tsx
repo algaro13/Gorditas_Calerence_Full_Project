@@ -9,6 +9,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { precioVenta } from '../utils/precios';
 import { Mesa, Platillo, Guiso, OrderStep, ApiResponse, Extra, TipoExtra } from '../types';
 
 interface PlatilloSeleccionado {
@@ -636,7 +637,7 @@ const NuevaOrden: React.FC = () => {
             nombrePlatillo: item.platillo.nombre,
             idGuiso: Number(item.guiso._id),
             nombreGuiso: item.guiso.nombre,
-            costoPlatillo: item.platillo.costo,
+            costoPlatillo: precioVenta(item.platillo),
             cantidad: item.cantidad,
             notas: item.notas // Incluir las notas del platillo
           };
@@ -743,7 +744,7 @@ const NuevaOrden: React.FC = () => {
     return (
       platillosSeleccionados.reduce(
         (sum, item) => sum + (
-          (item.platillo.costo ?? 0) * item.cantidad +
+          precioVenta(item.platillo) * item.cantidad +
           item.extras.reduce((extraSum, extra) => extraSum + (extra.costoExtra * extra.cantidad), 0)
         ),
         0
@@ -1167,19 +1168,19 @@ const NuevaOrden: React.FC = () => {
                           {item.extras.length > 0 ? (
                             <div>
                               <div className="text-[9px] sm:text-xs text-gray-500">
-                                Platillo: ${((item.platillo.costo ?? 0) * item.cantidad).toFixed(2)} + 
+                                Platillo: ${(precioVenta(item.platillo) * item.cantidad).toFixed(2)} + 
                                 Extras: ${item.extras.reduce((sum, extra) => sum + (extra.costoExtra * extra.cantidad), 0).toFixed(2)}
                               </div>
                               <div className="font-bold">
                                 Total: ${(
-                                  (item.platillo.costo ?? 0) * item.cantidad + 
+                                  precioVenta(item.platillo) * item.cantidad + 
                                   item.extras.reduce((sum, extra) => sum + (extra.costoExtra * extra.cantidad), 0)
                                 ).toFixed(2)}
                               </div>
                             </div>
                           ) : (
                             <div>
-                              ${((item.platillo.costo ?? 0) * item.cantidad).toFixed(2)}
+                              ${(precioVenta(item.platillo) * item.cantidad).toFixed(2)}
                             </div>
                           )}
                         </div>
@@ -1344,7 +1345,7 @@ const NuevaOrden: React.FC = () => {
                                   )}
                                 </div>
                                 <span className="flex-shrink-0 ml-2 font-semibold text-green-600">
-                                  ${((item.platillo.precio * item.cantidad) + item.extras.reduce((sum: number, e: any) => sum + (e.costoExtra * e.cantidad), 0)).toFixed(2)}
+                                  ${((precioVenta(item.platillo) * item.cantidad) + item.extras.reduce((sum: number, e: any) => sum + (e.costoExtra * e.cantidad), 0)).toFixed(2)}
                                 </span>
                               </div>
                             ))}
@@ -1419,7 +1420,7 @@ const NuevaOrden: React.FC = () => {
                                 )}
                               </div>
                               <span className="flex-shrink-0 ml-2 font-semibold text-orange-600">
-                                ${(((item.platillo.costo ?? 0) * item.cantidad) + item.extras.reduce((sum, e) => sum + (e.costoExtra * e.cantidad), 0)).toFixed(2)}
+                                ${((precioVenta(item.platillo) * item.cantidad) + item.extras.reduce((sum, e) => sum + (e.costoExtra * e.cantidad), 0)).toFixed(2)}
                               </span>
                             </div>
                           ))}
@@ -1563,7 +1564,7 @@ const NuevaOrden: React.FC = () => {
                   className="p-3 sm:p-4 rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:bg-orange-50 transition-colors text-center"
                 >
                   <div className="text-sm sm:text-base font-semibold text-gray-900">{platillo.nombre}</div>
-                  <div className="text-xs sm:text-sm text-green-600 font-medium mt-1">${platillo.costo}</div>
+                  <div className="text-xs sm:text-sm text-green-600 font-medium mt-1">${precioVenta(platillo).toFixed(2)}</div>
                 </button>
               ))}
             </div>
@@ -1825,7 +1826,7 @@ const NuevaOrden: React.FC = () => {
               <div className="mt-1.5 sm:mt-2 pt-1.5 sm:pt-2 border-t border-gray-200">
                 <p className="text-xs sm:text-sm font-semibold text-green-600">
                   Total: ${(
-                    (platilloEnConstruccion.platillo?.costo ?? 0) * platilloEnConstruccion.cantidad +
+                    precioVenta(platilloEnConstruccion.platillo) * platilloEnConstruccion.cantidad +
                     platilloEnConstruccion.extras.reduce((sum, e) => sum + (e.costoExtra * e.cantidad), 0)
                   ).toFixed(2)}
                 </p>

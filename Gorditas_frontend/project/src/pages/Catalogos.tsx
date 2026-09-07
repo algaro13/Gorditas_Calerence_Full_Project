@@ -25,7 +25,7 @@ const catalogModels = [
   { id: 'tipoproducto', name: 'Tipos de Producto', fields: ['nombre', 'descripcion'], hasActivo: true },
   { id: 'producto', name: 'Productos', fields: ['nombre', 'idTipoProducto', 'cantidad', 'costo', 'variantes'], hasActivo: true },
   { id: 'tipoplatillo', name: 'Tipos de Platillo', fields: ['nombre', 'descripcion'], hasActivo: true },
-  { id: 'platillo', name: 'Platillos', fields: ['nombre', 'idTipoPlatillo', 'descripcion', 'costo'], hasActivo: true },
+  { id: 'platillo', name: 'Platillos', fields: ['nombre', 'idTipoPlatillo', 'descripcion', 'precio'], hasActivo: true },
   { id: 'tipoextra', name: 'Tipos de Extra', fields: ['nombre', 'descripcion'], hasActivo: true },
   { id: 'extra', name: 'Extras', fields: ['nombre', 'idTipoExtra', 'descripcion', 'costo'], hasActivo: true },
   { id: 'tipogasto', name: 'Tipos de Gasto', fields: ['nombre'], hasActivo: true },
@@ -333,13 +333,14 @@ const Catalogos: React.FC = () => {
     setSaving(true);
     try {
       if (selectedModel.id === 'platillo') {
-        // Map 'costo' to 'precio' for platillo creation
-        formData.precio = formData.costo;
-        if (!formData.costo || formData.costo <= 0) {
-          setError('El campo "costo" es obligatorio y debe ser mayor a 0.');
+        // `precio` es el precio de venta que usa el servidor para cobrar. Se copia también a
+        // `costo` para no dejar en cero el campo heredado que aún leen pantallas antiguas.
+        if (!formData.precio || formData.precio <= 0) {
+          setError('El campo "precio" es obligatorio y debe ser mayor a 0.');
           setSaving(false);
           return;
         }
+        formData.costo = formData.precio;
       }
 
       if (selectedModel.id === 'extra') {
@@ -1026,7 +1027,7 @@ const Catalogos: React.FC = () => {
                         {(selectedModel.id === 'producto' || selectedModel.id === 'platillo' || selectedModel.id === 'extra') && (
                           <td className="py-2 px-1 sm:py-3 sm:px-4">
                             <span className="font-medium text-green-600 text-xs sm:text-base whitespace-nowrap">
-                              ${((item as any).costo || (item as any).precio || 0).toFixed(2)}
+                              ${((item as any).precio || (item as any).costo || 0).toFixed(2)}
                             </span>
                           </td>
                         )}

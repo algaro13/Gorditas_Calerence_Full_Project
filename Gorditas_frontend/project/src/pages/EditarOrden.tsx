@@ -17,6 +17,7 @@ import {
   Check
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { precioVenta } from '../utils/precios';
 import { Orden, Suborden, OrdenDetallePlatillo, OrdenDetalleProducto, Platillo, Guiso, Producto, MesaAgrupada, Extra, TipoExtra } from '../types';
 
 const EditarOrden: React.FC = () => {
@@ -595,7 +596,7 @@ const EditarOrden: React.FC = () => {
         nombrePlatillo: platilloEnConstruccion.platillo.nombre,
         idGuiso: Number(platilloEnConstruccion.guiso._id),
         nombreGuiso: platilloEnConstruccion.guiso.nombre,
-        costoPlatillo: platilloEnConstruccion.platillo.precio || platilloEnConstruccion.platillo.costo,
+        costoPlatillo: precioVenta(platilloEnConstruccion.platillo),
         cantidad: platilloEnConstruccion.cantidad,
         notas: platilloEnConstruccion.notas
       };
@@ -1616,7 +1617,7 @@ const EditarOrden: React.FC = () => {
                   className="p-3 bg-orange-50 hover:bg-orange-100 border-2 border-orange-200 rounded-lg transition-colors text-left"
                 >
                   <p className="font-medium text-gray-900 text-sm">{platillo.nombre}</p>
-                  <p className="text-orange-600 font-bold text-xs">${platillo.costo}</p>
+                  <p className="text-orange-600 font-bold text-xs">${precioVenta(platillo).toFixed(2)}</p>
                 </button>
               ))}
             </div>
