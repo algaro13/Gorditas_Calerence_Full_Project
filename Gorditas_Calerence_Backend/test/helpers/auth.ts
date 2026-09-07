@@ -21,8 +21,9 @@ export interface TokenInput {
   /** roles por organización: { Admin: { [orgId]: 'dominio' } }; por defecto se asignan a `orgId`. */
   roles?: Role[];
   rolesForOtherOrg?: { orgId: string; roles: Role[] };
-  email?: string;
-  name?: string;
+  /** `null` omite el claim, como hacen los tokens de acceso reales de Zitadel. */
+  email?: string | null;
+  name?: string | null;
   issuer?: string;
   audience?: string;
   projectId?: string;
@@ -43,9 +44,11 @@ export async function tokenFor(keys: TestKeys, input: TokenInput): Promise<strin
     }
   }
 
+  const email = input.email === null ? null : (input.email ?? `${input.userId}@test.local`);
+  const name = input.name === null ? null : (input.name ?? `Usuario ${input.userId}`);
   const payload: Record<string, unknown> = {
-    email: input.email ?? `${input.userId}@test.local`,
-    name: input.name ?? `Usuario ${input.userId}`,
+    ...(email ? { email } : {}),
+    ...(name ? { name } : {}),
     [claimRolesForProject(projectId)]: rolesClaim,
   };
   if (!input.omitOrgClaim) payload[CLAIM_ORG_ID] = input.orgId;

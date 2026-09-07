@@ -30,7 +30,7 @@ export function createVerificadorDeCorreo(identity: IdentityProvider, clock: Clo
       const revisadoHasta = pendientes.get(userId);
       if (revisadoHasta !== undefined && revisadoHasta > clock.now().getTime()) return false;
 
-      const verificado = await identity.isEmailVerified(userId);
+      const verificado = (await identity.getUserProfile(userId))?.emailVerified === true;
       if (verificado) {
         verificados.add(userId);
         pendientes.delete(userId);

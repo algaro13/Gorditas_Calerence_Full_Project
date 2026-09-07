@@ -148,7 +148,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
 
   const tenantContext = createTenantContext({
     findTenantByOrgId: (orgId) => tenants.findByOrgId(orgId),
-    onMemberSeen: (tenant, auth) => touchMember(prisma, tenant, auth, clock.now()),
+    onMemberSeen: (tenant, auth) => touchMember(prisma, tenant, auth, clock.now(), (id) => identityProvider.getUserProfile(id)),
     logger: logger.child({ component: 'tenant-context' }),
     cacheTtlMs: env.NODE_ENV === 'test' ? 0 : 60_000,
   });

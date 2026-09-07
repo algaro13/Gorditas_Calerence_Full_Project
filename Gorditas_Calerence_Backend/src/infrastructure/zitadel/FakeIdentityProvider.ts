@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { IdentityProvider, NewAdminAccount, NewStaffAccount } from '../../shared/application/ports/IdentityProvider';
+import type { IdentityProvider, UserProfile, NewAdminAccount, NewStaffAccount } from '../../shared/application/ports/IdentityProvider';
 import type { Role } from '../../shared/domain/Auth';
 
 export interface FakeOrg {
@@ -68,8 +68,12 @@ export class FakeIdentityProvider implements IdentityProvider {
   readonly sinVerificar = new Set<string>();
   readonly reenvios: string[] = [];
 
-  async isEmailVerified(userId: string): Promise<boolean> {
-    return !this.sinVerificar.has(userId);
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    for (const org of this.orgs.values()) {
+      const u = org.users.get(userId);
+      if (u) return { email: u.email, nombre: `${u.givenName} ${u.familyName}`.trim(), emailVerified: !this.sinVerificar.has(userId) };
+    }
+    return { email: null, nombre: null, emailVerified: !this.sinVerificar.has(userId) };
   }
 
   async resendEmailVerification(userId: string): Promise<void> {

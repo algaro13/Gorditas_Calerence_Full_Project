@@ -14,6 +14,12 @@ export interface NewStaffAccount {
   email: string;
 }
 
+export interface UserProfile {
+  email: string | null;
+  nombre: string | null;
+  emailVerified: boolean;
+}
+
 /**
  * Puerto hacia el proveedor de identidad (Zitadel en producción, Fake en pruebas).
  * Una organización del proveedor = un restaurante (tenant).
@@ -27,8 +33,11 @@ export interface IdentityProvider {
   assignRole(input: { orgId: string; userId: string; projectGrantId: string; role: Role }): Promise<{ grantId: string }>;
   updateRole(input: { orgId: string; userId: string; grantId: string; role: Role }): Promise<void>;
   setUserActive(userId: string, active: boolean): Promise<void>;
-  /** ¿La persona ya confirmó su correo? El registro crea la cuenta activa pero sin verificar. */
-  isEmailVerified(userId: string): Promise<boolean>;
+  /**
+   * Datos de la persona según el proveedor. El token de acceso no lleva correo ni nombre, así que
+   * es la única forma de saber si ya confirmó su dirección y de mostrarla en la lista de personal.
+   */
+  getUserProfile(userId: string): Promise<UserProfile | null>;
   /** Reenvía el correo de verificación a la dirección registrada. */
   resendEmailVerification(userId: string): Promise<void>;
   deleteUser(userId: string): Promise<void>;

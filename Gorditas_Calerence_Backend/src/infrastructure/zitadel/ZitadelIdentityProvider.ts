@@ -1,4 +1,4 @@
-import type { IdentityProvider, NewAdminAccount, NewStaffAccount } from '../../shared/application/ports/IdentityProvider';
+import type { IdentityProvider, UserProfile, NewAdminAccount, NewStaffAccount } from '../../shared/application/ports/IdentityProvider';
 import type { Logger } from '../../shared/application/ports/Logger';
 import type { Role } from '../../shared/domain/Auth';
 import { ExternalServiceError } from '../../shared/domain/DomainError';
@@ -108,9 +108,18 @@ export class ZitadelIdentityProvider implements IdentityProvider {
     await this.call('PUT', `/management/v1/users/${input.userId}/grants/${input.grantId}`, { roleKeys: [input.role] }, input.orgId);
   }
 
-  async isEmailVerified(userId: string): Promise<boolean> {
-    const res = await this.call<{ user?: { human?: { email?: { isVerified?: boolean } } } }>('GET', `/v2/users/${userId}`);
-    return res.user?.human?.email?.isVerified === true;
+  async getUserProfile(userId: string): Promise<UserProfile | null> {
+    const res = await this.call<{
+      user?: { human?: { profile?: { givenName?: string; familyName?: string }; email?: { email?: string; isVerified?: boolean } } };
+    }>('GET', `/v2/users/${userId}`);
+    const human = res.user?.human;
+    if (!human) return null;
+    const nombre = [human.profile?.givenName, human.profile?.familyName].filter(Boolean).join(' ').trim();
+    return {
+      email: human.email?.email ?? null,
+      nombre: nombre || null,
+      emailVerified: human.email?.isVerified === true,
+    };
   }
 
   async resendEmailVerification(userId: string): Promise<void> {
