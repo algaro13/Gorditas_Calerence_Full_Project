@@ -120,7 +120,40 @@ docker compose up -d
 
 Los logos viven en el volumen `uploads`; respáldalo con `docker run --rm -v kustodela_uploads:/u -v $PWD/backups:/b alpine tar czf /b/uploads.tgz -C /u .`.
 
-## 9. Problemas conocidos
+## 9. VPS con un proxy existente (Nginx Proxy Manager)
+
+Cuando el servidor ya tiene otro proxy ocupando 80/443, se usa `docker-compose.behind-proxy.yaml` en lugar del compose de producción: el stack no publica ningún puerto y expone un router interno (`kustodela_router`) en la red del proxy. El TLS lo sigue terminando el proxy existente.
+
+```
+Cloudflare (proxied)  ─►  proxy del host :443  ─►  kustodela_router:80  ─►  zitadel / backend / SPA
+```
+
+Requisitos: una red de docker compartida con el proxy (`EDGE_NETWORK`, por omisión `n8n_network`) y un certificado válido en el proxy. Con registros DNS en modo *proxied* de Cloudflare basta un **Cloudflare Origin Certificate** para `*.<dominio>`, que no caduca en años y no necesita ACME.
+
+```bash
+cp .env.example .env    # APP_DOMAIN, secretos, EDGE_NETWORK, MAILPIT_PASSWORD_HASH
+C="docker compose -f docker-compose.behind-proxy.yaml"
+$C up -d --wait postgres zitadel-api zitadel-login router mailpit
+
+# El bootstrap habla con Zitadel por la red interna: el alias del router conserva el Host público,
+# así no hace falta que el DNS ya exista ni salir a internet.
+docker run --rm --network kustodela_internal -v $PWD:/app -w /app \
+  -e ZITADEL_API_BASE_URL=http://auth.$APP_DOMAIN \
+  node:22-alpine sh -c "npm install --silent && npx tsx scripts/zitadel-bootstrap.ts --env production --smtp mailpit"
+
+$C up -d --build backend
+$C run --rm --build frontend-build
+```
+
+El hash de `MAILPIT_PASSWORD_HASH` se genera con `docker run --rm kustodela/caddy:latest caddy hash-password --plaintext '<contraseña>'`; en el `.env` cada `$` del hash se escribe `$$`.
+
+En el proxy hay que crear un host que mande `*.<dominio>` a `http://kustodela_router:80` conservando el `Host` original. Con Nginx Proxy Manager se hace desde su interfaz (Proxy Host con *Custom locations* vacío y el certificado de Cloudflare cargado en *SSL Certificates*), o a mano copiando `infra/npm/kustodela.conf` al archivo `nginx/custom/http.conf` de NPM y recargando (`nginx -t && nginx -s reload`). Los hosts con nombre exacto ya configurados siguen teniendo prioridad sobre el comodín.
+
+DNS: un único registro `A *` hacia la IP del VPS en modo *proxied* cubre `app`, `api`, `auth`, `mail` y el subdominio de cada restaurante.
+
+Para sembrar datos de prueba y ver qué incluye el entorno, ver [docs/entorno-pruebas.md](../docs/entorno-pruebas.md).
+
+## 10. Problemas conocidos
 
 - **Caddy no obtiene el certificado**: revisa `docker compose logs caddy`; casi siempre es el token de Cloudflare (permiso o zona equivocada). Ensaya con `ACME_CA` de staging para no agotar la cuota.
 - **`zitadel-api` no pasa el healthcheck**: primer arranque lento (hasta 60 s) o `ZITADEL_MASTERKEY` cambiada después de crear la base.
