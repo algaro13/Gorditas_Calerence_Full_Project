@@ -261,6 +261,29 @@ async function ensureSmtp(pat: string): Promise<void> {
   log('SMTP Mailpit activado');
 }
 
+/**
+ * Texto del correo de invitación. El de fábrica dice "ZITADEL" y habla en abstracto; se cambia por
+ * uno que nombra al producto y explica para qué es. Solo se escribe si no está ya personalizado.
+ */
+async function ensureInviteText(pat: string): Promise<void> {
+  const idioma = 'es';
+  const actual = await api<{ customText?: { text?: string; isDefault?: boolean } }>(pat, 'GET', `/admin/v1/text/message/invite_user/${idioma}`);
+  if (actual.customText?.isDefault === false && actual.customText.text?.includes(PROJECT_NAME)) {
+    log('Texto de invitación ya personalizado');
+    return;
+  }
+  await api(pat, 'PUT', `/admin/v1/text/message/invite_user/${idioma}`, {
+    title: `Te invitaron a ${PROJECT_NAME}`,
+    preHeader: `Crea tu contraseña para entrar a ${PROJECT_NAME}`,
+    subject: `Te invitaron a ${PROJECT_NAME}`,
+    greeting: 'Hola {{.DisplayName}},',
+    text: `Te dieron acceso a ${PROJECT_NAME}, el sistema de punto de venta de tu restaurante. Usa el botón de abajo para crear tu contraseña y entrar. Si no esperabas esta invitación, ignora este correo.`,
+    buttonText: 'Crear mi contraseña',
+    footerText: `${PROJECT_NAME}`,
+  });
+  log('Texto del correo de invitación personalizado');
+}
+
 async function disableSelfRegistration(pat: string): Promise<void> {
   const current = await api<{ policy: Record<string, unknown> }>(pat, 'GET', '/admin/v1/policies/login');
   const p = current.policy;
@@ -322,6 +345,7 @@ async function main(): Promise<void> {
   await ensureRoles(pat, orgId, projectId);
   const spa = await ensureSpaApp(pat, orgId, projectId);
   await ensureSmtp(pat);
+  await ensureInviteText(pat);
   await disableSelfRegistration(pat);
 
   const envSuffix = IS_PROD ? 'production' : 'development';

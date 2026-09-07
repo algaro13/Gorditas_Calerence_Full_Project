@@ -29,7 +29,11 @@ export interface IdentityProvider {
   deleteOrganization(orgId: string): Promise<void>;
   grantProjectToOrganization(orgId: string): Promise<{ projectGrantId: string }>;
   createUser(input: NewStaffAccount): Promise<{ userId: string }>;
-  sendSetPasswordLink(userId: string): Promise<void>;
+  /**
+   * Invita a la persona: recibe un correo para crear su contraseña y entrar. Es distinto de
+   * restablecer una contraseña olvidada, que usa otra plantilla y otro texto.
+   */
+  sendInvite(userId: string): Promise<void>;
   assignRole(input: { orgId: string; userId: string; projectGrantId: string; role: Role }): Promise<{ grantId: string }>;
   updateRole(input: { orgId: string; userId: string; grantId: string; role: Role }): Promise<void>;
   setUserActive(userId: string, active: boolean): Promise<void>;

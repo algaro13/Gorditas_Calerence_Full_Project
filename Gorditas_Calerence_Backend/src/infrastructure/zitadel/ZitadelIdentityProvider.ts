@@ -88,10 +88,10 @@ export class ZitadelIdentityProvider implements IdentityProvider {
     return { userId: res.userId };
   }
 
-  async sendSetPasswordLink(userId: string): Promise<void> {
-    await this.call('POST', `/v2/users/${userId}/password_reset`, {
-      sendLink: { notificationType: 'NOTIFICATION_TYPE_Email' },
-    });
+  async sendInvite(userId: string): Promise<void> {
+    // El enlace apunta a la pantalla de acceso nueva; sin esto Zitadel usa la antigua, con otro diseño.
+    const destino = `${this.cfg.apiUrl}/ui/v2/login/verify?userId={{.UserID}}&code={{.Code}}&organization={{.OrgID}}&invite=true`;
+    await this.call('POST', `/v2/users/${userId}/invite_code`, { sendCode: { urlTemplate: destino } });
   }
 
   async assignRole(input: { orgId: string; userId: string; projectGrantId: string; role: Role }): Promise<{ grantId: string }> {

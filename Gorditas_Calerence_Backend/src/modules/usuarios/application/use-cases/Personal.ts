@@ -70,7 +70,7 @@ export class InvitarUsuario {
     let grantId: string | null = null;
     try {
       grantId = (await this.identity.assignRole({ orgId: tenant.zitadelOrgId, userId, projectGrantId: tenant.zitadelProjectGrantId, role: input.role })).grantId;
-      await this.identity.sendSetPasswordLink(userId);
+      await this.identity.sendInvite(userId);
     } catch (err) {
       this.logger.warn('Usuario creado en el proveedor pero falló rol o invitación', { userId, err: String(err) });
     }
@@ -172,6 +172,6 @@ export class ReenviarInvitacion {
     const member = await this.uow.run(() => this.staff.findById(id));
     if (!member) throw new NotFoundError('Usuario no encontrado', 'USUARIO_NOT_FOUND');
     exigirPermiso(actor, member.role, 'invitar');
-    await this.identity.sendSetPasswordLink(member.zitadelUserId);
+    await this.identity.sendInvite(member.zitadelUserId);
   }
 }

@@ -14,7 +14,6 @@ export class FakeIdentityProvider implements IdentityProvider {
   readonly orgs = new Map<string, FakeOrg>();
   readonly redirectUris = new Set<string>();
   readonly postLogoutUris = new Set<string>();
-  readonly passwordLinksSent: string[] = [];
   readonly deletedUsers: string[] = [];
   private seq = 0;
 
@@ -49,8 +48,11 @@ export class FakeIdentityProvider implements IdentityProvider {
     return { userId };
   }
 
-  async sendSetPasswordLink(userId: string): Promise<void> {
-    this.passwordLinksSent.push(userId);
+  /** Invitaciones enviadas, para poder comprobarlas en las pruebas. */
+  readonly invitaciones: string[] = [];
+
+  async sendInvite(userId: string): Promise<void> {
+    this.invitaciones.push(userId);
   }
 
   async assignRole(input: { orgId: string; userId: string; projectGrantId: string; role: Role }): Promise<{ grantId: string }> {

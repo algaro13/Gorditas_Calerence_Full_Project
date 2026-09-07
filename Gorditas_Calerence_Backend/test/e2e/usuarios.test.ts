@@ -39,7 +39,7 @@ describe('Módulo usuarios', () => {
     const org = fake.orgs.get(tenant.orgId)!;
     const created = [...org.users.values()].find((u) => u.email === 'pepe@test.local');
     expect(created).toMatchObject({ role: 'Mesero', active: true });
-    expect(fake.passwordLinksSent).toHaveLength(1);
+    expect(fake.invitaciones).toHaveLength(1);
 
     const dup = await api().post('/api/usuarios').set(auth(admin)).send({ nombre: 'Otro', apellido: 'Pepe', email: 'pepe@test.local', role: 'Mesero' });
     expect(dup.status).toBe(409);
