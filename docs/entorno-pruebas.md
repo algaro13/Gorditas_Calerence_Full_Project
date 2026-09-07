@@ -24,6 +24,13 @@ Instancia completa de Kustodela POS pensada para probar sin límites: se puede r
 
 Cuentas: `admin@<slug>.<APP_DOMAIN>` en los tres, y en `demo` además `encargado@`, `mesero@`, `despachador@` y `cocinero@` del mismo dominio. Cada restaurante nace con 5 platillos, 7 guisos y sus mesas.
 
+El script siembra los usuarios directamente en Zitadel; con `SEED_SQL_OUT=<archivo>` genera además el SQL que los da de alta en el espejo local (`tenant_users`), para que salgan en la pantalla de personal sin esperar a que entren por primera vez:
+
+```bash
+docker run --rm --network kustodela_internal -v $PWD:/app -w /app   -e SEED_SQL_OUT=/app/.local/seed-mirror.sql node:22-alpine npx tsx scripts/seed-staging.ts
+docker compose -f docker-compose.behind-proxy.yaml exec -T postgres   psql -U postgres -d kustodela -f - < .local/seed-mirror.sql
+```
+
 ## Qué se puede probar
 
 - **Registro público**: desde `<APP_PLATFORM_HOST>.<APP_DOMAIN>/onboarding`, con un correo cualquiera. El correo de verificación llega a Mailpit.

@@ -4,9 +4,11 @@
  *   ZITADEL_API_BASE=http://auth.<dominio> API_BASE=http://api.<dominio> npx tsx scripts/seed-staging.ts
  *
  * Es idempotente: los restaurantes o usuarios que ya existen se omiten.
+ * Con SEED_SQL_OUT=<archivo> escribe además el SQL que da de alta a esos usuarios en el espejo
+ * local (`tenant_users`), para que aparezcan en la pantalla de personal sin esperar a que entren.
  * Solo para entornos de prueba: las contraseñas son públicas y los correos no se verifican.
  */
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,7 +46,12 @@ function readPat(): string {
 }
 const PAT = readPat();
 
+const SQL_OUT = rootEnv.SEED_SQL_OUT ?? '';
 const log = (m: string) => console.log(`[seed-staging] ${m}`);
+
+/** Filas del espejo local que se emiten como SQL (el backend solo las crea al primer acceso). */
+const mirrorRows: string[] = [];
+const sqlLiteral = (v: string) => `'${v.replace(/'/g, "''")}'`;
 
 async function zitadel<T = Record<string, unknown>>(method: string, path: string, body?: unknown, orgId?: string): Promise<T> {
   const res = await fetch(`${ZITADEL_API_BASE}${path}`, {
@@ -160,28 +167,58 @@ async function findProjectGrant(orgId: string): Promise<string> {
   return grant.grantId;
 }
 
-async function userExists(orgId: string, email: string): Promise<boolean> {
-  const res = await zitadel<{ result?: unknown[] }>('POST', '/v2/users', {
+async function findUser(orgId: string, email: string): Promise<string | null> {
+  const res = await zitadel<{ result?: Array<{ userId: string }> }>('POST', '/v2/users', {
     query: { offset: '0', limit: 5, asc: true },
     queries: [{ organizationIdQuery: { organizationId: orgId } }, { emailQuery: { emailAddress: email, method: 'TEXT_QUERY_METHOD_EQUALS' } }],
   });
-  return (res.result ?? []).length > 0;
+  return res.result?.[0]?.userId ?? null;
+}
+
+/** Autorización del usuario sobre el proyecto (la necesita el espejo local para cambiar de rol). */
+async function findUserGrant(orgId: string, userId: string): Promise<string | null> {
+  const res = await zitadel<{ result?: Array<{ id: string }> }>(
+    'POST',
+    '/management/v1/users/grants/_search',
+    { query: { offset: '0', limit: 50, asc: true }, queries: [{ userIdQuery: { userId } }] },
+    orgId,
+  );
+  return res.result?.[0]?.id ?? null;
 }
 
 async function createStaff(orgId: string, projectGrantId: string, slug: string, s: StaffSeed): Promise<void> {
   const email = `${s.role.toLowerCase()}@${slug}.${APP_DOMAIN}`;
-  if (await userExists(orgId, email)) {
+  let userId = await findUser(orgId, email);
+  let grantId: string | null;
+
+  if (userId) {
+    grantId = await findUserGrant(orgId, userId);
     log(`  ya existía: ${email}`);
-    return;
+  } else {
+    const user = await zitadel<{ userId: string }>('POST', '/v2/users/human', {
+      organization: { orgId },
+      profile: { givenName: s.nombre, familyName: s.apellido },
+      email: { email, isVerified: true },
+      password: { password: PASSWORD, changeRequired: false },
+    });
+    userId = user.userId;
+    const grant = await zitadel<{ userGrantId: string }>(
+      'POST',
+      `/management/v1/users/${userId}/grants`,
+      { projectId: PROJECT_ID, projectGrantId, roleKeys: [s.role] },
+      orgId,
+    );
+    grantId = grant.userGrantId;
+    log(`  ${s.role}: ${email}`);
   }
-  const user = await zitadel<{ userId: string }>('POST', '/v2/users/human', {
-    organization: { orgId },
-    profile: { givenName: s.nombre, familyName: s.apellido },
-    email: { email, isVerified: true },
-    password: { password: PASSWORD, changeRequired: false },
-  });
-  await zitadel('POST', `/management/v1/users/${user.userId}/grants`, { projectId: PROJECT_ID, projectGrantId, roleKeys: [s.role] }, orgId);
-  log(`  ${s.role}: ${email}`);
+
+  mirrorRows.push(
+    `INSERT INTO tenant_users (tenant_id, zitadel_user_id, email, nombre, role, grant_id, activo, updated_at) ` +
+      `SELECT t.id, ${sqlLiteral(userId)}, ${sqlLiteral(email)}, ${sqlLiteral(`${s.nombre} ${s.apellido}`)}, ` +
+      `${sqlLiteral(s.role)}::"TenantRole", ${grantId ? sqlLiteral(grantId) : 'NULL'}, true, now() ` +
+      `FROM tenants t WHERE t.slug = ${sqlLiteral(slug)} ` +
+      `ON CONFLICT (tenant_id, email) DO NOTHING;`,
+  );
 }
 
 async function main(): Promise<void> {
@@ -198,6 +235,11 @@ async function main(): Promise<void> {
     if (!info?.orgId) throw new Error(`El restaurante ${t.slug} no tiene organización`);
     const grantId = await findProjectGrant(info.orgId);
     for (const s of t.staff) await createStaff(info.orgId, grantId, t.slug, s);
+  }
+
+  if (SQL_OUT && mirrorRows.length > 0) {
+    writeFileSync(SQL_OUT, mirrorRows.join('\n') + '\n');
+    log(`SQL del espejo local escrito en ${SQL_OUT} (${mirrorRows.length} usuarios)`);
   }
 
   console.log('\n=== Restaurantes de prueba ===');
