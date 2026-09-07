@@ -4,7 +4,10 @@ import type { Role } from '../../shared/domain/Auth';
 import { ExternalServiceError } from '../../shared/domain/DomainError';
 
 export interface ZitadelConfig {
+  /** Dónde llamar al API. Detrás de un proxy puede ser una dirección interna sin TLS. */
   apiUrl: string;
+  /** Dirección pública (el emisor de los tokens). Es la que se pone en los enlaces de los correos. */
+  publicUrl: string;
   pat: string;
   projectId: string;
   defaultOrgId: string;
@@ -90,7 +93,7 @@ export class ZitadelIdentityProvider implements IdentityProvider {
 
   async sendInvite(userId: string): Promise<void> {
     // El enlace apunta a la pantalla de acceso nueva; sin esto Zitadel usa la antigua, con otro diseño.
-    const destino = `${this.cfg.apiUrl}/ui/v2/login/verify?userId={{.UserID}}&code={{.Code}}&organization={{.OrgID}}&invite=true`;
+    const destino = `${this.cfg.publicUrl}/ui/v2/login/verify?userId={{.UserID}}&code={{.Code}}&organization={{.OrgID}}&invite=true`;
     await this.call('POST', `/v2/users/${userId}/invite_code`, { sendCode: { urlTemplate: destino } });
   }
 

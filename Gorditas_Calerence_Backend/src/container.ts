@@ -107,6 +107,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
       : new ZitadelIdentityProvider(
           {
             apiUrl: env.ZITADEL_API_URL,
+            publicUrl: env.ZITADEL_ISSUER,
             pat: env.ZITADEL_PAT!,
             projectId: env.ZITADEL_PROJECT_ID,
             defaultOrgId: env.ZITADEL_DEFAULT_ORG_ID,
