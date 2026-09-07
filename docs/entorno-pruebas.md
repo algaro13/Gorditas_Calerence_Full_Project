@@ -10,7 +10,7 @@ Instancia completa de Kustodela POS pensada para probar sin límites: se puede r
 | `https://<slug>.<APP_DOMAIN>` | El POS de cada restaurante (`/login` para entrar) |
 | `https://api.<APP_DOMAIN>` | API |
 | `https://auth.<APP_DOMAIN>` | Zitadel: pantalla de inicio de sesión y consola de administración (`/ui/console`) |
-| `https://mail.<APP_DOMAIN>` | Mailpit: **todos** los correos que envía el sistema caen aquí, no salen a internet. Protegido con usuario y contraseña |
+| `https://mail.<APP_DOMAIN>` | Mailpit: guarda copia de **todos** los correos que envía el sistema. Protegido con usuario y contraseña |
 
 ## Restaurantes sembrados
 
@@ -74,9 +74,18 @@ $C up -d backend && $C run --rm frontend-build
 
 En el VPS, `/home/debian/apps/kustodela`. Los secretos generados (contraseñas de PostgreSQL, masterkey de Zitadel, administrador de Zitadel y contraseña de Mailpit) están en el `.env` de esa carpeta, que no se versiona. La `ZITADEL_MASTERKEY` conviene respaldarla aparte: sin ella la base de Zitadel es ilegible.
 
+## Correo
+
+Zitadel siempre envía a Mailpit, que guarda copia de cada mensaje y lo retransmite a un proveedor real. Así se conserva la bandeja completa para revisar plantillas y enlaces, y a la vez llegan los correos a las personas de verdad.
+
+- La configuración del reenvío vive en `.local/mailpit-relay.yaml` del despliegue, fuera de git porque lleva la clave del proveedor. Se activa con `MAILPIT_RELAY_CONFIG` y `MAILPIT_RELAY_ALL` en el `.env`.
+- `blocked-recipients` deja capturados los correos de los restaurantes de prueba, cuyas direcciones terminan en `@<slug>.<APP_DOMAIN>`. Nunca salen a internet.
+- Mientras el dominio no esté verificado en el proveedor, `override-from` reescribe el remitente por uno del propio proveedor. Al verificarlo se borra esa línea y los correos salen desde `no-reply@<APP_DOMAIN>`.
+- Sin `MAILPIT_RELAY_CONFIG`, Mailpit vuelve a ser solo una trampa: captura todo y no entrega nada.
+
 ## Diferencias con producción
 
-- El SMTP apunta a Mailpit: ningún correo sale a internet.
+- Los correos de los restaurantes de prueba se quedan en Mailpit y no salen a internet.
 - El proveedor de cobros es falso: no hay cargos reales ni webhooks de Stripe.
 - La contraseña del administrador de Zitadel no obliga a cambiarse al primer acceso.
 - Las cuentas sembradas tienen contraseñas conocidas y correos sin verificar.

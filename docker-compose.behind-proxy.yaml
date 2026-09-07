@@ -153,7 +153,9 @@ services:
       - pos_dist:/srv/pos
     networks: [internal]
 
-  # Bandeja de correo para pruebas: recibe lo que envía Zitadel (verificación, invitaciones).
+  # Bandeja de correo: recibe todo lo que envía Zitadel (verificación, invitaciones) y guarda copia.
+  # Con MAILPIT_RELAY_CONFIG apuntando a un archivo de reenvío, además retransmite por un proveedor
+  # real (Resend), salvo los destinatarios que ese archivo bloquee. Sin esa variable solo captura.
   mailpit:
     image: axllent/mailpit:latest
     restart: unless-stopped
@@ -161,6 +163,11 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: "1"
       MP_SMTP_AUTH_ALLOW_INSECURE: "1"
       MP_MAX_MESSAGES: "2000"
+      MP_SMTP_RELAY_CONFIG: ${MAILPIT_RELAY_CONFIG:-}
+      MP_SMTP_RELAY_ALL: "${MAILPIT_RELAY_ALL:-false}"
+    volumes:
+      # El archivo de reenvío lleva la clave del proveedor, así que vive fuera de git.
+      - ./.local:/mailpit-config:ro
     networks: [internal]
 
   router:
