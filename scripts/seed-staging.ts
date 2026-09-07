@@ -6,7 +6,9 @@
  * Es idempotente: los restaurantes o usuarios que ya existen se omiten.
  * Con SEED_SQL_OUT=<archivo> escribe además el SQL que da de alta a esos usuarios en el espejo
  * local (`tenant_users`), para que aparezcan en la pantalla de personal sin esperar a que entren.
- * Solo para entornos de prueba: las contraseñas son públicas y los correos no se verifican.
+ * Confirma también los correos pendientes leyendo el código de Mailpit, porque el API bloquea a
+ * quien no lo ha confirmado y estas direcciones son inventadas.
+ * Solo para entornos de prueba: las contraseñas son públicas y cualquiera puede leer esa bandeja.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -221,6 +223,76 @@ async function createStaff(orgId: string, projectGrantId: string, slug: string, 
   );
 }
 
+const MAILPIT_URL = (rootEnv.MAILPIT_URL ?? 'http://mailpit:8025').replace(/\/+$/, '');
+
+async function mailpit<T>(path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`${MAILPIT_URL}${path}`, { headers: { Accept: 'application/json' } });
+    return res.ok ? ((await res.json()) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+interface MensajeMailpit {
+  ID: string;
+}
+
+/** Identificadores de los correos que ya hay para esa dirección. */
+async function correosDe(direccion: string): Promise<string[]> {
+  const busq = await mailpit<{ messages?: MensajeMailpit[] }>(`/api/v1/search?query=${encodeURIComponent(`to:${direccion}`)}&limit=20`);
+  return (busq?.messages ?? []).map((m) => m.ID);
+}
+
+/**
+ * Código del primer correo que llegue después de pedir el reenvío. Hay que esperar al nuevo: el
+ * reenvío invalida los códigos anteriores, así que leer el correo viejo daría un código muerto.
+ */
+async function codigoDelCorreoNuevo(direccion: string, previos: string[]): Promise<string | null> {
+  const yaVistos = new Set(previos);
+  for (let intento = 0; intento < 10; intento++) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const busq = await mailpit<{ messages?: MensajeMailpit[] }>(`/api/v1/search?query=${encodeURIComponent(`to:${direccion}`)}&limit=20`);
+    const nuevo = (busq?.messages ?? []).find((m) => !yaVistos.has(m.ID));
+    if (!nuevo) continue;
+    const det = await mailpit<{ Text?: string; HTML?: string }>(`/api/v1/message/${nuevo.ID}`);
+    const texto = `${det?.Text ?? ''} ${(det?.HTML ?? '').replace(/<[^>]+>/g, ' ')}`;
+    const m = texto.match(/[Cc]ódigo ([A-Z0-9]{4,10})/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+/**
+ * Confirma los correos que queden pendientes en la organización. El registro deja al dueño con el
+ * correo sin verificar, y el API bloquea a quien no lo confirma; como estas direcciones son
+ * inventadas, se toma el código de la bandeja de pruebas igual que haría una persona.
+ * Solo tiene sentido con Mailpit delante: si no responde, se avisa y se sigue.
+ */
+async function confirmarCorreos(orgId: string, slug: string): Promise<void> {
+  const res = await zitadel<{ result?: Array<{ userId: string; human?: { email?: { email?: string; isVerified?: boolean } } }> }>(
+    'POST',
+    '/v2/users',
+    { query: { offset: '0', limit: 100, asc: true }, queries: [{ organizationIdQuery: { organizationId: orgId } }] },
+  );
+  const pendientes = (res.result ?? []).filter((u) => u.human?.email?.isVerified !== true);
+  if (pendientes.length === 0) return;
+
+  for (const u of pendientes) {
+    const direccion = u.human?.email?.email;
+    if (!direccion) continue;
+    const previos = await correosDe(direccion);
+    await zitadel('POST', `/v2/users/${u.userId}/email/resend`, {});
+    const codigo = await codigoDelCorreoNuevo(direccion, previos);
+    if (!codigo) {
+      log(`  ${slug}: no se pudo confirmar ${direccion} (¿Mailpit no responde en ${MAILPIT_URL}?)`);
+      continue;
+    }
+    await zitadel('POST', `/v2/users/${u.userId}/email/verify`, { verificationCode: codigo });
+    log(`  correo confirmado: ${direccion}`);
+  }
+}
+
 async function main(): Promise<void> {
   if (!PROJECT_ID || !DEFAULT_ORG_ID) throw new Error('Faltan ZITADEL_PROJECT_ID / ZITADEL_DEFAULT_ORG_ID');
   log(`API ${API_BASE} · Zitadel ${ZITADEL_API_BASE} · dominio ${APP_DOMAIN}`);
@@ -230,11 +302,16 @@ async function main(): Promise<void> {
     if (existing) log(`restaurante existente: ${t.slug}`);
     else await createTenant(t);
 
-    if (t.staff.length === 0) continue;
     const info = await tenantExists(t.slug);
     if (!info?.orgId) throw new Error(`El restaurante ${t.slug} no tiene organización`);
-    const grantId = await findProjectGrant(info.orgId);
-    for (const s of t.staff) await createStaff(info.orgId, grantId, t.slug, s);
+
+    if (t.staff.length > 0) {
+      const grantId = await findProjectGrant(info.orgId);
+      for (const s of t.staff) await createStaff(info.orgId, grantId, t.slug, s);
+    }
+
+    // El dueño nace con el correo sin confirmar y el API le cierra el paso hasta que lo abra.
+    await confirmarCorreos(info.orgId, t.slug);
   }
 
   if (SQL_OUT && mirrorRows.length > 0) {
