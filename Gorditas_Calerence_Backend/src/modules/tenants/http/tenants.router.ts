@@ -7,6 +7,8 @@ import { sendError, sendOk } from '../../../shared/http/express/respond';
 import { singleImageUpload } from '../../../shared/http/express/upload';
 import { validateBody } from '../../../shared/http/express/validate';
 import type { TenantRepository } from '../../../shared/application/ports/TenantRepository';
+import type { IdentityProvider } from '../../../shared/application/ports/IdentityProvider';
+import type { VerificadorDeCorreo } from '../../../shared/http/express/email-verificado';
 import type { ActualizarConfigTenant, SubirLogoTenant } from '../application/use-cases/ConfiguracionTenant';
 import { PALETAS } from '../../../shared/domain/Tenant';
 
@@ -15,6 +17,10 @@ export interface TenantsRouterDeps {
   urls: DomainUrls;
   authenticate: RequestHandler;
   tenantContext: RequestHandler;
+  /** Exige el correo confirmado; se aplica solo a lo que modifica datos. */
+  emailVerificado: RequestHandler;
+  verificador: VerificadorDeCorreo;
+  identity: IdentityProvider;
   actualizarConfig: ActualizarConfigTenant;
   subirLogo: SubirLogoTenant;
 }
@@ -65,6 +71,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
     asyncHandler(async (req, res) => {
       const tenant = req.tenant!;
       const auth = req.auth!;
+      const emailVerificado = await deps.verificador.estaVerificado(auth.userId);
       sendOk(res, {
         tenant: {
           id: tenant.id,
@@ -84,6 +91,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           nombre: auth.name,
           role: auth.primaryRole,
           roles: auth.roles,
+          emailVerificado,
         },
       });
     }),
@@ -93,6 +101,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
     '/me/config',
     deps.authenticate,
     deps.tenantContext,
+    deps.emailVerificado,
     isAdmin,
     validateBody(configSchema, { stripUnknown: true }),
     asyncHandler(async (req, res) => {
@@ -105,6 +114,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
     '/me/logo',
     deps.authenticate,
     deps.tenantContext,
+    deps.emailVerificado,
     isAdmin,
     singleImageUpload('image'),
     asyncHandler(async (req, res) => {
@@ -114,6 +124,19 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
       }
       const result = await deps.subirLogo.execute(req.tenant!, { buffer: req.file.buffer, mimeType: req.file.mimetype, size: req.file.size });
       sendOk(res, result, 'Logo actualizado');
+    }),
+  );
+
+  // Reenvío del correo de verificación. No lleva el guard: es justo lo que necesita quien no
+  // ha confirmado todavía.
+  router.post(
+    '/me/reenviar-verificacion',
+    deps.authenticate,
+    asyncHandler(async (req, res) => {
+      const userId = req.auth!.userId;
+      await deps.identity.resendEmailVerification(userId);
+      deps.verificador.olvidar(userId);
+      sendOk(res, null, 'Te enviamos un correo nuevo para confirmar tu dirección.');
     }),
   );
 

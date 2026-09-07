@@ -27,6 +27,10 @@ export interface IdentityProvider {
   assignRole(input: { orgId: string; userId: string; projectGrantId: string; role: Role }): Promise<{ grantId: string }>;
   updateRole(input: { orgId: string; userId: string; grantId: string; role: Role }): Promise<void>;
   setUserActive(userId: string, active: boolean): Promise<void>;
+  /** ¿La persona ya confirmó su correo? El registro crea la cuenta activa pero sin verificar. */
+  isEmailVerified(userId: string): Promise<boolean>;
+  /** Reenvía el correo de verificación a la dirección registrada. */
+  resendEmailVerification(userId: string): Promise<void>;
   deleteUser(userId: string): Promise<void>;
   /** Agrega URIs a la app SPA (idempotente). */
   registerRedirectUris(input: { redirect: string[]; postLogout: string[] }): Promise<void>;

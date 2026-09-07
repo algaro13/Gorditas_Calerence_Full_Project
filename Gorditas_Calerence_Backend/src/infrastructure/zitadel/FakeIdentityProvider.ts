@@ -64,6 +64,18 @@ export class FakeIdentityProvider implements IdentityProvider {
     this.requireUser(input.orgId, input.userId).role = input.role;
   }
 
+  /** Correos marcados como NO verificados; por omisión todos se consideran verificados. */
+  readonly sinVerificar = new Set<string>();
+  readonly reenvios: string[] = [];
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    return !this.sinVerificar.has(userId);
+  }
+
+  async resendEmailVerification(userId: string): Promise<void> {
+    this.reenvios.push(userId);
+  }
+
   async setUserActive(userId: string, active: boolean): Promise<void> {
     for (const org of this.orgs.values()) {
       const u = org.users.get(userId);

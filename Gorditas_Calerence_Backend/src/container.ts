@@ -21,6 +21,7 @@ import { SystemClock } from './shared/infrastructure/clock/SystemClock';
 import { LocalFileStorage } from './shared/infrastructure/storage/LocalFileStorage';
 import { createAuthenticate } from './shared/http/express/authenticate';
 import { createTenantContext, type TenantContextMiddleware } from './shared/http/express/tenant-context';
+import { createEmailVerificadoGuard, createVerificadorDeCorreo, type VerificadorDeCorreo } from './shared/http/express/email-verificado';
 import { createPlanGuard } from './shared/http/express/plan-guard';
 import { createErrorHandler } from './shared/http/express/error-handler';
 import { ZitadelIdentityProvider } from './infrastructure/zitadel/ZitadelIdentityProvider';
@@ -56,6 +57,7 @@ export interface Container {
   clock: Clock;
   uow: UnitOfWork;
   identityProvider: IdentityProvider;
+  verificadorDeCorreo: VerificadorDeCorreo;
   paymentProvider: PaymentProvider;
   webhookVerifier: WebhookVerifier;
   storage: FileStorage;
@@ -65,6 +67,7 @@ export interface Container {
     authenticate: RequestHandler;
     tenantContext: TenantContextMiddleware;
     planGuard: RequestHandler;
+    emailVerificado: RequestHandler;
     errorHandler: ErrorRequestHandler;
   };
   shutdown(): Promise<void>;
@@ -151,6 +154,8 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   });
 
   const planGuard = createPlanGuard({ clock });
+  const verificadorDeCorreo = createVerificadorDeCorreo(identityProvider, clock);
+  const emailVerificado = createEmailVerificadoGuard(verificadorDeCorreo);
   const errorHandler = createErrorHandler({ logger: logger.child({ component: 'http' }), exposeStack: !isProd });
 
   return {
@@ -162,12 +167,13 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     clock,
     uow,
     identityProvider,
+    verificadorDeCorreo,
     paymentProvider,
     webhookVerifier,
     storage,
     billingConfig,
     tenants,
-    middlewares: { authenticate, tenantContext, planGuard, errorHandler },
+    middlewares: { authenticate, tenantContext, planGuard, emailVerificado, errorHandler },
     shutdown: async () => {
       await prisma.$disconnect();
     },

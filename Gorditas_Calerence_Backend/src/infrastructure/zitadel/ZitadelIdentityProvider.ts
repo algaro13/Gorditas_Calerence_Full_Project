@@ -108,6 +108,19 @@ export class ZitadelIdentityProvider implements IdentityProvider {
     await this.call('PUT', `/management/v1/users/${input.userId}/grants/${input.grantId}`, { roleKeys: [input.role] }, input.orgId);
   }
 
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const res = await this.call<{ user?: { human?: { email?: { isVerified?: boolean } } } }>('GET', `/v2/users/${userId}`);
+    return res.user?.human?.email?.isVerified === true;
+  }
+
+  async resendEmailVerification(userId: string): Promise<void> {
+    const res = await this.call<{ user?: { human?: { email?: { email?: string } } } }>('GET', `/v2/users/${userId}`);
+    const email = res.user?.human?.email?.email;
+    if (!email) throw new ExternalServiceError('El usuario no tiene correo registrado', 'ZITADEL');
+    // Reponer el correo con sendCode vuelve a emitir el código de verificación.
+    await this.call('POST', `/v2/users/${userId}/email`, { email, sendCode: {} });
+  }
+
   async setUserActive(userId: string, active: boolean): Promise<void> {
     await this.call('POST', `/v2/users/${userId}/${active ? 'reactivate' : 'deactivate'}`, {});
   }

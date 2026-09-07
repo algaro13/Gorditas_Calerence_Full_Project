@@ -15,6 +15,9 @@ interface AuthContextType {
   tenant: TenantInfo | null;
   /** Sesión válida pero la organización no tiene restaurante registrado. */
   tenantMissing: boolean;
+  /** Entró, pero todavía no confirma su correo: no puede operar. */
+  correoPorVerificar: boolean;
+  correoPendiente: string | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -40,6 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [tenantState, setTenantState] = useState<TenantState>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [correoVerificado, setCorreoVerificado] = useState<boolean | null>(null);
+  const [correoPendiente, setCorreoPendiente] = useState<string | null>(null);
   const oidcRef = useRef(oidc);
   oidcRef.current = oidc;
 
@@ -78,6 +83,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await apiService.getTenantMe();
     if (res.success && res.data) {
       setTenant(res.data.tenant);
+      setCorreoVerificado(res.data.user?.emailVerificado ?? true);
+      setCorreoPendiente(res.data.user?.email ?? null);
       setError(null);
       setTenantState('ready');
       applyPalette(getPalette(res.data.tenant.config?.paleta || 'orange'));
@@ -165,6 +172,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user: authenticated && tenantState === 'ready' ? user : null,
     tenant: tenantState === 'ready' ? tenant : null,
     tenantMissing: authenticated && (tenantState === 'missing' || (tenantState === 'ready' && user === null)),
+    correoPorVerificar: authenticated && tenantState === 'ready' && correoVerificado === false,
+    correoPendiente,
     loading,
     error: oidc.error?.message ?? error,
     isAuthenticated: authenticated,

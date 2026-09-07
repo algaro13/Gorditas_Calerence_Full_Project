@@ -53,7 +53,7 @@ export function createApp(c: Container): Express {
     res.json({ status: 'ok', env: c.env.NODE_ENV, time: c.clock.now().toISOString() });
   });
 
-  const { authenticate, tenantContext, planGuard } = c.middlewares;
+  const { authenticate, tenantContext, planGuard, emailVerificado } = c.middlewares;
   const invalidateTenant = (tenant: { zitadelOrgId: string | null }) => {
     if (tenant.zitadelOrgId) tenantContext.invalidate(tenant.zitadelOrgId);
   };
@@ -77,7 +77,7 @@ export function createApp(c: Container): Express {
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
 
-  const pos = [authenticate, tenantContext, planGuard];
+  const pos = [authenticate, tenantContext, emailVerificado, planGuard];
   const timeZone = c.env.APP_TZ;
 
   app.use(
@@ -87,6 +87,9 @@ export function createApp(c: Container): Express {
       urls: c.urls,
       authenticate,
       tenantContext,
+      emailVerificado,
+      verificador: c.verificadorDeCorreo,
+      identity: c.identityProvider,
       actualizarConfig: new ActualizarConfigTenant(c.tenants, c.storage, invalidateTenant),
       subirLogo: new SubirLogoTenant(c.tenants, c.storage, invalidateTenant),
     }),

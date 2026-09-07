@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Callback from './pages/Callback';
 import SinRestaurante from './pages/SinRestaurante';
+import VerificarCorreo from './pages/VerificarCorreo';
 import Plans from './pages/Plans';
 import BillingSuccess from './pages/BillingSuccess';
 import Onboarding from './pages/Onboarding';
@@ -30,10 +31,11 @@ const Spinner: React.FC = () => (
 );
 
 const AuthenticatedApp: React.FC = () => {
-  const { user, loading, isAuthenticated, tenantMissing } = useAuth();
+  const { user, loading, isAuthenticated, tenantMissing, correoPorVerificar } = useAuth();
 
   if (loading) return <Spinner />;
   if (isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;
+  if (correoPorVerificar) return <Navigate to="/verificar-correo" replace />;
   if (!user) return <Navigate to="/login" replace />;
 
   return (
@@ -156,10 +158,11 @@ const AuthenticatedApp: React.FC = () => {
 };
 
 const BasicProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, isAuthenticated, tenantMissing } = useAuth();
+  const { user, loading, isAuthenticated, tenantMissing, correoPorVerificar } = useAuth();
 
   if (loading) return <Spinner />;
   if (isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;
+  if (correoPorVerificar) return <Navigate to="/verificar-correo" replace />;
   return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
@@ -171,6 +174,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/callback" element={<Callback />} />
           <Route path="/sin-restaurante" element={<SinRestaurante />} />
+          <Route path="/verificar-correo" element={<VerificarCorreo />} />
           <Route path="/landing" element={<Landing />} />
           {/* En el host de la plataforma (o el dominio a secas) la raíz es la página de venta.
               En el subdominio de un restaurante la raíz sigue siendo el POS. */}

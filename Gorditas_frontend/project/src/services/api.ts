@@ -16,7 +16,7 @@ export interface OnboardingPayload {
 
 export interface TenantMeResponse {
   tenant: TenantInfo;
-  user: { id: string; email: string | null; nombre: string | null; role: UserRole | null; roles: UserRole[] };
+  user: { id: string; email: string | null; nombre: string | null; role: UserRole | null; roles: UserRole[]; emailVerificado?: boolean };
 }
 
 /**
@@ -85,6 +85,9 @@ class ApiService {
   }
   updateTenantConfig(config: Partial<TenantConfig>) {
     return this.request<{ config: TenantConfig }>('/tenants/me/config', this.json('PUT', config));
+  }
+  reenviarVerificacion() {
+    return this.request('/tenants/me/reenviar-verificacion', { method: 'POST' });
   }
   uploadTenantLogo(file: File) {
     const form = new FormData();
