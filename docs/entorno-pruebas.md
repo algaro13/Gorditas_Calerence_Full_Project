@@ -6,7 +6,7 @@ Instancia completa de Kustodela POS pensada para probar sin límites: se puede r
 
 | Dirección | Qué es |
 |-----------|--------|
-| `https://app.<APP_DOMAIN>` | Registro de restaurantes nuevos (`/onboarding`) y landing |
+| `https://<APP_PLATFORM_HOST>.<APP_DOMAIN>` | Registro de restaurantes nuevos (`/onboarding`) y landing. En el VPS actual es `pos.kustodela.com`, porque `app` ya lo usa otro sitio |
 | `https://<slug>.<APP_DOMAIN>` | El POS de cada restaurante (`/login` para entrar) |
 | `https://api.<APP_DOMAIN>` | API |
 | `https://auth.<APP_DOMAIN>` | Zitadel: pantalla de inicio de sesión y consola de administración (`/ui/console`) |
@@ -26,7 +26,7 @@ Cuentas: `admin@<slug>.<APP_DOMAIN>` en los tres, y en `demo` además `encargado
 
 ## Qué se puede probar
 
-- **Registro público**: desde `app.<APP_DOMAIN>/onboarding`, con un correo cualquiera. El correo de verificación llega a Mailpit.
+- **Registro público**: desde `<APP_PLATFORM_HOST>.<APP_DOMAIN>/onboarding`, con un correo cualquiera. El correo de verificación llega a Mailpit.
 - **Aislamiento**: entrar como `admin@demo` y como `admin@taqueria-lupita` en dos navegadores; ninguno ve datos del otro. Un usuario de un restaurante no puede iniciar sesión en el subdominio de otro (Zitadel lo rechaza).
 - **Roles**: cada rol entra a su pantalla por omisión y solo ve su menú (Mesero a Nueva Orden, Despachador y Cocinero a Surtir Orden, Admin y Encargado al panel).
 - **Personal**: en Catálogos → Usuarios se invita gente; el correo de invitación aparece en Mailpit. El límite del plan devuelve un error visible.
@@ -62,6 +62,10 @@ docker run --rm --network kustodela_internal -v $PWD:/app -w /app \
   node:22-alpine npx tsx scripts/zitadel-bootstrap.ts --env production --smtp mailpit
 $C up -d backend && $C run --rm frontend-build
 ```
+
+## Dónde vive
+
+En el VPS, `/home/debian/apps/kustodela`. Los secretos generados (contraseñas de PostgreSQL, masterkey de Zitadel, administrador de Zitadel y contraseña de Mailpit) están en el `.env` de esa carpeta, que no se versiona. La `ZITADEL_MASTERKEY` conviene respaldarla aparte: sin ella la base de Zitadel es ilegible.
 
 ## Diferencias con producción
 
