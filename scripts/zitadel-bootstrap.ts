@@ -284,15 +284,23 @@ async function ensureInviteText(pat: string): Promise<void> {
   log('Texto del correo de invitación personalizado');
 }
 
-async function disableSelfRegistration(pat: string): Promise<void> {
+/**
+ * Política de acceso: sin registro público, y con un destino al terminar un acceso que no venía
+ * de la aplicación. Ese caso ocurre al aceptar una invitación desde el correo: sin destino, Zitadel
+ * deja a la persona en su propia página de perfil en vez de llevarla al POS.
+ */
+async function ensureLoginPolicy(pat: string): Promise<void> {
   const current = await api<{ policy: Record<string, unknown> }>(pat, 'GET', '/admin/v1/policies/login');
   const p = current.policy;
+  const destino = `${FRONTEND_ORIGIN}/login`;
+
   // proto3 JSON omite los booleanos en false: ausente == false
-  if (!p.allowRegister) {
-    log('Auto-registro ya deshabilitado');
+  if (!p.allowRegister && p.defaultRedirectUri === destino) {
+    log('Política de login ya configurada');
     return;
   }
-  const body = {
+
+  await api(pat, 'PUT', '/admin/v1/policies/login', {
     allowUsernamePassword: p.allowUsernamePassword ?? true,
     allowRegister: false,
     allowExternalIdp: p.allowExternalIdp ?? false,
@@ -301,7 +309,7 @@ async function disableSelfRegistration(pat: string): Promise<void> {
     passwordlessType: p.passwordlessType ?? 'PASSWORDLESS_TYPE_NOT_ALLOWED',
     hidePasswordReset: p.hidePasswordReset ?? false,
     ignoreUnknownUsernames: p.ignoreUnknownUsernames ?? false,
-    defaultRedirectUri: p.defaultRedirectUri ?? '',
+    defaultRedirectUri: destino,
     passwordCheckLifetime: p.passwordCheckLifetime,
     externalLoginCheckLifetime: p.externalLoginCheckLifetime,
     mfaInitSkipLifetime: p.mfaInitSkipLifetime,
@@ -310,9 +318,8 @@ async function disableSelfRegistration(pat: string): Promise<void> {
     allowDomainDiscovery: p.allowDomainDiscovery ?? false,
     disableLoginWithEmail: p.disableLoginWithEmail ?? false,
     disableLoginWithPhone: p.disableLoginWithPhone ?? false,
-  };
-  await api(pat, 'PUT', '/admin/v1/policies/login', body);
-  log('Auto-registro deshabilitado en la política de login');
+  });
+  log(`Política de login: sin registro público, destino tras aceptar invitaciones ${destino}`);
 }
 
 // ---------- escritura de .env ----------
@@ -346,7 +353,7 @@ async function main(): Promise<void> {
   const spa = await ensureSpaApp(pat, orgId, projectId);
   await ensureSmtp(pat);
   await ensureInviteText(pat);
-  await disableSelfRegistration(pat);
+  await ensureLoginPolicy(pat);
 
   const envSuffix = IS_PROD ? 'production' : 'development';
   const apiOrigin = IS_PROD ? `${APP_SCHEME}://api.${APP_DOMAIN}` : 'http://localhost:5000';
