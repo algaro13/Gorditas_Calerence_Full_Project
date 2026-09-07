@@ -1048,7 +1048,7 @@ const NuevaOrden: React.FC = () => {
                     : 'Orden pagada'}
                 </span>
                 <span className="ml-2 text-xs text-gray-500">
-                  (se marcaran las ordnes como "pagadas")
+                  (las órdenes se marcarán como "pagadas")
                 </span>
               </label>
             </div>
