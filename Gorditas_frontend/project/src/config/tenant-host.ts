@@ -4,6 +4,8 @@
  */
 export const APP_DOMAIN = (import.meta.env.VITE_APP_DOMAIN || 'localhost').toLowerCase();
 export const RESERVED_SLUGS = ['www', 'app', 'api', 'auth', 'admin', 'mail', 'docs', 'status', 'blog'] as const;
+/** Subdominio de la plataforma (landing y registro); configurable si `app` ya está ocupado. */
+export const PLATFORM_HOST = (import.meta.env.VITE_APP_PLATFORM_HOST || 'app').toLowerCase();
 export const SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
 export const DEV_SLUG_KEY = 'devTenantSlug';
 
@@ -14,7 +16,7 @@ export function isLocalHost(hostname: string = window.location.hostname): boolea
 }
 
 export function isReservedSlug(slug: string): boolean {
-  return (RESERVED_SLUGS as readonly string[]).includes(slug);
+  return slug === PLATFORM_HOST || (RESERVED_SLUGS as readonly string[]).includes(slug);
 }
 
 export function isValidSlug(slug: string): boolean {
@@ -64,7 +66,7 @@ export function tenantUrl(slug: string): string {
 /** Host de la plataforma (landing y registro). */
 export function appUrl(): string {
   if (isLocalHost()) return window.location.origin;
-  return `${window.location.protocol}//app.${APP_DOMAIN}`;
+  return `${window.location.protocol}//${PLATFORM_HOST}.${APP_DOMAIN}`;
 }
 
 /** Texto de la dirección que verá el usuario, sin protocolo. */

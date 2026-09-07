@@ -59,7 +59,9 @@ const SMTP_HOST = rootEnv.SMTP_HOST ?? 'mailpit:1025';
 
 const PROJECT_NAME = 'Kustodela POS';
 const ROLES = ['Admin', 'Encargado', 'Mesero', 'Despachador', 'Cocinero'];
-const FRONTEND_ORIGIN = IS_PROD ? `${APP_SCHEME}://app.${APP_DOMAIN}` : 'http://localhost:5173';
+/** Subdominio de la plataforma (landing y registro). Configurable si `app` ya está ocupado. */
+const PLATFORM_HOST = (rootEnv.APP_PLATFORM_HOST ?? 'app').toLowerCase();
+const FRONTEND_ORIGIN = IS_PROD ? `${APP_SCHEME}://${PLATFORM_HOST}.${APP_DOMAIN}` : 'http://localhost:5173';
 const SPA_APP_NAME = IS_PROD ? 'Kustodela POS Web' : 'Kustodela POS Web (dev)';
 
 // ---------- PAT ----------
@@ -345,6 +347,7 @@ async function main(): Promise<void> {
     ...dbValues,
     APP_DOMAIN,
     APP_SCHEME,
+    APP_PLATFORM_HOST: PLATFORM_HOST,
     ZITADEL_ISSUER: ZITADEL_URL,
     ZITADEL_JWKS_URL: `${ZITADEL_URL}/oauth/v2/keys`,
     ZITADEL_API_URL: ZITADEL_URL,
@@ -382,6 +385,7 @@ async function main(): Promise<void> {
 
   upsertEnvFile(resolve(ROOT, 'Gorditas_frontend', 'project', `.env.${envSuffix}`), {
     VITE_APP_DOMAIN: APP_DOMAIN,
+    VITE_APP_PLATFORM_HOST: PLATFORM_HOST,
     VITE_API_URL: `${apiOrigin}/api`,
     VITE_ZITADEL_AUTHORITY: ZITADEL_URL,
     VITE_ZITADEL_CLIENT_ID: spa.clientId,

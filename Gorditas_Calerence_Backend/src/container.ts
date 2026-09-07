@@ -89,7 +89,12 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const clock = overrides.clock ?? new SystemClock();
   const prisma = overrides.prisma ?? createPrismaClient({ url: env.DATABASE_URL, logQueries: false });
   const uow = new PrismaUnitOfWork(prisma);
-  const urls = createDomainUrls({ appDomain: env.APP_DOMAIN, scheme: env.APP_SCHEME, localFrontendOrigin: env.FRONTEND_BASE_URL });
+  const urls = createDomainUrls({
+    appDomain: env.APP_DOMAIN,
+    scheme: env.APP_SCHEME,
+    localFrontendOrigin: env.FRONTEND_BASE_URL,
+    platformHost: env.APP_PLATFORM_HOST,
+  });
   const storage = overrides.storage ?? new LocalFileStorage(env.UPLOADS_DIR);
 
   const identityProvider: IdentityProvider =

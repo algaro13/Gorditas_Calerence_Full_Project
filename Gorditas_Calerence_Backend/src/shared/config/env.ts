@@ -21,6 +21,7 @@ const schema = Joi.object({
 
   APP_DOMAIN: Joi.string().hostname().required(),
   APP_SCHEME: Joi.string().valid('http', 'https').default('https'),
+  APP_PLATFORM_HOST: Joi.string().lowercase().pattern(/^[a-z0-9][a-z0-9-]{0,30}$/).default('app'),
   FRONTEND_BASE_URL: Joi.string().uri().required(),
 
   ZITADEL_ISSUER: Joi.string().uri().required(),
@@ -53,6 +54,7 @@ export interface Env {
   DIRECT_URL?: string;
   APP_DOMAIN: string;
   APP_SCHEME: 'http' | 'https';
+  APP_PLATFORM_HOST: string;
   FRONTEND_BASE_URL: string;
   ZITADEL_ISSUER: string;
   ZITADEL_JWKS_URL: string;

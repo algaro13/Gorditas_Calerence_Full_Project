@@ -8,7 +8,7 @@ Punto de venta multi-tenant para restaurantes: cada negocio vive en `https://<sl
 | `Gorditas_frontend/project/` | SPA React + Vite (autenticación OIDC con Zitadel) |
 | `infra/` | Caddy (TLS wildcard), init de PostgreSQL, [guía de despliegue](infra/README.md) |
 | `scripts/` | `zitadel-bootstrap.ts` (configura Zitadel y escribe los `.env`), `dev-seed.ts` |
-| `docs/` | [Entorno local](docs/local-testing.md), [cambiar de dominio](docs/cambiar-dominio.md) |
+| `docs/` | [Entorno local](docs/local-testing.md), [entorno de pruebas en el VPS](docs/entorno-pruebas.md), [cambiar de dominio](docs/cambiar-dominio.md) |
 | `openspec/` | Especificaciones y changes (OpenSpec) |
 
 ## Desarrollo local
