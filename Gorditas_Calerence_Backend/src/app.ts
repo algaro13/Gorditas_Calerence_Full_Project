@@ -130,13 +130,18 @@ export function createApp(c: Container): Express {
   return app;
 }
 
+/**
+ * Orígenes permitidos: el subdominio de la plataforma (configurable, no siempre `app`), el dominio
+ * a secas, `www`, y el subdominio de cualquier restaurante.
+ */
 function isAllowedOrigin(origin: string | undefined, c: Container): boolean {
   if (!origin) return true; // curl, healthchecks, same-origin
   try {
     const url = new URL(origin);
     if (c.urls.isLocal()) return url.hostname === 'localhost' || url.hostname === '127.0.0.1';
     const host = url.hostname.toLowerCase();
-    if (host === `app.${c.env.APP_DOMAIN}` || host === c.env.APP_DOMAIN) return true;
+    const plataforma = new URL(c.urls.appUrl()).hostname.toLowerCase();
+    if (host === plataforma || host === c.env.APP_DOMAIN || host === `www.${c.env.APP_DOMAIN}`) return true;
     return c.urls.slugFromHost(host) !== null;
   } catch {
     return false;
