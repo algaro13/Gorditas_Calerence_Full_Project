@@ -104,50 +104,50 @@ Solo frontend: `npm run prod:build-frontend`. Solo backend: `docker compose up -
 
 ## 8. Respaldos y restauración
 
-`pg-backup` guarda diariamente `kustodela` y `zitadel` en `./backups/` (14 diarios, 4 semanales, 6 mensuales). Respaldo manual: `npm run prod:backup`.
+Dos capas. La local sirve para deshacer un error; la externa, para sobrevivir a la pérdida del servidor.
 
-**Comprueba que el servicio esté levantado**: si arrancas el stack nombrando servicios, `pg-backup` se queda fuera y no se genera ningún respaldo sin que nada avise.
+| Capa | Qué hace | Dónde |
+|---|---|---|
+| `pg-backup` | Vuelca `kustodela` y `zitadel` cada 6 h (14 diarios, 4 semanales, 6 mensuales) | `./backups/` en el mismo disco |
+| `respaldar.sh` | Instantánea cifrada con volcados, logos y secretos | Cloudflare R2, fuera del servidor |
+
+```bash
+npm run prod:backup             # volcado local manual
+npm run prod:respaldo           # volcado + instantánea cifrada a R2
+npm run prod:verificar-respaldo # ensayo: ¿de verdad vuelve todo?
+```
+
+**El procedimiento completo de recuperación está en [`docs/recuperacion.md`](../docs/recuperacion.md)**: qué hacer si se pierde el servidor, qué contiene el sobre de arranque, y los errores que se cometen al restaurar. Este README solo cubre la operación normal.
+
+> Los archivos se llaman `.sql.gz` pero **no son gzip**: son volcados en el formato propio de PostgreSQL, ya comprimidos por dentro. `gunzip` falla con ellos; se leen y restauran con `pg_restore`.
+
+### El respaldo local no basta
+
+Vive en el mismo disco que la base, así que no protege de perder la máquina. Y solo cubre las dos bases: los logos (volumen `uploads`) y los secretos (`.env`, `.local/`, los dos `.env.production`) no están ahí. Eso es lo que añade el respaldo externo.
+
+Configúralo copiando `infra/respaldo/.env.respaldo.example` y completándolo con las credenciales de R2, luego instala el cron:
+
+```
+0 */6 * * *  /bin/bash /home/debian/apps/kustodela/infra/respaldo/respaldar.sh >> /var/log/kustodela-respaldo.log 2>&1
+```
+
+### Fallo silencioso
+
+Si arrancas el stack nombrando servicios, `pg-backup` se queda fuera y no se genera ningún respaldo sin que nada avise. Por eso `respaldar.sh` hace ping a un vigilante externo solo cuando termina bien: si el respaldo deja de ocurrir, llega un correo. Comprobación manual:
 
 ```bash
 docker compose ps pg-backup          # debe aparecer "Up"
 find backups -name '*.sql.gz' | head # debe haber archivos
 ```
 
-> Los archivos se llaman `.sql.gz` pero **no son gzip**: son volcados en el formato propio de PostgreSQL, ya comprimidos por dentro. `gunzip` falla con ellos; se leen y restauran con `pg_restore`.
+### La masterkey
 
-Restauración (en un VPS limpio con el mismo `.env`):
-
-```bash
-docker compose up -d postgres
-docker compose cp backups/last/kustodela-<fecha>.sql.gz postgres:/tmp/k.dump
-docker compose cp backups/last/zitadel-<fecha>.sql.gz postgres:/tmp/z.dump
-docker compose exec postgres pg_restore -U postgres -d kustodela --clean --if-exists --no-owner /tmp/k.dump
-docker compose exec postgres pg_restore -U postgres -d zitadel   --clean --if-exists --no-owner /tmp/z.dump
-docker compose exec postgres psql -U postgres -d kustodela -c 'REASSIGN OWNED BY postgres TO pos_migrator'
-docker compose up -d
-```
-
-Para ensayar sin tocar nada, restaura en una base desechable y cuenta filas:
+Un volcado de `zitadel` **no sirve de nada sin la `ZITADEL_MASTERKEY`**: cifra los datos de identidad, y sin ella se pierden todas las cuentas aunque la base esté intacta. Va en el gestor de contraseñas, nunca solo en el servidor. Para comprobar que lo guardado coincide, sin exponerla:
 
 ```bash
-docker compose exec postgres psql -U postgres -c 'CREATE DATABASE prueba_restauracion'
-docker compose exec postgres pg_restore -U postgres -d prueba_restauracion --no-owner /tmp/k.dump
-docker compose exec postgres psql -U postgres -d prueba_restauracion -c 'SELECT count(*) FROM tenants'
-docker compose exec postgres psql -U postgres -c 'DROP DATABASE prueba_restauracion'
+grep '^ZITADEL_MASTERKEY=' .env | cut -d= -f2- | tr -d '\n' | sha256sum | cut -c1-16
 ```
 
-### Los secretos son parte del respaldo
-
-Un volcado de `zitadel` **no sirve de nada sin la `ZITADEL_MASTERKEY`**: cifra los datos de identidad, y sin ella se pierden todas las cuentas aunque la base esté intacta. Guarda fuera del servidor, en un gestor de contraseñas:
-
-- `ZITADEL_MASTERKEY` (32 caracteres). Puedes verificar que lo guardado coincide sin exponerlo:
-  `grep '^ZITADEL_MASTERKEY=' .env | cut -d= -f2- | tr -d '
-' | sha256sum | cut -c1-16`
-- El resto del `.env` raíz: contraseñas de PostgreSQL, token de Cloudflare y clave del proveedor de correo.
-
-La carpeta `backups/` también debe salir del servidor (rclone, S3 o similar): un respaldo que vive en el mismo disco que la base no protege de la pérdida del disco.
-
-Los logos viven en el volumen `uploads`; respáldalo con `docker run --rm -v kustodela_uploads:/u -v $PWD/backups:/b alpine tar czf /b/uploads.tgz -C /u .`.
 
 ## 9. VPS con un proxy existente (Nginx Proxy Manager)
 

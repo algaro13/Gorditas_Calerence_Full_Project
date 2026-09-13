@@ -19,6 +19,9 @@
     "prod:build-frontend": "docker compose run --rm --build frontend-build",
     "prod:logs": "docker compose logs -f --tail=100",
     "prod:backup": "docker compose exec pg-backup /backup.sh",
+    "prod:respaldo": "bash infra/respaldo/respaldar.sh",
+    "prod:verificar-respaldo": "bash infra/respaldo/verificar.sh",
+    "prod:restaurar": "bash infra/respaldo/restaurar.sh",
     "prod:down": "docker compose down",
     "prod:sync-redirects": "docker compose exec backend npx tsx scripts/sync-redirect-uris.ts"
   },
