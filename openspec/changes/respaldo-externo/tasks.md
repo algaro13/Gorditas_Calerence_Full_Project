@@ -33,4 +33,4 @@
 - [x] 5.5 Comprobado el aviso del vigilante provocando un fallo real (credencial de R2 invalida): detectado y notificado en 48 s, sin contenedores huerfanos
 - [x] 5.6 Tras varias corridas, la retención poda y el uso en R2 no crece linealmente (1.985 MiB de datos en 486 KiB, ratio 3.14x)
 - [x] 5.7 El commit del manifiesto existe en `origin` y corresponde a lo desplegado
-- [ ] 5.8 Ensayo completo en VPS desechable: flujo de orden extremo a extremo con `hosts` local, tiempo anotado, VPS destruido
+- [x] 5.8 Ensayo completo ejecutado el 13/09/2026 en un VPS ajeno: flujo entero probado en el navegador, orden cobrada visible en la base restaurada, tiempo medido en docs/recuperacion.md

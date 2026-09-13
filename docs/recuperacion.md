@@ -145,8 +145,50 @@ Así Zitadel se ve a sí mismo con el dominio correcto, que es lo que exige su b
 ningún cliente real se entere. Se prueba el flujo entero: entrar, tomar una orden, cobrarla,
 verla en reportes, y que el logo del restaurante cargue. Al terminar se destruye el VPS.
 
-> **Tiempo medido:** pendiente del primer ensayo completo. Anótalo aquí cuando se haga; una
-> cifra medida vale más que una estimada.
+### Tiempo medido
+
+Primer ensayo completo: **13 de septiembre de 2026**, sobre un VPS ajeno con Docker ya instalado.
+
+| Tramo | Medido |
+|---|---|
+| Descargar la instantánea y restaurar ambas bases | menos de 4 min |
+| Repoblar los logos y arrancar todos los servicios | 1 min |
+| **Con las imágenes ya presentes** | **~5 min** |
+| Obtener las imágenes en un servidor nuevo | no medible ahí (ver abajo); 10-20 min estimados |
+
+**Objetivo realista: entre 15 y 25 minutos**, más lo que tarde en propagar el DNS.
+
+El ensayo terminó con una persona entrando por el navegador, tomando una orden y cobrándola
+sobre los datos recuperados; la orden apareció en la base restaurada. Eso es lo que hace que
+el número de arriba signifique algo.
+
+### Lo que el ensayo destapó
+
+Ninguno de estos fallos se veía leyendo el código. Aparecieron todos al ejecutar el
+procedimiento de verdad, y por eso conviene repetirlo de vez en cuando:
+
+- **`REASSIGN OWNED BY postgres` no funciona.** PostgreSQL lo rechaza porque alcanza objetos
+  del sistema. Estaba en el procedimiento desde antes y nunca se había ejecutado.
+- **Zitadel guarda sus 144 tablas en ocho esquemas propios**, no en `public`. Un arreglo que
+  solo mirara `public` habría dejado toda la identidad a nombre de `postgres`, y la primera
+  actualización posterior a la recuperación habría fallado semanas después.
+- **Los errores no fatales de `pg_restore` abortaban el guion a media restauración**, que es
+  peor que continuar e informar.
+- **La restauración elegía el volcado más viejo** cuando había dos del mismo día.
+- **Un fallo de red tardaba más de diez minutos en avisar**, porque restic reintenta en
+  silencio.
+
+### Si el servidor de destino tiene la red limitada
+
+El ensayo se hizo en un servidor **sin salida IPv4**, donde los contenedores no alcanzan
+internet. Dos variables del guion existen por eso:
+
+- `RED_RESTIC=host` hace que restic use la pila de red del anfitrión.
+- `COMPOSE_RESTAURACION` permite usar el compose detrás de proxy cuando otro servicio ya
+  ocupa los puertos 80 y 443.
+
+Si además el registro de imágenes es inalcanzable, se pueden trasladar desde otro servidor:
+`docker save <imágenes> | gzip` en origen, `gunzip | docker load` en destino.
 
 ---
 

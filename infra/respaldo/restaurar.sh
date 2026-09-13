@@ -46,8 +46,10 @@ C=(docker compose -f "$RAIZ/$COMPOSE_FILE")
 
 cd "$RAIZ"
 
+# En servidores donde los contenedores no alcanzan internet (p. ej. sin salida IPv4), RED_RESTIC=host
+# hace que restic use la pila de red del anfitrion.
 restic_run() {
-  docker run --rm \
+  docker run --rm ${RED_RESTIC:+--network "$RED_RESTIC"} \
     -e RESTIC_REPOSITORY -e RESTIC_PASSWORD \
     -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
     -v kustodela_restic_cache:/root/.cache/restic \
@@ -107,6 +109,9 @@ paso "listo"
 
 # --- 5. Restaurar las bases --------------------------------------------------------------
 
+# pg_restore devuelve distinto de cero ante errores no fatales. Abortar aqui dejaria el
+# sistema a medio restaurar, que es peor que seguir e informar: se cuentan y se avisan.
+ERRORES=0
 log "5. Restaurando las dos bases"
 k="$DATOS/postgres/kustodela.dump"
 z="$DATOS/postgres/zitadel.dump"
@@ -118,14 +123,14 @@ paso "identidad: $(du -h "$z" | cut -f1)"
 # PostgreSQL, ya comprimidos por dentro. gunzip falla con ellos; se leen con pg_restore.
 "${C[@]}" cp "$k" postgres:/tmp/kustodela.dump
 "${C[@]}" cp "$z" postgres:/tmp/zitadel.dump
-"${C[@]}" exec -T postgres pg_restore -U postgres -d kustodela --clean --if-exists --no-owner /tmp/kustodela.dump < /dev/null
-"${C[@]}" exec -T postgres pg_restore -U postgres -d zitadel   --clean --if-exists --no-owner /tmp/zitadel.dump   < /dev/null
+for base in kustodela zitadel; do L="/tmp/pgrestore-$base.log"; "${C[@]}" exec -T postgres pg_restore -U postgres -d "$base" --clean --if-exists --no-owner "/tmp/$base.dump" < /dev/null 2> "$L" || true; n=$(grep -c "pg_restore: error" "$L" 2>/dev/null || true); if [ "${n:-0}" -gt 0 ]; then paso "$base: $n errores no fatales, detalle en $L"; ERRORES=$((ERRORES + n)); else paso "$base: restaurada sin errores"; fi; done
 
-# El volcado llega sin dueños (--no-owner) y el init fija POS_MIGRATOR_CREATEDB=false, así
-# que hay que devolver la propiedad o pos_app se queda sin permisos bajo RLS.
-"${C[@]}" exec -T postgres psql -U postgres -d kustodela -c 'REASSIGN OWNED BY postgres TO pos_migrator' < /dev/null
+# El volcado se restaura como postgres, que hace falta para cargar datos en tablas con RLS
+# forzada, asi que todo queda a su nombre. Ver infra/respaldo/propiedad.sql para por que hay
+# que devolverlo y por que REASSIGN OWNED no sirve.
+for base in kustodela zitadel; do "${C[@]}" exec -T postgres psql -U postgres -d "$base" -q -v ON_ERROR_STOP=1 < "$RAIZ/infra/respaldo/propiedad.sql"; done
 "${C[@]}" exec -T postgres rm -f /tmp/kustodela.dump /tmp/zitadel.dump < /dev/null
-paso "restauradas"
+if [ "$ERRORES" -gt 0 ]; then paso "ATENCION: $ERRORES errores durante la restauracion, revisalos antes de dar esto por bueno"; else paso "restauradas"; fi
 
 # --- 6. Logos ----------------------------------------------------------------------------
 # La base guarda rutas /uploads/<tenantId>/logo.<ext>, así que sin esto los restaurantes
@@ -140,7 +145,11 @@ paso "$(find "$DATOS/uploads" -type f | wc -l) archivos"
 # --- 7. El resto del sistema -------------------------------------------------------------
 
 log "7. Levantando el resto"
-"${C[@]}" up -d --build --wait postgres zitadel-api zitadel-login caddy pg-backup backend
+# Los nombres de servicio cambian entre composes (caddy en el de emergencia, router en el
+# de detras de proxy), asi que se toman del propio compose. Se excluye frontend-build, que
+# es de un solo disparo y --wait se quedaria esperandolo.
+mapfile -t SERVICIOS < <("${C[@]}" config --services | grep -vx frontend-build)
+"${C[@]}" up -d --build --wait "${SERVICIOS[@]}"
 "${C[@]}" run --rm --build frontend-build
 
 # --- 8. Lo que falta y es manual ---------------------------------------------------------
