@@ -1,7 +1,7 @@
 ## 1. Preparación fuera del código
 
 - [x] 1.1 Subir la rama de trabajo a `origin` (hoy sin upstream; sin esto el manifiesto apunta a un commit inexistente)
-- [ ] 1.2 Crear el bucket R2 `kustodela-respaldo` y un token de API con acceso solo a ese bucket
+- [x] 1.2 Crear el bucket R2 `kustodela-respaldo` y un token de API con acceso solo a ese bucket
 - [ ] 1.3 Crear el vigilante en healthchecks.io con periodo 6 h y margen 2 h
 - [ ] 1.4 Guardar el sobre de arranque en el gestor de contraseñas (repositorio y contraseña restic, credenciales R2, `ZITADEL_MASTERKEY`, URL del repositorio)
 
@@ -26,11 +26,11 @@
 
 ## 5. Verificación
 
-- [ ] 5.1 `restic snapshots` y `restic ls latest` muestran los dos volcados, los logos, los cinco secretos y el manifiesto
-- [ ] 5.2 Un objeto crudo del bucket no revela texto legible
-- [ ] 5.3 `verificar.sh` restaura y las cuentas de `tenants`, `ordenes` y `platillos` coinciden con producción
-- [ ] 5.4 La huella de la `ZITADEL_MASTERKEY` restaurada coincide con la del gestor de contraseñas
+- [x] 5.1 `restic snapshots` y `restic ls latest` muestran los dos volcados, los logos, los cinco secretos y el manifiesto
+- [x] 5.2 Un objeto crudo del bucket no revela texto legible (comprobado con control positivo)
+- [x] 5.3 `verificar.sh` restaura y las cuentas de `tenants`, `ordenes` y `platillos` coinciden con producción
+- [x] 5.4 La huella de la `ZITADEL_MASTERKEY` restaurada coincide con la del gestor de contraseñas
 - [ ] 5.5 Detener el cron y comprobar que llega el aviso del vigilante
 - [ ] 5.6 Tras varias corridas, la retención poda y el uso en R2 no crece linealmente
-- [ ] 5.7 El commit del manifiesto existe en `origin` y corresponde a lo desplegado
+- [x] 5.7 El commit del manifiesto existe en `origin` y corresponde a lo desplegado
 - [ ] 5.8 Ensayo completo en VPS desechable: flujo de orden extremo a extremo con `hosts` local, tiempo anotado, VPS destruido
