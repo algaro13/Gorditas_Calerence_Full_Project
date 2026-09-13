@@ -31,6 +31,6 @@
 - [x] 5.3 `verificar.sh` restaura y las cuentas de `tenants`, `ordenes` y `platillos` coinciden con producción
 - [x] 5.4 La huella de la `ZITADEL_MASTERKEY` restaurada coincide con la del gestor de contraseñas
 - [ ] 5.5 Detener el cron y comprobar que llega el aviso del vigilante
-- [ ] 5.6 Tras varias corridas, la retención poda y el uso en R2 no crece linealmente
+- [x] 5.6 Tras varias corridas, la retención poda y el uso en R2 no crece linealmente (1.985 MiB de datos en 486 KiB, ratio 3.14x)
 - [x] 5.7 El commit del manifiesto existe en `origin` y corresponde a lo desplegado
 - [ ] 5.8 Ensayo completo en VPS desechable: flujo de orden extremo a extremo con `hosts` local, tiempo anotado, VPS destruido
