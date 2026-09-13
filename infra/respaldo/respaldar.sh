@@ -19,6 +19,11 @@ set -euo pipefail
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CONF="${RESPALDO_ENV:-$RAIZ/infra/respaldo/.env.respaldo}"
 ETAPA=""
+CANDADO="/var/lock/kustodela-respaldo.lock"
+CONTENEDOR="kustodela-restic-$$"
+# Restic reintenta contra el almacenamiento con espera exponencial. Sin un tope, un fallo
+# tarda muchisimo en manifestarse y el aviso llega tardisimo; con el, se rinde y avisa.
+TOPE="${TOPE_RESTIC:-1800}"
 
 log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 
@@ -26,7 +31,9 @@ log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 # esto un fallo a mitad quedaría como silencio, que es indistinguible de "todo bien".
 al_salir() {
   local codigo=$?
-  [ -n "$ETAPA" ] && rm -rf "$ETAPA"
+  if [ -n "$ETAPA" ]; then rm -rf "$ETAPA"; fi
+  # timeout mata al cliente de docker, no al contenedor: hay que rematarlo aparte.
+  docker kill "$CONTENEDOR" >/dev/null 2>&1 || true
   if [ $codigo -ne 0 ]; then
     log "FALLÓ con código $codigo"
     [ -n "${HEALTHCHECK_URL:-}" ] && curl -fsS -m 10 --retry 3 \
@@ -47,6 +54,15 @@ set +a
 for v in RESTIC_REPOSITORY RESTIC_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY; do
   [ -n "${!v:-}" ] || { log "Falta $v en $CONF"; exit 1; }
 done
+
+# Una corrida colgada no debe solaparse con la siguiente del cron: dos respaldos a la vez se
+# pelean por el candado del repositorio. Si ya hay una en curso, esta se rinde sin avisar al
+# vigilante, para que la atascada acabe disparando la alarma por silencio.
+exec 9>"$CANDADO"
+if ! flock -n 9; then
+  log "Ya hay un respaldo en curso; esta corrida se salta."
+  exit 0
+fi
 
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.behind-proxy.yaml}"
 COMPOSE_PROJECT="${COMPOSE_PROJECT:-kustodela}"
@@ -142,7 +158,7 @@ fi
 # prácticamente lo mismo que una.
 
 restic_run() {
-  docker run --rm \
+  timeout "$TOPE" docker run --rm --name "$CONTENEDOR" \
     -e RESTIC_REPOSITORY -e RESTIC_PASSWORD \
     -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
     -v kustodela_restic_cache:/root/.cache/restic \
