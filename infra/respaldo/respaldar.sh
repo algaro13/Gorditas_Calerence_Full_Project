@@ -72,10 +72,16 @@ chmod 700 "$ETAPA"
 mkdir -p "$ETAPA"/{postgres,secretos/local/zitadel-bootstrap,uploads}
 
 log "Reuniendo volcados..."
-# backups/last son enlaces simbólicos al volcado más reciente de cada base; -L copia el
-# archivo real. El histórico local se queda en el servidor: la retención remota la lleva
-# restic, así que no tiene sentido volver a subir lo de días anteriores.
-cp -L "$RAIZ"/backups/last/*.sql.gz "$ETAPA/postgres/"
+# Solo los enlaces "latest", que pg-backup mantiene apuntando al volcado más reciente, y con
+# un nombre fijo. Copiar backups/last/*.sql.gz traía también el volcado del turno anterior, y
+# la restauración escogía el primero por orden alfabético: el más VIEJO. El histórico local se
+# queda en el servidor, que la retención remota la lleva restic.
+for base in kustodela zitadel; do
+  origen="$RAIZ/backups/last/$base-latest.sql.gz"
+  [ -e "$origen" ] || { log "Falta $origen — ¿corrió pg-backup?"; exit 1; }
+  cp -L "$origen" "$ETAPA/postgres/$base.dump"
+  log "  $base <- $(basename "$(readlink -f "$origen")")"
+done
 
 log "Reuniendo logos..."
 docker run --rm -v "$VOL_UPLOADS:/u:ro" -v "$ETAPA/uploads:/dst" \

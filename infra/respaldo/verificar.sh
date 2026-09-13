@@ -98,10 +98,10 @@ fi
 
 log "4. Volcados"
 for base in kustodela zitadel; do
-  a="$(ls -1 "$D"/postgres/$base-*.sql.gz 2>/dev/null | head -1)"
-  if [ -n "$a" ] && docker run --rm -v "$D/postgres:/d:ro" postgres:17-alpine \
-       pg_restore -l "/d/$(basename "$a")" >/dev/null 2>&1; then
-    ok "$base — $(basename "$a") ($(du -h "$a" | cut -f1))"
+  a="$D/postgres/$base.dump"
+  if [ -f "$a" ] && docker run --rm -v "$D/postgres:/d:ro" postgres:17-alpine \
+       pg_restore -l "/d/$base.dump" >/dev/null 2>&1; then
+    ok "$base — $(du -h "$a" | cut -f1)"
   else
     mal "$base — el volcado falta o no se puede leer"
   fi
@@ -116,7 +116,7 @@ n="$(find "$D/uploads" -type f 2>/dev/null | wc -l)"
 # --- 6. Los datos vuelven ----------------------------------------------------------------
 
 log "6. Restauración en una base desechable"
-k="$(ls -1 "$D"/postgres/kustodela-*.sql.gz | head -1)"
+k="$D/postgres/kustodela.dump"
 "${C[@]}" cp "$k" postgres:/tmp/ensayo.dump >/dev/null
 "${C[@]}" exec -T postgres psql -U postgres -q -c 'DROP DATABASE IF EXISTS ensayo_respaldo' < /dev/null >/dev/null
 "${C[@]}" exec -T postgres psql -U postgres -q -c 'CREATE DATABASE ensayo_respaldo' < /dev/null >/dev/null

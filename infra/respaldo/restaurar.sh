@@ -108,10 +108,11 @@ paso "listo"
 # --- 5. Restaurar las bases --------------------------------------------------------------
 
 log "5. Restaurando las dos bases"
-k="$(ls -1 "$DATOS"/postgres/kustodela-*.sql.gz | head -1)"
-z="$(ls -1 "$DATOS"/postgres/zitadel-*.sql.gz | head -1)"
-paso "negocio:   $(basename "$k")"
-paso "identidad: $(basename "$z")"
+k="$DATOS/postgres/kustodela.dump"
+z="$DATOS/postgres/zitadel.dump"
+[ -f "$k" ] && [ -f "$z" ] || { echo "Faltan los volcados en $DATOS/postgres"; exit 1; }
+paso "negocio:   $(du -h "$k" | cut -f1)"
+paso "identidad: $(du -h "$z" | cut -f1)"
 
 # Los archivos se llaman .sql.gz pero no son gzip: son volcados en el formato propio de
 # PostgreSQL, ya comprimidos por dentro. gunzip falla con ellos; se leen con pg_restore.
