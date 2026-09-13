@@ -103,6 +103,11 @@ copiar "$RAIZ/.local/zitadel-bootstrap/login-client.pat"     "$ETAPA/secretos/lo
 
 commit="$(git -C "$RAIZ" rev-parse --short HEAD 2>/dev/null || echo 'desconocido')"
 rama="$(git -C "$RAIZ" rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'desconocida')"
+# El manifiesto existe para decir que codigo corresponde a estos datos. Si el despliegue
+# tiene cambios sin commitear, el commit por si solo mentiria.
+if [ -n "$(git -C "$RAIZ" status --porcelain 2>/dev/null)" ]; then
+  commit="$commit+sucio"
+fi
 if git -C "$RAIZ" branch -r --contains HEAD >/dev/null 2>&1 && \
    [ -n "$(git -C "$RAIZ" branch -r --contains HEAD 2>/dev/null)" ]; then
   en_origin="sí"

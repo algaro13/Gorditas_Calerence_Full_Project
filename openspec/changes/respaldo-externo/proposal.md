@@ -13,7 +13,7 @@ Al inventariar qué haría falta para reconstruir el sistema en una máquina lim
 - Respaldo cifrado fuera del servidor con **restic** hacia **Cloudflare R2**, que incluye los volcados de ambas bases, el volumen `uploads`, los cinco archivos de secretos y un manifiesto con la versión desplegada.
 - **Sobre de arranque**: el conjunto mínimo de secretos que por definición no puede ir dentro del respaldo (contraseña de restic, credenciales de R2, `ZITADEL_MASTERKEY`, URL del repositorio), documentado como una entrada única del gestor de contraseñas.
 - **Vigilante de fallo silencioso**: ping a un *dead man's switch* al terminar cada corrida; si el respaldo deja de ocurrir, llega un aviso sin que nadie tenga que revisarlo.
-- `BACKUP_SCHEDULE` baja de `@daily` a cada 6 horas: la pérdida máxima pasa de un día de órdenes a seis horas, y como restic deduplica el costo es prácticamente el mismo.
+- El respaldo externo corre cada 6 horas y dispara su propio volcado en cada pasada, así que la pérdida máxima pasa de un día de órdenes a seis horas sin tocar el horario de `pg-backup`, que sigue alimentando el histórico local a diario.
 - Guion de restauración para máquina limpia y guion de verificación periódica, más `docs/recuperacion.md` escrito para leerse bajo presión.
 - Ensayo completo de recuperación en un VPS desechable, que fija el tiempo real de recuperación en vez de estimarlo.
 
@@ -26,7 +26,7 @@ Al inventariar qué haría falta para reconstruir el sistema en una máquina lim
 
 - **Infra**: `infra/respaldo/respaldar.sh`, `infra/respaldo/restaurar.sh`, `infra/respaldo/verificar.sh`, `infra/respaldo/.env.respaldo.example`; cron del host en el VPS.
 - **Documentación**: `docs/recuperacion.md` nuevo; `infra/README.md` §8 reescrito.
-- **Configuración**: `.env.example` gana `BACKUP_SCHEDULE` cada 6 h y las variables de la variante behind-proxy que hoy no documenta (`EDGE_NETWORK`, `MAILPIT_USER`, `MAILPIT_PASSWORD_HASH`, `MAILPIT_RELAY_CONFIG`, `MAILPIT_RELAY_ALL`, `ROUTER_NAME`).
+- **Configuración**: `.env.example` documenta `BACKUP_SCHEDULE` y las variables de la variante behind-proxy que hoy no documenta (`EDGE_NETWORK`, `MAILPIT_USER`, `MAILPIT_PASSWORD_HASH`, `MAILPIT_RELAY_CONFIG`, `MAILPIT_RELAY_ALL`, `ROUTER_NAME`).
 - **Scripts**: `prod:respaldo` y `prod:verificar-respaldo` en el `package.json` raíz.
 - **Sin cambios de código de aplicación**: no se toca el backend, el frontend ni el esquema.
 - **Fuera del repositorio**: bucket y token de R2, vigilante en healthchecks.io, entrada del gestor de contraseñas, y subir la rama de trabajo a `origin` (hoy no tiene upstream, así que el manifiesto apuntaría a un commit inexistente).

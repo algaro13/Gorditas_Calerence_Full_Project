@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: Backups and restore procedure
-The stack SHALL back up both databases every 6 hours, keep 14 days locally, and document in `docs/recuperacion.md` the ordered procedure to restore both databases, the `uploads` volume and every non-versioned secret onto a clean machine, including the Zitadel masterkey.
+The stack SHALL dump both databases at least daily and again on every off-site backup run (at most 6 hours apart), keep 14 days locally, and document in `docs/recuperacion.md` the ordered procedure to restore both databases, the `uploads` volume and every non-versioned secret onto a clean machine, including the Zitadel masterkey.
 
 The procedure SHALL state that the emergency restore uses `docker-compose.yaml` (Caddy issues its own certificates on a clean host) rather than `docker-compose.behind-proxy.yaml`, and SHALL warn that `prod:bootstrap` MUST NOT be re-run after restoring the `zitadel` dump, because the dump already contains the project, roles, apps and organizations and a second run would create a duplicate project.
 

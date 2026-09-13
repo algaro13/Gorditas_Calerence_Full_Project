@@ -96,7 +96,9 @@ Detalles que importan:
   mismo que una.
 - **Retención remota**: 14 diarias, 8 semanales, 12 mensuales. La local (14/4/6 en `./backups/`)
   sigue igual y sirve para restaurar rápido sin bajar nada.
-- **Pérdida máxima: 6 horas** de órdenes.
+- **Pérdida máxima: 6 horas** de órdenes. Viene del cron externo, que dispara un volcado
+  fresco en cada pasada; el horario propio de `pg-backup` sigue siendo diario y solo alimenta
+  el histórico local.
 - **Vigilante de fallo silencioso.** El guion avisa a healthchecks.io solo cuando termina bien.
   Si el respaldo deja de ocurrir, llega un correo. Esto cubre el modo de fallo más peligroso:
   levantar el stack nombrando servicios deja `pg-backup` fuera y no se genera ningún respaldo

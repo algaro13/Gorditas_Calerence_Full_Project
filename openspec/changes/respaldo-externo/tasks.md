@@ -1,6 +1,6 @@
 ## 1. Preparación fuera del código
 
-- [ ] 1.1 Subir la rama de trabajo a `origin` (hoy sin upstream; sin esto el manifiesto apunta a un commit inexistente)
+- [x] 1.1 Subir la rama de trabajo a `origin` (hoy sin upstream; sin esto el manifiesto apunta a un commit inexistente)
 - [ ] 1.2 Crear el bucket R2 `kustodela-respaldo` y un token de API con acceso solo a ese bucket
 - [ ] 1.3 Crear el vigilante en healthchecks.io con periodo 6 h y margen 2 h
 - [ ] 1.4 Guardar el sobre de arranque en el gestor de contraseñas (repositorio y contraseña restic, credenciales R2, `ZITADEL_MASTERKEY`, URL del repositorio)
@@ -9,8 +9,8 @@
 
 - [x] 2.1 `infra/respaldo/.env.respaldo.example` con `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `HEALTHCHECK_URL`, `COMPOSE_FILE`
 - [x] 2.2 `infra/respaldo/respaldar.sh`: disparar `pg-backup`, escribir `MANIFIESTO.txt`, `restic backup`, `restic forget --prune`, ping al vigilante; salir distinto de cero ante cualquier fallo
-- [ ] 2.3 `restic init` contra R2 y primera corrida manual
-- [ ] 2.4 Bajar `BACKUP_SCHEDULE` a cada 6 h e instalar el cron del host
+- [x] 2.3 `restic init` contra R2 y primera corrida manual
+- [x] 2.4 Instalar el cron del host cada 6 h (no se toca `BACKUP_SCHEDULE`: respaldar.sh vuelca por su cuenta)
 
 ## 3. Restauración y verificación
 
@@ -22,7 +22,7 @@
 
 - [x] 4.1 `docs/recuperacion.md`: sobre de arranque, contenido del respaldo, procedimiento paso a paso, tiempo real medido
 - [x] 4.2 `infra/README.md` §8 reescrito apuntando al documento nuevo, conservando el aviso de que los `.sql.gz` no son gzip
-- [x] 4.3 `.env.example`: `BACKUP_SCHEDULE` cada 6 h y las variables de la variante behind-proxy que hoy faltan
+- [x] 4.3 `.env.example`: `BACKUP_SCHEDULE` documentado y las variables de la variante behind-proxy que hoy faltan
 
 ## 5. Verificación
 

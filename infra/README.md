@@ -108,8 +108,8 @@ Dos capas. La local sirve para deshacer un error; la externa, para sobrevivir a 
 
 | Capa | Qué hace | Dónde |
 |---|---|---|
-| `pg-backup` | Vuelca `kustodela` y `zitadel` cada 6 h (14 diarios, 4 semanales, 6 mensuales) | `./backups/` en el mismo disco |
-| `respaldar.sh` | Instantánea cifrada con volcados, logos y secretos | Cloudflare R2, fuera del servidor |
+| `pg-backup` | Vuelca `kustodela` y `zitadel` a diario (14 diarios, 4 semanales, 6 mensuales) | `./backups/` en el mismo disco |
+| `respaldar.sh` | Cada 6 h: volcado fresco + instantánea cifrada con logos y secretos | Cloudflare R2, fuera del servidor |
 
 ```bash
 npm run prod:backup             # volcado local manual
