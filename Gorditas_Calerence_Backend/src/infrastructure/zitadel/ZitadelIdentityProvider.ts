@@ -65,6 +65,18 @@ export class ZitadelIdentityProvider implements IdentityProvider {
     });
     const userId = res.createdAdmins?.[0]?.userId;
     if (!userId) throw new ExternalServiceError('Zitadel no devolvió el usuario administrador', 'ZITADEL');
+
+    // Zitadel nombra ORG_OWNER al administrador de la organización, y lo hace aunque se le
+    // pase `roles: []` — comprobado. Ese rol le daría a la persona acceso a la consola de
+    // Zitadel sobre su propia organización, donde podría crear usuarios sin pasar por el POS
+    // y saltarse el límite de su plan. El producto no lo necesita: el backend administra las
+    // organizaciones con su propio usuario máquina.
+    //
+    // Se retira en el momento, no al final: si falla, el registro aborta y el llamador borra
+    // la organización. Es preferible a dejar creado un restaurante capaz de emitir usuarios
+    // sin límite.
+    await this.call('DELETE', `/management/v1/orgs/me/members/${userId}`, undefined, res.organizationId);
+
     return { orgId: res.organizationId, userId };
   }
 
