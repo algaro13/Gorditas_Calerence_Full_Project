@@ -187,4 +187,23 @@ describe('El tope sale del plan contratado', () => {
     expect((await invitar('p4@plan.local')).status).toBe(201);
     expect(await activos()).toBe(4);
   });
+
+  it('bajar de plan deja al restaurante por encima de su tope', async () => {
+    // Viene de la prueba anterior: profesional con 4 activos. Al bajar a basico (3),
+    // nadie es expulsado y el restaurante queda usando mas plazas de las que paga.
+    expect(await activos()).toBe(4);
+    await contratar('basico', 12);
+
+    const estado = await api().get('/api/billing/status').set(auth(admin));
+    expect(estado.body.data).toMatchObject({ plan: 'basico', maxUsuarios: 3 });
+
+    expect(await activos()).toBe(4);
+
+    const lista = await api().get('/api/usuarios').set(auth(admin));
+    expect(lista.body.data.filter((u: { activo: boolean }) => u.activo)).toHaveLength(4);
+
+    const otro = await api().post('/api/usuarios').set(auth(admin)).send({ nombre: 'U', apellido: 'no', email: 'p5@plan.local', role: 'Mesero' });
+    expect(otro.status).toBe(403);
+    expect(otro.body.code).toBe('USER_LIMIT_REACHED');
+  });
 });
