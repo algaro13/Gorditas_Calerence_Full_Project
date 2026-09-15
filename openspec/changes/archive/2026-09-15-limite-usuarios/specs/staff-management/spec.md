@@ -1,8 +1,5 @@
-# staff-management Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change pos-core-modules. Update Purpose after archive.
-## Requirements
 ### Requirement: Staff managed through the identity provider
 The system SHALL expose `GET /api/usuarios` (mirror list), `POST /api/usuarios` (`nombre`, `apellido`, `email`, `role`), `PUT /api/usuarios/:id` (`nombre`, `role`, `activo`), `DELETE /api/usuarios/:id` and `POST /api/usuarios/:id/resend-invite`. Creating a user SHALL create it in the identity provider inside the tenant organization, assign the role through the project grant, send the set-password link and insert the mirror row.
 
@@ -27,11 +24,3 @@ The plan user limit SHALL be checked both when creating a member and when reacti
 #### Scenario: Protection of the last Admin
 - **WHEN** an Admin tries to delete or deactivate the only active Admin (including themselves)
 - **THEN** the API responds 400
-
-### Requirement: Legacy user catalog compatibility
-`GET /api/catalogos/usuario` SHALL return the mirror list shaped as `{ _id, nombre, email, nombreTipoUsuario, activo }`; `POST|PUT|DELETE /api/catalogos/usuario` SHALL respond 400 pointing to `/api/usuarios`.
-
-#### Scenario: Old form posts a password
-- **WHEN** the client posts to `/api/catalogos/usuario`
-- **THEN** the API responds 400 "Los usuarios se administran en /api/usuarios"
-
