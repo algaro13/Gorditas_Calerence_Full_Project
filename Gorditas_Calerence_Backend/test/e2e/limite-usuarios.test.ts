@@ -2,9 +2,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import request from 'supertest';
 import { createTestApp, type TestApp } from '../helpers/app';
 import { tokenFor } from '../helpers/auth';
-import { createTestTenant, deleteTestTenant, type TestTenant } from '../helpers/db';
+import { adminPrisma, createTestTenant, deleteTestTenant, type TestTenant } from '../helpers/db';
 import { FakeIdentityProvider } from '../../src/infrastructure/zitadel/FakeIdentityProvider';
 import { runAsTenant } from '../../src/shared/infrastructure/prisma/unit-of-work';
+import Stripe from 'stripe';
+import { FakePaymentProvider } from '../../src/infrastructure/stripe/FakePaymentProvider';
+import { PLAN_LIMITS } from '../../src/shared/domain/Tenant';
 
 /**
  * El límite de usuarios es lo que sostiene el cobro por plan: si se puede rodear, el plan
@@ -92,5 +95,96 @@ describe('Límite de usuarios del plan', () => {
     await new Promise((r) => setTimeout(r, 150));
 
     expect(await activos()).toBe(2);
+  });
+});
+
+/**
+ * El tope no es un número fijo: sale del plan contratado. Las pruebas de facturación
+ * comprobaban que el plan *guarda* el número correcto, pero no que ese número se haga valer
+ * — que son cosas distintas. Aquí se cierra ese eslabón, y de paso se cubre `empresarial`,
+ * que no aparecía en ninguna prueba.
+ */
+describe('El tope sale del plan contratado', () => {
+  const SECRETO = 'whsec_test_limite';
+  const CORRIDA = Date.now().toString(36);
+  const PRECIOS = { basico: 'price_b', profesional: 'price_p', empresarial: 'price_e' };
+
+  let t: TestApp;
+  let pagos: FakePaymentProvider;
+  let idp: FakeIdentityProvider;
+  let tenant: TestTenant;
+  let admin: string;
+  const stripe = new Stripe('sk_test_placeholder');
+  const api = () => request(t.app);
+  const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
+
+  const activos = () =>
+    runAsTenant(t.container.prisma, tenant.id, (db) => db.tenantUser.count({ where: { activo: true } }));
+
+  /** Simula que Stripe confirma una suscripción a `plan`, que es como cambia el tope. */
+  async function contratar(plan: keyof typeof PRECIOS, n: number) {
+    const sub = `sub_${CORRIDA}_${n}`;
+    const customerId = await t.container.tenants.getStripeCustomerId(tenant.id);
+    pagos.setSubscription({ id: sub, status: 'active', customerId, priceId: PRECIOS[plan], metadata: { tenantId: tenant.id } });
+    const evento = {
+      id: `evt_${CORRIDA}_${n}`,
+      type: 'checkout.session.completed',
+      data: { object: { id: `cs_${n}`, customer: customerId, subscription: sub, metadata: { tenantId: tenant.id, plan } } },
+    };
+    const payload = JSON.stringify(evento);
+    const firma = stripe.webhooks.generateTestHeaderString({ payload, secret: SECRETO });
+    const res = await api().post('/api/billing/webhook').set('stripe-signature', firma).set('Content-Type', 'application/json').send(payload);
+    expect(res.status).toBe(200);
+  }
+
+  beforeAll(async () => {
+    pagos = new FakePaymentProvider();
+    idp = new FakeIdentityProvider();
+    t = await createTestApp({
+      paymentProvider: pagos,
+      identityProvider: idp,
+      env: { STRIPE_WEBHOOK_SECRET: SECRETO, STRIPE_PRICE_BASICO: PRECIOS.basico, STRIPE_PRICE_PROFESIONAL: PRECIOS.profesional, STRIPE_PRICE_EMPRESARIAL: PRECIOS.empresarial },
+    });
+    tenant = await createTestTenant(t.container.prisma, { maxUsuarios: 3 });
+    admin = await tokenFor(t.keys, { userId: 'adm-plan', orgId: tenant.orgId, roles: ['Admin'], email: 'adm@plan.local', name: 'Admin Plan' });
+    await api().get('/api/usuarios').set(auth(admin));
+    await new Promise((r) => setTimeout(r, 150));
+  });
+
+  afterAll(async () => {
+    const a = adminPrisma();
+    await a.stripeEvent.deleteMany({ where: { id: { contains: CORRIDA } } });
+    await a.$disconnect();
+    await deleteTestTenant(t.container.prisma, tenant.id);
+    await t.container.shutdown();
+  });
+
+  it('cada plan impone el tope que declara PLAN_LIMITS', async () => {
+    let n = 0;
+    for (const plan of ['basico', 'profesional', 'empresarial'] as const) {
+      await contratar(plan, ++n);
+      const estado = await api().get('/api/billing/status').set(auth(admin));
+      expect(estado.body.data).toMatchObject({ plan, maxUsuarios: PLAN_LIMITS[plan].maxUsuarios });
+    }
+  });
+
+  it('subir de plan amplia el tope de verdad, no solo el numero guardado', async () => {
+    // De vuelta al plan chico: 3 plazas, el admin ocupa una.
+    await contratar('basico', 10);
+    const invitar = (email: string) =>
+      api().post('/api/usuarios').set(auth(admin)).send({ nombre: 'U', apellido: 'no', email, role: 'Mesero' });
+
+    expect((await invitar('p1@plan.local')).status).toBe(201);
+    expect((await invitar('p2@plan.local')).status).toBe(201);
+    expect(await activos()).toBe(3);
+
+    const bloqueado = await invitar('p4@plan.local');
+    expect(bloqueado.status).toBe(403);
+    expect(bloqueado.body.code).toBe('USER_LIMIT_REACHED');
+
+    // Mismo restaurante, mismo intento: solo cambia el plan.
+    await contratar('profesional', 11);
+    expect((await invitar('p4@plan.local')).status).toBe(201);
+    expect(await activos()).toBe(4);
   });
 });
