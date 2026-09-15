@@ -1,8 +1,5 @@
-# spa-staff-management Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change frontend-zitadel. Update Purpose after archive.
-## Requirements
 ### Requirement: Staff panel without passwords
 The Catálogos page SHALL render a dedicated staff panel for "Usuarios" backed by `/api/usuarios`: list (name, email, role, active, last seen), invite (nombre, apellido, correo, rol), change role, activate/deactivate, delete and resend invitation. Role options SHALL follow the actor's permissions (Encargado only operational roles).
 
@@ -19,4 +16,3 @@ When the tenant has more active members than its plan allows — which happens a
 #### Scenario: Over the plan after a downgrade
 - **WHEN** the tenant has more active members than `maxUsuarios`
 - **THEN** the panel shows a prominent notice naming how many seats are over and what to do, and the invite form is not offered
-

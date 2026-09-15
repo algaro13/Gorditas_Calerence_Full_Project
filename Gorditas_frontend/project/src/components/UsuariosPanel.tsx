@@ -109,15 +109,33 @@ const UsuariosPanel: React.FC = () => {
   };
 
   const activos = items.filter((u) => u.activo).length;
+  // Al bajar de plan no se desactiva a nadie: el restaurante puede quedar por encima de su
+  // cupo y seguir operando. Mientras eso dure, invitar falla siempre, así que no se ofrece.
+  const excedidas = tenant ? activos - tenant.maxUsuarios : 0;
+  const sobreCupo = excedidas > 0;
 
   return (
     <div className="space-y-4">
+      {sobreCupo && tenant && (
+        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+          <p className="text-sm font-semibold text-amber-900">
+            Tienes {excedidas} usuario{excedidas === 1 ? '' : 's'} por encima de tu plan
+          </p>
+          <p className="text-sm text-amber-800 mt-1">
+            Tu plan permite {tenant.maxUsuarios} usuario{tenant.maxUsuarios === 1 ? '' : 's'} activo
+            {tenant.maxUsuarios === 1 ? '' : 's'} y tienes {activos}. Nadie pierde el acceso, pero no
+            puedes agregar a nadie más hasta resolverlo: desactiva {excedidas} usuario
+            {excedidas === 1 ? '' : 's'} de la lista, o cambia a un plan más grande.
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <p className="text-sm text-gray-600">
           {activos} activo{activos === 1 ? '' : 's'}
           {tenant ? ` de ${tenant.maxUsuarios} permitidos en tu plan` : ''}. Los usuarios reciben un correo para crear su contraseña.
         </p>
-        {allowed.length > 0 && (
+        {allowed.length > 0 && !sobreCupo && (
           <button
             onClick={() => setShowForm((v) => !v)}
             className="flex-shrink-0 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center text-sm"
@@ -131,7 +149,7 @@ const UsuariosPanel: React.FC = () => {
       {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-sm break-words">{error}</div>}
       {success && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm break-words">{success}</div>}
 
-      {showForm && (
+      {showForm && !sobreCupo && (
         <form onSubmit={invitar} className="bg-gray-50 border border-gray-200 rounded-lg p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             required
