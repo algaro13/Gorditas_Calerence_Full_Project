@@ -70,6 +70,9 @@ model Tenant {
   planStatus            PlanStatus         @default(trial) @map("plan_status")
   trialEndsAt           DateTime?          @map("trial_ends_at") @db.Timestamptz(3)
   maxUsuarios           Int                @default(3) @map("max_usuarios")
+  /// Desde cuándo tiene más usuarios activos de los que su plan permite. Null si cabe.
+  /// Arranca el plazo tras el cual el sistema desactiva a los que sobran.
+  sobreCupoDesde        DateTime?          @map("sobre_cupo_desde") @db.Timestamptz(3)
   stripeCustomerId      String?            @unique @map("stripe_customer_id")
   stripeSubscriptionId  String?            @unique @map("stripe_subscription_id")
   config                Json               @default("{}")
@@ -124,6 +127,10 @@ model TenantUser {
   grantId       String?    @map("grant_id")
   activo        Boolean    @default(true)
   lastSeenAt    DateTime?  @map("last_seen_at") @db.Timestamptz(3)
+  /// Cuándo lo desactivó el sistema al vencer el plazo de cupo. Null si lo desactivó alguien
+  /// a mano o si está activo. Sirve para que la pantalla pueda decir qué pasó y no parezca
+  /// que la persona desapareció sola.
+  desactivadoPorCupo DateTime? @map("desactivado_por_cupo") @db.Timestamptz(3)
   createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 

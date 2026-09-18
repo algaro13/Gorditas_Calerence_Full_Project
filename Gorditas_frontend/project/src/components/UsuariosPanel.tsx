@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Plus, Mail, Trash2, UserCheck, UserX, X, RefreshCw } from 'lucide-react';
 import { apiService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import type { UserRole, Usuario } from '../types';
+import type { EstadoDeCupo, UserRole, Usuario } from '../types';
 
 const ROLE_INFO: { value: UserRole; label: string; descripcion: string }[] = [
   { value: 'Admin', label: 'Administrador', descripcion: 'Acceso total a todos los componentes y configuraciones.' },
@@ -24,7 +24,7 @@ function rolesAdministrables(roles: UserRole[]): UserRole[] {
 const emptyForm = { nombre: '', apellido: '', email: '', role: 'Mesero' as UserRole };
 
 const UsuariosPanel: React.FC = () => {
-  const { user, tenant } = useAuth();
+  const { user } = useAuth();
   const allowed = rolesAdministrables(user?.roles ?? []);
   const [items, setItems] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,12 +33,16 @@ const UsuariosPanel: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [cupo, setCupo] = useState<EstadoDeCupo | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await apiService.getUsuarios();
+    const [res, estado] = await Promise.all([apiService.getUsuarios(), apiService.getCupo()]);
     if (res.success && Array.isArray(res.data)) setItems(res.data);
     else setError(res.error || 'No se pudo cargar el personal');
+    // El cupo lo calcula el backend: asi el nombre que se anuncia aqui es el mismo que
+    // desactivara el trabajo diario, y no dos cuentas que puedan discrepar.
+    setCupo(estado.success && estado.data ? estado.data : null);
     setLoading(false);
   }, []);
 
@@ -109,23 +113,79 @@ const UsuariosPanel: React.FC = () => {
   };
 
   const activos = items.filter((u) => u.activo).length;
-  // Al bajar de plan no se desactiva a nadie: el restaurante puede quedar por encima de su
-  // cupo y seguir operando. Mientras eso dure, invitar falla siempre, así que no se ofrece.
-  const excedidas = tenant ? activos - tenant.maxUsuarios : 0;
-  const sobreCupo = excedidas > 0;
+  // Bajar de plan no desactiva a nadie en el momento: se abre un plazo. Quién se irá al vencer
+  // lo decide el backend, no esta pantalla, para que el nombre anunciado y el desactivado sean
+  // el mismo. Mientras dure, invitar falla siempre, así que no se ofrece.
+  const sobreCupo = cupo?.excedido ?? false;
+  const sobran = cupo?.sobran ?? 0;
+  const enRiesgo = cupo?.enRiesgo ?? [];
+  // Lo que ya ocurrió: sin decirlo, tras el vencimiento alguien simplemente deja de aparecer.
+  const yaDesactivados = cupo?.desactivadosPorCupo ?? [];
+  const limite = cupo?.fechaLimite ? new Date(cupo.fechaLimite) : null;
+  const diasRestantes = limite ? Math.max(0, Math.ceil((limite.getTime() - Date.now()) / 86_400_000)) : null;
+  const fechaTexto = limite ? limite.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }) : '';
 
   return (
     <div className="space-y-4">
-      {sobreCupo && tenant && (
+      {yaDesactivados.length > 0 && (
+        <div className="bg-gray-50 border border-gray-300 rounded-lg p-4">
+          <p className="text-sm font-semibold text-gray-900">
+            {yaDesactivados.length === 1 ? 'Se desactivó 1 usuario' : `Se desactivaron ${yaDesactivados.length} usuarios`} al vencer el plazo
+          </p>
+          <p className="text-sm text-gray-700 mt-1">
+            Tu plan permite {cupo?.maxUsuarios ?? 0} usuario{(cupo?.maxUsuarios ?? 0) === 1 ? '' : 's'} activo
+            {(cupo?.maxUsuarios ?? 0) === 1 ? '' : 's'} y el plazo para ajustarlo terminó, así que el sistema desactivó a{' '}
+            {yaDesactivados.map((u, i) => (
+              <React.Fragment key={u._id}>
+                {i > 0 ? (i === yaDesactivados.length - 1 ? ' y ' : ', ') : ''}
+                <strong>{u.nombre}</strong>
+                {u.desactivadoPorCupo
+                  ? ` el ${new Date(u.desactivadoPorCupo).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}`
+                  : ''}
+              </React.Fragment>
+            ))}
+            .
+          </p>
+          <p className="text-sm text-gray-700 mt-2">
+            No se borró nada: si cambias a un plan más grande puedes volver a activarlos desde la lista.
+          </p>
+        </div>
+      )}
+
+      {sobreCupo && cupo && (
         <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
           <p className="text-sm font-semibold text-amber-900">
-            Tienes {excedidas} usuario{excedidas === 1 ? '' : 's'} por encima de tu plan
+            Tienes {sobran} usuario{sobran === 1 ? '' : 's'} por encima de tu plan
           </p>
           <p className="text-sm text-amber-800 mt-1">
-            Tu plan permite {tenant.maxUsuarios} usuario{tenant.maxUsuarios === 1 ? '' : 's'} activo
-            {tenant.maxUsuarios === 1 ? '' : 's'} y tienes {activos}. Nadie pierde el acceso, pero no
-            puedes agregar a nadie más hasta resolverlo: desactiva {excedidas} usuario
-            {excedidas === 1 ? '' : 's'} de la lista, o cambia a un plan más grande.
+            Tu plan permite {cupo.maxUsuarios} usuario{cupo.maxUsuarios === 1 ? '' : 's'} activo
+            {cupo.maxUsuarios === 1 ? '' : 's'} y tienes {activos}. Nadie pierde el acceso ahora
+            {limite ? (
+              <>
+                , pero tienes hasta el <strong>{fechaTexto}</strong>
+                {diasRestantes !== null && diasRestantes <= 30 ? ` (${diasRestantes} día${diasRestantes === 1 ? '' : 's'})` : ''} para
+                ajustarlo.
+              </>
+            ) : (
+              '.'
+            )}
+          </p>
+          {enRiesgo.length > 0 && (
+            <p className="text-sm text-amber-800 mt-2">
+              Si no haces nada, ese día se desactivará a{' '}
+              {enRiesgo.map((u, i) => (
+                <React.Fragment key={u._id}>
+                  {i > 0 ? (i === enRiesgo.length - 1 ? ' y ' : ', ') : ''}
+                  <strong>{u.nombre}</strong>
+                  {u.lastSeenAt ? `, que no entra desde el ${new Date(u.lastSeenAt).toLocaleDateString('es-MX', { day: 'numeric', month: 'long' })}` : ', que nunca ha entrado'}
+                </React.Fragment>
+              ))}
+              .
+            </p>
+          )}
+          <p className="text-sm text-amber-800 mt-2">
+            Para evitarlo: desactiva {sobran} usuario{sobran === 1 ? '' : 's'} de la lista, o cambia a un
+            plan más grande.
           </p>
         </div>
       )}
@@ -133,7 +193,9 @@ const UsuariosPanel: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <p className="text-sm text-gray-600">
           {activos} activo{activos === 1 ? '' : 's'}
-          {tenant ? ` de ${tenant.maxUsuarios} permitidos en tu plan` : ''}. Los usuarios reciben un correo para crear su contraseña.
+          {/* Del endpoint de cupo, no del contexto: el del contexto se carga al iniciar sesión
+              y queda viejo si el plan cambia mientras la sesión está abierta. */}
+          {cupo ? ` de ${cupo.maxUsuarios} permitidos en tu plan` : ''}. Los usuarios reciben un correo para crear su contraseña.
         </p>
         {allowed.length > 0 && !sobreCupo && (
           <button

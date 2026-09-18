@@ -31,6 +31,9 @@ import { FakePaymentProvider } from './infrastructure/stripe/FakePaymentProvider
 import { PrismaTenantRepository } from './modules/tenants/infrastructure/PrismaTenantRepository';
 import type { TenantRepository } from './shared/application/ports/TenantRepository';
 import { touchMember } from './modules/usuarios/infrastructure/member-mirror';
+import { EvaluarCupo } from './modules/usuarios/application/use-cases/EvaluarCupo';
+import { PrismaStaffRepository } from './modules/usuarios/infrastructure/PrismaStaffRepository';
+import { PrismaTenantScope } from './modules/usuarios/infrastructure/PrismaTenantScope';
 import type { BillingConfig } from './modules/billing/application/use-cases/Billing';
 import type { PaidPlanId } from './modules/billing/domain/plans';
 
@@ -63,6 +66,7 @@ export interface Container {
   storage: FileStorage;
   billingConfig: BillingConfig;
   tenants: TenantRepository;
+  evaluarCupo: EvaluarCupo;
   middlewares: {
     authenticate: RequestHandler;
     tenantContext: TenantContextMiddleware;
@@ -157,6 +161,17 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const planGuard = createPlanGuard({ clock });
   const verificadorDeCorreo = createVerificadorDeCorreo(identityProvider, clock);
   const emailVerificado = createEmailVerificadoGuard(verificadorDeCorreo);
+  // Lo usan la pantalla de personal (consultar) y el trabajo diario (aplicar). Se construye
+  // aqui para que ambos partan del mismo objeto y no haya dos ensamblados que puedan divergir.
+  const evaluarCupo = new EvaluarCupo(
+    new PrismaTenantScope(prisma),
+    new PrismaStaffRepository(),
+    tenants,
+    identityProvider,
+    clock,
+    logger.child({ component: 'cupo' }),
+  );
+
   const errorHandler = createErrorHandler({ logger: logger.child({ component: 'http' }), exposeStack: !isProd });
 
   return {
@@ -174,6 +189,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     storage,
     billingConfig,
     tenants,
+    evaluarCupo,
     middlewares: { authenticate, tenantContext, planGuard, emailVerificado, errorHandler },
     shutdown: async () => {
       await prisma.$disconnect();

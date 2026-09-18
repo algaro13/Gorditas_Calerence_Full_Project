@@ -132,6 +132,8 @@ export class ActualizarUsuario {
         ...(input.nombre !== undefined ? { nombre: input.nombre.trim() } : {}),
         ...(input.role !== undefined ? { role: input.role } : {}),
         ...(input.activo !== undefined ? { activo: input.activo } : {}),
+        // Reactivar a alguien cierra el asunto: deja de ser una baja que el sistema tenga que explicar.
+        ...(input.activo === true ? { desactivadoPorCupo: null } : {}),
         grantId,
       }),
     );

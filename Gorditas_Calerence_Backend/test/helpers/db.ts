@@ -20,7 +20,7 @@ export interface TestTenant {
 
 export async function createTestTenant(
   prisma: PrismaClient,
-  overrides: Partial<{ slug: string; orgId: string; planStatus: 'trial' | 'active' | 'canceled'; trialEndsAt: Date | null; activo: boolean; maxUsuarios: number }> = {},
+  overrides: Partial<{ slug: string; orgId: string; planStatus: 'trial' | 'active' | 'canceled'; trialEndsAt: Date | null; activo: boolean; maxUsuarios: number; sobreCupoDesde: Date | null }> = {},
 ): Promise<TestTenant> {
   const suffix = randomUUID().slice(0, 8);
   const slug = overrides.slug ?? `t-${suffix}`;
@@ -36,6 +36,7 @@ export async function createTestTenant(
       planStatus: overrides.planStatus ?? 'trial',
       trialEndsAt: overrides.trialEndsAt === undefined ? new Date(Date.now() + 14 * 86_400_000) : overrides.trialEndsAt,
       maxUsuarios: overrides.maxUsuarios ?? 3,
+      sobreCupoDesde: overrides.sobreCupoDesde ?? null,
       activo: overrides.activo ?? true,
       config: { paleta: 'orange' },
     },

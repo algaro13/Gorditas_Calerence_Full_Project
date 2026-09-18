@@ -46,6 +46,18 @@ export interface TipoUsuario extends BaseEntity {
   permisos: string[];
 }
 
+/** Estado del cupo del restaurante: cuantas plazas sobran, hasta cuando, y a quien le tocaria. */
+export interface EstadoDeCupo {
+  maxUsuarios: number;
+  excedido: boolean;
+  sobran: number;
+  fechaLimite: string | null;
+  plazoEnMarcha: boolean;
+  enRiesgo: Usuario[];
+  /** A quien ya desactivo el sistema al vencer un plazo, de lo mas reciente a lo mas antiguo. */
+  desactivadosPorCupo: Usuario[];
+}
+
 /** Miembro del personal (espejo de Zitadel en `tenant_users`). */
 export interface Usuario extends BaseEntity {
   _id: string;
@@ -54,6 +66,8 @@ export interface Usuario extends BaseEntity {
   role: UserRole;
   nombreTipoUsuario: UserRole;
   lastSeenAt?: string | null;
+  /** Cuando lo desactivo el sistema al vencer el plazo de cupo; null si fue a mano. */
+  desactivadoPorCupo?: string | null;
   createdAt?: string;
 }
 

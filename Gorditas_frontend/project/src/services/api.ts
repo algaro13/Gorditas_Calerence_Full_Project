@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app-config';
-import type { ApiResponse, PlanId, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
+import type { ApiResponse, EstadoDeCupo, PlanId, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
 type TokenProvider = () => string | null | undefined;
 
@@ -120,6 +120,10 @@ class ApiService {
   }
 
   // ---------- Usuarios (personal) ----------
+  /** Cupo del plan: cuántas plazas sobran, hasta cuándo, y a quién le tocaría. Solo lee. */
+  getCupo() {
+    return this.request<EstadoDeCupo>('/usuarios/cupo');
+  }
   getUsuarios() {
     return this.request<Usuario[]>('/usuarios');
   }

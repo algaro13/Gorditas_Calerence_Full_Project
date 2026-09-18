@@ -12,6 +12,7 @@ const toMember = (r: Row): StaffMember => ({
   grantId: r.grantId,
   activo: r.activo,
   lastSeenAt: r.lastSeenAt,
+  desactivadoPorCupo: r.desactivadoPorCupo,
   createdAt: r.createdAt,
 });
 
@@ -43,7 +44,10 @@ export class PrismaStaffRepository implements StaffRepository {
     return toMember(await currentDb().tenantUser.create({ data }));
   }
 
-  async update(id: string, data: Partial<{ nombre: string; role: Role; activo: boolean; grantId: string | null }>): Promise<StaffMember | null> {
+  async update(
+    id: string,
+    data: Partial<{ nombre: string; role: Role; activo: boolean; grantId: string | null; desactivadoPorCupo: Date | null }>,
+  ): Promise<StaffMember | null> {
     try {
       return toMember(await currentDb().tenantUser.update({ where: { id }, data }));
     } catch (err) {

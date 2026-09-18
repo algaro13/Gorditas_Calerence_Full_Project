@@ -9,6 +9,8 @@ Members SHALL be chosen for deactivation by longest time without signing in, tho
 
 Members deactivated this way SHALL be deactivated in the identity provider too, exactly as a manual deactivation, and SHALL be reactivatable by an Admin subject to the usual limit.
 
+An automatic deactivation SHALL be recorded as such, distinguishable from a manual one, so that the tenant can be told what happened and to whom. Reactivating a member SHALL clear that record. The record SHALL be reported for a limited window after the fact, not indefinitely.
+
 #### Scenario: The tenant fits again before the deadline
 - **WHEN** a tenant over its limit deactivates a member, or moves to a plan that fits, before the 15 days elapse
 - **THEN** the grace period is cleared and nobody is deactivated automatically
@@ -16,6 +18,10 @@ Members deactivated this way SHALL be deactivated in the identity provider too, 
 #### Scenario: The deadline passes
 - **WHEN** the grace period of a tenant still over its limit expires
 - **THEN** the members who went longest without signing in are deactivated until the tenant fits, and the change is visible in the staff list
+
+#### Scenario: The tenant is told what the system did
+- **WHEN** the daily job has deactivated members of a tenant
+- **THEN** the tenant's quota status reports those members, so the staff panel can name them and the deactivation is never silent
 
 #### Scenario: Fitting would remove the last Admin
 - **WHEN** deactivating enough members would leave no active Admin

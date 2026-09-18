@@ -33,4 +33,8 @@ export interface TenantRepository {
   setProvisioningStatus(id: string, status: 'pending' | 'ready' | 'failed'): Promise<void>;
   updateConfig(id: string, config: TenantConfig): Promise<TenantInfo>;
   updateBilling(id: string, data: BillingUpdate): Promise<TenantInfo>;
+  /** Restaurantes activos, para los trabajos que recorren la plataforma entera. */
+  listActive(): Promise<TenantInfo[]>;
+  /** Marca (o limpia) desde cuándo el restaurante excede su cupo. */
+  setSobreCupoDesde(id: string, desde: Date | null): Promise<void>;
 }

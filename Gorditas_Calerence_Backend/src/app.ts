@@ -110,7 +110,12 @@ export function createApp(c: Container): Express {
   app.use('/api/billing', billing.router);
 
   const ordenes = createOrdenesModule({ uow: c.uow, clock: c.clock, timeZone });
-  const usuarios = createUsuariosModule({ uow: c.uow, identity: c.identityProvider, logger: c.logger.child({ module: 'usuarios' }) });
+  const usuarios = createUsuariosModule({
+    uow: c.uow,
+    identity: c.identityProvider,
+    logger: c.logger.child({ module: 'usuarios' }),
+    evaluarCupo: c.evaluarCupo,
+  });
   const catalogos = createCatalogosModule({
     uow: c.uow,
     nextPedidoNumber: () => c.uow.run(() => nextPedidoNumber(c.clock.now(), timeZone)),

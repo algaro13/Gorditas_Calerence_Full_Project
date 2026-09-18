@@ -18,6 +18,8 @@ export interface TenantInfo {
   planStatus: PlanStatus;
   trialEndsAt: Date | null;
   maxUsuarios: number;
+  /** Desde cuándo excede su cupo. Null si cabe. Arranca el plazo de `DIAS_SOBRE_CUPO`. */
+  sobreCupoDesde: Date | null;
   config: TenantConfig;
   activo: boolean;
 }
@@ -30,6 +32,19 @@ export const PLAN_LIMITS: Record<Exclude<PlanId, 'trial'>, { maxUsuarios: number
 
 export const TRIAL_DAYS = 14;
 export const TRIAL_MAX_USUARIOS = 3;
+
+/**
+ * Días que tiene un restaurante para ajustarse cuando excede su cupo, antes de que el sistema
+ * desactive a los que sobran. Bajar de plan no expulsa a nadie en el momento: dejar a un mesero
+ * fuera un lunes por la mañana es peor que cobrar de menos unos días.
+ */
+export const DIAS_SOBRE_CUPO = 15;
+
+/** Fecha en que vence el plazo, o null si el restaurante no está excedido. */
+export function fechaLimiteDeCupo(sobreCupoDesde: Date | null): Date | null {
+  if (!sobreCupoDesde) return null;
+  return new Date(sobreCupoDesde.getTime() + DIAS_SOBRE_CUPO * 86_400_000);
+}
 
 /** Regla de acceso por plan. Devuelve null si puede operar, o el código de bloqueo. */
 export function accessBlockReason(t: Pick<TenantInfo, 'planStatus' | 'trialEndsAt'>, now: Date): 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE' | null {

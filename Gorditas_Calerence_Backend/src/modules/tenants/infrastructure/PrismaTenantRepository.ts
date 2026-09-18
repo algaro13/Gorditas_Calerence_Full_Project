@@ -13,6 +13,7 @@ export function toTenantInfo(row: TenantRow): TenantInfo {
     planStatus: row.planStatus,
     trialEndsAt: row.trialEndsAt,
     maxUsuarios: row.maxUsuarios,
+    sobreCupoDesde: row.sobreCupoDesde,
     config: (row.config ?? {}) as TenantConfig,
     activo: row.activo,
   };
@@ -85,6 +86,14 @@ export class PrismaTenantRepository implements TenantRepository {
   async updateConfig(id: string, config: TenantConfig): Promise<TenantInfo> {
     const row = await this.prisma.tenant.update({ where: { id }, data: { config: config as object } });
     return toTenantInfo(row);
+  }
+
+  listActive(): Promise<TenantInfo[]> {
+    return this.prisma.tenant.findMany({ where: { activo: true }, orderBy: { slug: "asc" } }).then((rows) => rows.map(toTenantInfo));
+  }
+
+  async setSobreCupoDesde(id: string, desde: Date | null): Promise<void> {
+    await this.prisma.tenant.update({ where: { id }, data: { sobreCupoDesde: desde } });
   }
 
   async updateBilling(id: string, data: BillingUpdate): Promise<TenantInfo> {

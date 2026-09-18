@@ -7,6 +7,7 @@ import { sendCreated, sendOk } from '../../../shared/http/express/respond';
 import { toApi } from '../../../shared/utils/serialize';
 import { validateBody } from '../../../shared/http/express/validate';
 import type { ActualizarUsuario, EliminarUsuario, InvitarUsuario, ListarPersonal, ReenviarInvitacion } from '../application/use-cases/Personal';
+import type { EvaluarCupo } from '../application/use-cases/EvaluarCupo';
 import type { StaffMember } from '../application/ports/StaffRepository';
 
 export interface UsuariosUseCases {
@@ -15,6 +16,7 @@ export interface UsuariosUseCases {
   actualizar: ActualizarUsuario;
   eliminar: EliminarUsuario;
   reenviar: ReenviarInvitacion;
+  evaluarCupo: EvaluarCupo;
 }
 
 const invitarSchema = Joi.object({
@@ -50,6 +52,25 @@ export function createUsuariosRouter(uc: UsuariosUseCases): Router {
     asyncHandler(async (_req, res) => {
       const items = await uc.listar.execute();
       sendOk(res, items.map(toUsuarioApi));
+    }),
+  );
+
+  // El aviso de la pantalla y la desactivacion del trabajo diario salen del mismo calculo, para
+  // que el nombre anunciado y el desactivado no puedan discrepar.
+  router.get(
+    '/cupo',
+    asyncHandler(async (req, res) => {
+      const tenant = req.tenant!;
+      const estado = await uc.evaluarCupo.consultar(tenant);
+      sendOk(res, {
+        maxUsuarios: tenant.maxUsuarios,
+        excedido: estado.excedido,
+        sobran: estado.sobran,
+        fechaLimite: estado.fechaLimite,
+        plazoEnMarcha: estado.plazoEnMarcha,
+        enRiesgo: estado.enRiesgo.map(toUsuarioApi),
+        desactivadosPorCupo: estado.desactivadosPorCupo.map(toUsuarioApi),
+      });
     }),
   );
 
