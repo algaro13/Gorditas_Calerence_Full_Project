@@ -6,7 +6,9 @@ TBD - created by archiving change frontend-zitadel. Update Purpose after archive
 ### Requirement: Staff panel without passwords
 The Catálogos page SHALL render a dedicated staff panel for "Usuarios" backed by `/api/usuarios`: list (name, email, role, active, last seen), invite (nombre, apellido, correo, rol), change role, activate/deactivate, delete and resend invitation. Role options SHALL follow the actor's permissions (Encargado only operational roles).
 
-When the tenant has more active members than its plan allows — which happens after downgrading, since no one is deactivated automatically — the panel SHALL say so prominently, state how many seats are over, and offer the two ways out: deactivate members or change plan. While over the limit the panel SHALL NOT offer the invite form, because inviting is guaranteed to fail.
+When the tenant has more active members than its plan allows, the panel SHALL show a prominent notice stating how many seats are over, when the grace period ends, and which members will be deactivated if nothing is done, so that the outcome is never a surprise. It SHALL offer the two ways out — deactivate members or change plan — and SHALL NOT offer the invite form, because inviting is guaranteed to fail.
+
+Once the system has deactivated members automatically, the panel SHALL say so and name them.
 
 #### Scenario: Invite a waiter
 - **WHEN** an Admin invites a Mesero
@@ -18,5 +20,5 @@ When the tenant has more active members than its plan allows — which happens a
 
 #### Scenario: Over the plan after a downgrade
 - **WHEN** the tenant has more active members than `maxUsuarios`
-- **THEN** the panel shows a prominent notice naming how many seats are over and what to do, and the invite form is not offered
+- **THEN** the panel names the deadline and the members at risk, and the invite form is not offered
 
