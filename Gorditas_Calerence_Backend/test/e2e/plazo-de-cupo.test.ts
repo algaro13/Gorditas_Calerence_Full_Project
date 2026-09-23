@@ -9,6 +9,7 @@ import { EvaluarCupo } from '../../src/modules/usuarios/application/use-cases/Ev
 import { PrismaStaffRepository } from '../../src/modules/usuarios/infrastructure/PrismaStaffRepository';
 import { PrismaTenantScope } from '../../src/modules/usuarios/infrastructure/PrismaTenantScope';
 import { DIAS_SOBRE_CUPO } from '../../src/shared/domain/Tenant';
+import { programarTrabajos } from '../../src/trabajos';
 
 const DIA = 86_400_000;
 
@@ -192,5 +193,10 @@ describe('Plazo cuando el restaurante excede su cupo', () => {
 
     const res = await api().get('/api/usuarios/cupo').set(auth(admin));
     expect(res.body.data.desactivadosPorCupo).toEqual([]);
+  });
+
+  it('el programador del backend no arranca en pruebas', () => {
+    // Montar la app en una prueba no debe poner una evaluación de fondo a tocar la base.
+    expect(programarTrabajos(t.container)).toEqual([]);
   });
 });

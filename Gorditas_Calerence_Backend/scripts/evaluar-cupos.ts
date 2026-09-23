@@ -1,60 +1,35 @@
 /**
- * Revisa el cupo de todos los restaurantes: arranca el plazo a los que empezaron a exceder su
- * plan, lo cancela a los que volvieron a caber, y desactiva a los que sobran cuando el plazo
- * venció.
- *
- * Bajar de plan no expulsa a nadie en el momento: durante el plazo la pantalla de personal dice
- * la fecha y el nombre de quien se irá. Este trabajo es lo que hace que ese aviso signifique
- * algo — sin él, el aviso se puede ignorar para siempre.
+ * Dispara a mano la evaluación de cupos de todos los restaurantes.
  *
  *   NODE_ENV=production npx tsx scripts/evaluar-cupos.ts
  *
- * Pensado para correr una vez al día por cron. Es idempotente: correrlo de más no desactiva de
- * más, porque tras ajustar limpia la marca y el plazo vuelve a empezar de cero.
+ * **No hace falta ponerlo en un cron.** El backend se programa este trabajo solo (`src/trabajos.ts`):
+ * corre al arrancar y cada 24 horas. Así levantar el stack basta, también en un servidor
+ * reconstruido desde un respaldo, sin nada que reinstalar.
+ *
+ * Este script sirve para forzar la evaluación ahora mismo sin esperar al ciclo, o correrla
+ * contra una base concreta. Llama a la misma función que el programador, así que hace
+ * exactamente lo mismo.
+ *
+ * Ojo: en la imagen de producción no viaja `scripts/` ni está `tsx` (el Dockerfile copia solo
+ * `src` y la imagen final se instala con `--omit=dev`). Allí la forma de forzar una corrida es
+ * `docker compose restart backend`, que la dispara un minuto después de arrancar.
+ *
+ * Es idempotente: correrlo de más no desactiva de más, porque tras ajustar limpia la marca y
+ * el plazo vuelve a empezar de cero.
  */
 import { buildContainer } from '../src/container';
+import { evaluarCupos } from '../src/trabajos';
 
 async function main(): Promise<void> {
   const c = buildContainer();
   try {
-    const resultados = await c.evaluarCupo.aplicarATodos();
-
-    let iniciados = 0;
-    let cancelados = 0;
-    let ajustados = 0;
-    let fallidos = 0;
-
-    for (const { tenant, resultado } of resultados) {
-      if (!resultado) {
-        fallidos += 1;
-        continue;
-      }
-      switch (resultado.accion) {
-        case 'plazo-iniciado':
-          iniciados += 1;
-          console.log(`[cupo] ${tenant.slug}: excede su plan, plazo hasta ${resultado.fechaLimite.toISOString().slice(0, 10)}`);
-          break;
-        case 'plazo-cancelado':
-          cancelados += 1;
-          console.log(`[cupo] ${tenant.slug}: volvió a caber, plazo cancelado`);
-          break;
-        case 'ajustado':
-          ajustados += 1;
-          console.log(`[cupo] ${tenant.slug}: venció el plazo, desactivados ${resultado.desactivados.map((m) => m.email).join(', ') || '(ninguno)'}`);
-          if (resultado.quedanDeMas > 0) {
-            console.log(`[cupo] ${tenant.slug}: sigue ${resultado.quedanDeMas} por encima; solo queda el último administrador`);
-          }
-          break;
-        default:
-          break;
-      }
-    }
-
+    const r = await evaluarCupos(c);
     console.log(
-      `[cupo] ${resultados.length} restaurantes revisados: ${iniciados} con plazo nuevo, ${cancelados} cancelados, ${ajustados} ajustados, ${fallidos} con error`,
+      `[cupo] ${r.revisados} restaurantes revisados: ${r.iniciados} con plazo nuevo, ${r.cancelados} cancelados, ${r.ajustados} ajustados, ${r.fallidos} con error`,
     );
-    // Un restaurante que falló no debe pasar desapercibido: el cron lo reporta por el código.
-    if (fallidos > 0) process.exitCode = 1;
+    // Un restaurante que falló no debe pasar desapercibido: se reporta por el código de salida.
+    if (r.fallidos > 0) process.exitCode = 1;
   } finally {
     await c.shutdown();
   }

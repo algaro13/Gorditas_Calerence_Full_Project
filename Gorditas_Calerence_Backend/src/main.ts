@@ -1,5 +1,6 @@
 import { buildContainer } from './container';
 import { createApp } from './app';
+import { programarTrabajos } from './trabajos';
 
 async function main(): Promise<void> {
   const container = buildContainer();
@@ -17,8 +18,13 @@ async function main(): Promise<void> {
     });
   });
 
+  // El backend se programa sus propios trabajos: así levantar el stack basta, en producción y
+  // en un servidor restaurado, sin cron que instalar ni recordar.
+  const trabajos = programarTrabajos(container);
+
   const shutdown = (signal: string) => {
     logger.info(`Señal ${signal}: cerrando`);
+    for (const t of trabajos) t.stop();
     server.close(async () => {
       await container.shutdown();
       process.exit(0);

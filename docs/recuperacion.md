@@ -110,6 +110,26 @@ Instalación del cron en el VPS:
 0 */6 * * *  /bin/bash /home/debian/apps/kustodela/infra/respaldo/respaldar.sh >> /var/log/kustodela-respaldo.log 2>&1
 ```
 
+**Este es el único cron del host.** Es la única pieza de Kustodela que vive fuera del
+repositorio, y por eso es la única que hay que acordarse de reinstalar al levantar un servidor
+nuevo. Está en esta lista para que no se olvide.
+
+Lo demás que corre solo —hoy, la evaluación de cupos que hace vencer el plazo de 15 días— lo
+programa el propio backend (`src/trabajos.ts`): arranca al levantar el contenedor y se repite
+cada 24 horas. **No hay nada que instalar**, ni en producción ni en un servidor restaurado.
+Se hizo así justamente por lo que enseñó el ensayo: un paso manual es un paso que se olvida el
+día que hay prisa.
+
+Para forzar una evaluación en producción, sin esperar al ciclo, se reinicia el backend: la
+primera corrida ocurre un minuto después de arrancar.
+
+```
+docker compose restart backend
+```
+
+(En la imagen de producción no está `scripts/` ni `tsx`, así que `scripts/evaluar-cupos.ts`
+sirve en desarrollo — `npx tsx scripts/evaluar-cupos.ts` — pero no dentro del contenedor.)
+
 ---
 
 ## 5. Ensayo
@@ -202,3 +222,5 @@ Si además el registro de imágenes es inalcanzable, se pueden trasladar desde o
 - **Restaurar solo la base.** Los logos viven en un volumen aparte y la base guarda sus rutas.
 - **Dejar la copia descomprimida.** `/tmp/kustodela-restauracion` contiene todos los secretos
   en claro. Bórrala al terminar.
+- **Instalar un cron para la evaluación de cupos.** No hace falta: el backend se la programa
+  sola. Un cron encima solo duplicaría el trabajo. Ver §4.
