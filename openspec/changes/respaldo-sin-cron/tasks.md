@@ -30,6 +30,8 @@
 - [x] 4.4 Con un volcado fresco: instantánea con los dos volcados, logos, secretos y manifiesto
 - [x] 4.5 El manifiesto trae el commit del despliegue, leído desde el montaje
 - [x] 4.6 Dos corridas simultáneas: la segunda se rinde por el candado
+- [x] 4.9 Bajo compose: el servicio arranca, el bucle dispara en la frontera, respalda y reprograma
+- [x] 4.10 Una corrida fallida no mata el bucle: el siguiente turno ocurre igual
 - [ ] 4.7 En el VPS, contra R2: instantánea real y vigilante respondiendo
 - [ ] 4.8 Restaurar desde una instantánea hecha por el servicio nuevo
 
