@@ -150,8 +150,13 @@ Hazlo de una sentada:
    docker run --rm --env-file infra/respaldo/.env.respaldo restic/restic:latest snapshots | tail -5
    ```
 
-2. **Quita la línea del crontab** (`crontab -e`). A partir de aquí no hay respaldos hasta el
-   paso 5, así que no lo dejes a medias.
+2. **Quita el cron.** En el VPS actual NO está en `crontab -e` sino en un archivo aparte:
+
+   ```bash
+   rm /etc/cron.d/kustodela-respaldo
+   ```
+
+   A partir de aquí no hay respaldos hasta el paso 5, así que no lo dejes a medias.
 
 3. **Actualiza el código y la configuración**: `git pull`, luego en
    `infra/respaldo/.env.respaldo` pon `RESPALDO_SERVIDOR` con el valor del paso 1, y en `.env`
