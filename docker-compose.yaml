@@ -193,7 +193,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD}
       POSTGRES_DB: kustodela,zitadel
       POSTGRES_EXTRA_OPTS: -Z6 --format=custom
-      SCHEDULE: ${BACKUP_SCHEDULE:-@daily}
+      SCHEDULE: ${BACKUP_SCHEDULE:-0 0 */6 * * *}
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
       BACKUP_KEEP_WEEKS: 4
       BACKUP_KEEP_MONTHS: 6
@@ -206,6 +206,40 @@ services:
         condition: service_healthy
     networks: [internal]
 
+  # Respaldo cifrado fuera del servidor. El horario vive AQUI y no en el crontab del host:
+  # levantar el stack deja los respaldos armados, tambien en un servidor reconstruido desde
+  # una instantanea, sin nada que instalar ni recordar.
+  #
+  # Sin socket de Docker a proposito. El contenedor *es* restic y lee lo que necesita por
+  # montajes de solo lectura; el socket le habria dado control equivalente a root sobre el
+  # host para un trabajo que solo lee archivos.
+  respaldo:
+    build: ./infra/respaldo
+    image: kustodela/respaldo:latest
+    restart: unless-stopped
+    # Las credenciales de R2 y del vigilante. No va dentro del respaldo a proposito: contiene
+    # la llave que lo descifra. Su contenido vive en el sobre de arranque.
+    env_file:
+      - path: ./infra/respaldo/.env.respaldo
+        required: false
+    environment:
+      TZ: ${APP_TZ:-America/Mexico_City}
+      RESPALDO_CADA_HORAS: ${RESPALDO_CADA_HORAS:-6}
+      # Desfase sobre la hora en punto: pg-backup vuelca en punto y esto lo fotografia despues.
+      RESPALDO_DESFASE_MIN: ${RESPALDO_DESFASE_MIN:-15}
+      COMPOSE_FILE: docker-compose.yaml
+      RESTIC_CACHE_DIR: /cache/restic
+    volumes:
+      # El despliegue entero en solo lectura: hacen falta los secretos y el .git, que es lo
+      # que dice que version del codigo corresponde a estos datos.
+      - .:/despliegue:ro
+      - ./backups:/backups:ro
+      - uploads:/uploads:ro
+      - respaldo_cache:/cache
+    depends_on:
+      - pg-backup
+    networks: [internal]
+
 networks:
   internal:
 
@@ -215,3 +249,4 @@ volumes:
   pos_dist:
   caddy_data:
   caddy_config:
+  respaldo_cache:

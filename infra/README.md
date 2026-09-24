@@ -125,19 +125,22 @@ npm run prod:verificar-respaldo # ensayo: ¿de verdad vuelve todo?
 
 Vive en el mismo disco que la base, así que no protege de perder la máquina. Y solo cubre las dos bases: los logos (volumen `uploads`) y los secretos (`.env`, `.local/`, los dos `.env.production`) no están ahí. Eso es lo que añade el respaldo externo.
 
-Configúralo copiando `infra/respaldo/.env.respaldo.example` y completándolo con las credenciales de R2, luego instala el cron:
+Configúralo copiando `infra/respaldo/.env.respaldo.example` y completándolo con las credenciales de R2. **No hay cron que instalar**: el respaldo es el servicio `respaldo` del propio compose y arranca con el stack, también en un servidor restaurado. Vuelca `pg-backup` en punto y el respaldo fotografía ese volcado 15 minutos después.
 
-```
-0 */6 * * *  /bin/bash /home/debian/apps/kustodela/infra/respaldo/respaldar.sh >> /var/log/kustodela-respaldo.log 2>&1
+Para forzar uno ahora mismo:
+
+```bash
+docker compose run --rm respaldo respaldar.sh
 ```
 
 ### Fallo silencioso
 
-Si arrancas el stack nombrando servicios, `pg-backup` se queda fuera y no se genera ningún respaldo sin que nada avise. Por eso `respaldar.sh` hace ping a un vigilante externo solo cuando termina bien: si el respaldo deja de ocurrir, llega un correo. Comprobación manual:
+Si arrancas el stack nombrando servicios, `pg-backup` se queda fuera y deja de haber volcados. El respaldo lo caza de dos maneras: comprueba que el volcado más reciente tenga menos de `RESPALDO_FRESCURA_HORAS` y falla si no, y hace ping al vigilante externo **solo** cuando termina bien. Si el respaldo deja de ocurrir, llega un correo. Comprobación manual:
 
 ```bash
-docker compose ps pg-backup          # debe aparecer "Up"
-find backups -name '*.sql.gz' | head # debe haber archivos
+docker compose ps pg-backup respaldo  # ambos deben aparecer "Up"
+find backups -name '*.sql.gz' | head  # debe haber archivos
+docker compose logs --tail=20 respaldo
 ```
 
 ### La masterkey

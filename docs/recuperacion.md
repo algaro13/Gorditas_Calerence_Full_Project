@@ -86,8 +86,20 @@ formas difíciles de diagnosticar.
 
 ## 4. Cómo funciona el respaldo
 
-`infra/respaldo/respaldar.sh` corre por cron cada 6 horas. En cada pasada dispara `pg-backup`,
-reúne todo lo anterior, y sube una instantánea cifrada a Cloudflare R2 con restic.
+El respaldo es **un servicio más del compose** (`respaldo`), no un cron del host. Levantar el
+stack basta para dejarlo armado: en producción, en una instalación nueva y en un servidor
+salido de un respaldo. **No hay nada que instalar ni que recordar.**
+
+Se hizo así por lo que enseñó el ensayo de recuperación: un paso manual es un paso que se
+olvida el día que hay prisa. Antes el horario vivía en el crontab del VPS, y `restaurar.sh` ni
+lo reinstalaba ni lo mencionaba — un servidor recién restaurado se quedaba sin respaldos.
+
+Cómo encaja con el volcado:
+
+```
+   :00   pg-backup vuelca kustodela y zitadel a ./backups/
+   :15   el servicio respaldo fotografía ese volcado y lo sube cifrado a R2
+```
 
 Detalles que importan:
 
@@ -96,29 +108,77 @@ Detalles que importan:
   mismo que una.
 - **Retención remota**: 14 diarias, 8 semanales, 12 mensuales. La local (14/4/6 en `./backups/`)
   sigue igual y sirve para restaurar rápido sin bajar nada.
-- **Pérdida máxima: 6 horas** de órdenes. Viene del cron externo, que dispara un volcado
-  fresco en cada pasada; el horario propio de `pg-backup` sigue siendo diario y solo alimenta
-  el histórico local.
-- **Vigilante de fallo silencioso.** El guion avisa a healthchecks.io solo cuando termina bien.
-  Si el respaldo deja de ocurrir, llega un correo. Esto cubre el modo de fallo más peligroso:
-  levantar el stack nombrando servicios deja `pg-backup` fuera y no se genera ningún respaldo
-  sin que nada avise.
+- **Pérdida máxima: 6 horas** de órdenes. Ahora viene de `BACKUP_SCHEDULE`, la cadencia del
+  volcado: el respaldo ya no dispara el suyo, fotografía el que encuentra.
+- **Sin socket de Docker.** El contenedor *es* restic y lee lo que necesita por montajes de
+  solo lectura. Montar el socket le habría dado control equivalente a root sobre el host para
+  un trabajo que sólo lee archivos.
+- **Comprobación de frescura.** Como ya no dispara el volcado, comprueba que el más reciente
+  tenga menos de `RESPALDO_FRESCURA_HORAS` (7 por omisión). Si está viejo, falla y no avisa al
+  vigilante, así que llega el correo. Esto cubre el fallo más peligroso —`pg-backup` fuera del
+  stack— y además uno que antes se escapaba: `pg-backup` levantado pero fallando en silencio.
+- **Vigilante de fallo silencioso.** El servicio avisa a healthchecks.io solo cuando termina
+  bien. Si el respaldo deja de ocurrir, llega un correo sin que nadie revise el servidor.
 
-Instalación del cron en el VPS:
+Para forzar un respaldo ahora mismo, sin esperar al turno:
 
 ```
-0 */6 * * *  /bin/bash /home/debian/apps/kustodela/infra/respaldo/respaldar.sh >> /var/log/kustodela-respaldo.log 2>&1
+docker compose run --rm respaldo respaldar.sh
 ```
 
-**Este es el único cron del host.** Es la única pieza de Kustodela que vive fuera del
-repositorio, y por eso es la única que hay que acordarse de reinstalar al levantar un servidor
-nuevo. Está en esta lista para que no se olvide.
+Si ya hay uno en curso, ese se rinde solo: comparten un candado, así que no se pisan.
 
-Lo demás que corre solo —hoy, la evaluación de cupos que hace vencer el plazo de 15 días— lo
-programa el propio backend (`src/trabajos.ts`): arranca al levantar el contenedor y se repite
-cada 24 horas. **No hay nada que instalar**, ni en producción ni en un servidor restaurado.
-Se hizo así justamente por lo que enseñó el ensayo: un paso manual es un paso que se olvida el
-día que hay prisa.
+### Migrar desde el cron viejo
+
+Sólo aplica a un servidor que aún tenga la línea en el crontab. El orden importa por dos
+razones, y conviene tenerlas claras antes de empezar:
+
+- **`git pull` rompe el cron en el acto.** `respaldar.sh` se reescribió para correr dentro del
+  contenedor: en el host ya no encuentra ni `/despliegue` ni `restic`. La línea del crontab hay
+  que quitarla en la misma ventana, no después.
+- **No conviven bien.** No comparten candado —el viejo lo tenía en `/var/lock`, el nuevo en su
+  volumen— y `restic forget --prune` toma un bloqueo exclusivo del repositorio. Dos pasadas
+  solapadas harían fallar a una y dispararían el vigilante sin motivo real.
+
+Hazlo de una sentada:
+
+1. **Antes de nada, averigua con qué host están guardadas las instantáneas existentes.** Si
+   `RESPALDO_SERVIDOR` no coincide, `restic forget` tratará las viejas como un grupo aparte y
+   la retención se descuadra:
+
+   ```bash
+   docker run --rm --env-file infra/respaldo/.env.respaldo restic/restic:latest snapshots | tail -5
+   ```
+
+2. **Quita la línea del crontab** (`crontab -e`). A partir de aquí no hay respaldos hasta el
+   paso 5, así que no lo dejes a medias.
+
+3. **Actualiza el código y la configuración**: `git pull`, luego en
+   `infra/respaldo/.env.respaldo` pon `RESPALDO_SERVIDOR` con el valor del paso 1, y en `.env`
+   baja `BACKUP_SCHEDULE` a `0 0 */6 * * *`. Antes daba igual porque el guion disparaba su
+   propio volcado; ahora es la cadencia que fija la pérdida máxima, y dejarlo en `@daily` haría
+   fallar el respaldo por falta de frescura.
+
+4. **Levanta el servicio y fuerza una corrida:**
+
+   ```bash
+   docker compose up -d --build pg-backup respaldo
+   docker compose run --rm respaldo respaldar.sh
+   ```
+
+5. **Comprueba** que la instantánea llegó y que el vigilante quedó en verde:
+
+   ```bash
+   docker compose run --rm respaldo restic snapshots | tail -5
+   ```
+
+   Si el paso 4 falló por falta de frescura, es que `pg-backup` aún no ha hecho su primer
+   volcado con el horario nuevo. Fuérzalo con
+   `docker compose exec pg-backup /backup.sh` y repite.
+
+**Ya no queda ningún cron del host.** Lo otro que corre solo —la evaluación de cupos que hace
+vencer el plazo de 15 días— lo programa el propio backend (`src/trabajos.ts`), al arrancar y
+cada 24 horas.
 
 Para forzar una evaluación en producción, sin esperar al ciclo, se reinicia el backend: la
 primera corrida ocurre un minuto después de arrancar.
