@@ -28,3 +28,6 @@ dist-ssr
 .env.development
 .env.production
 .env.test
+e2e/.sesion.json
+playwright-report/
+test-results/

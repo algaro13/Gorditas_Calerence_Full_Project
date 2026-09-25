@@ -701,7 +701,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <Link
                         to="/editar-orden"
-                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
+                        className="btn btn-min text-gray-400 hover:text-gray-600 flex-shrink-0"
                         onClick={e => e.stopPropagation()}
                       >
                         <Edit className="w-4 h-4" />

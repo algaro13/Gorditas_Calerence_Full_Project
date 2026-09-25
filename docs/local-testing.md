@@ -82,3 +82,28 @@ npm run dev:reset      # apagar y borrar volúmenes y PATs (.local/)
 - Primer arranque de Zitadel: tarda 30-60 s en inicializar su esquema. `dev:up` espera al healthcheck.
 - Si cambias `ZITADEL_MASTERKEY` después del primer arranque, la base de Zitadel queda inservible: haz `dev:reset`.
 - En Windows, `infra/postgres/init/01-roles.sh` debe tener finales de línea LF (el repo lo fuerza con `.gitattributes`).
+
+## Pruebas de navegador
+
+```bash
+cd Gorditas_frontend/project && npm run test:e2e
+```
+
+Necesitan levantado lo mismo que el desarrollo normal: Docker (Postgres y Zitadel), el backend
+en el 5000 y el frontend en el 5173. Inician sesión una vez con el restaurante `demo` y
+reutilizan el estado.
+
+Tres suites, en `Gorditas_frontend/project/e2e/`:
+
+- **humo**: cada ruta carga, con contenido y sin errores de consola.
+- **ergonomía**: ningún control bajo 44 px, ningún texto bajo 14, sin desborde horizontal. Es el
+  estándar de `docs/estandar-ui.md` convertido en regla que se ejecuta.
+- **flujo-orden**: tomar, surtir, despachar y cobrar una orden, incluida la confirmación de
+  cobro.
+
+Corren a ancho de teléfono. Dejan órdenes de prueba con el cliente `E2E <marca de tiempo>`; se
+pueden borrar sin más:
+
+```sql
+DELETE FROM ordenes WHERE nombre_cliente LIKE 'E2E %';
+```
