@@ -4,7 +4,9 @@ import { ORDEN_ESTATUS } from '../domain/OrdenStatus';
 // Se aceptan los campos que el frontend ya envía (nombres, costos) aunque el servidor los recalcule.
 
 export const crearOrdenSchema = Joi.object({
-  idTipoOrden: Joi.number().integer().required(),
+  // Opcional: sin el, el backend usa el tipo por omision del restaurante. El cliente no
+  // puede adivinar ids de catalogo, que se generan por restaurante.
+  idTipoOrden: Joi.number().integer().optional(),
   nombreTipoOrden: Joi.string().allow('').optional(),
   idMesa: Joi.number().integer().allow(null).optional(),
   nombreMesa: Joi.string().allow('', null).optional(),

@@ -33,4 +33,15 @@ export class PrismaCatalogoLookup implements CatalogoLookup {
     const r = await currentDb().tipoOrden.findUnique({ where: { id }, select: { id: true, nombre: true, activo: true } });
     return r ? { id: r.id, nombre: r.nombre, activo: r.activo, precio: 0 } : null;
   }
+
+  async tipoOrdenPorOmision(): Promise<CatalogoItem | null> {
+    // Por id ascendente: es el orden en que el restaurante los dio de alta, asi que el
+    // primero activo es "En mesa" en los catalogos sembrados y el mas antiguo en los demas.
+    const r = await currentDb().tipoOrden.findFirst({
+      where: { activo: true },
+      orderBy: { id: 'asc' },
+      select: { id: true, nombre: true, activo: true },
+    });
+    return r ? { id: r.id, nombre: r.nombre, activo: r.activo, precio: 0 } : null;
+  }
 }

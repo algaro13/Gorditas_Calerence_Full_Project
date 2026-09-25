@@ -55,6 +55,43 @@ describe('Módulo ordenes', () => {
     expect(r2.status).toBe(400);
   });
 
+  // Los ids de catálogo se generan por restaurante. La pantalla mandaba un `idTipoOrden: 1`
+  // fijo, así que tomar órdenes fallaba en todo restaurante que no fuera el primero dado de
+  // alta — un 400 genérico que no apuntaba a la causa.
+  it('crea la orden sin que el cliente mande el tipo', async () => {
+    const res = await api()
+      .post('/api/ordenes/nueva')
+      .set(auth(mesero))
+      .send({ idMesa: cat.mesa.id, nombreCliente: 'Sin tipo' });
+
+    expect(res.status).toBe(201);
+    expect(res.body.data.nombreTipoOrden).toBe('En mesa');
+  });
+
+  it('un restaurante sin tipos de orden recibe un error que lo explica', async () => {
+    // Restaurante propio y sin catálogo: es el estado de uno recién dado de alta al que
+    // nadie le sembró los tipos. Decirle "tipo no válido" lo mandaría a revisar lo que envió,
+    // que es justo lo que despistó al encontrar este bug.
+    const vacio = await createTestTenant(t.container.prisma);
+    try {
+      const token = await tokenFor(t.keys, { userId: 'mesero2', orgId: vacio.orgId, roles: ['Mesero'] });
+      const res = await api().post('/api/ordenes/nueva').set(auth(token)).send({ nombreCliente: 'Sin catalogo' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('SIN_TIPOS_DE_ORDEN');
+      expect(res.body.message).toMatch(/Cat[aá]logos/);
+    } finally {
+      await deleteTestTenant(t.container.prisma, vacio.id);
+    }
+  });
+
+  it('un tipo que no es de este restaurante se sigue rechazando', async () => {
+    // El aislamiento entre restaurantes no se relaja al volver opcional el campo.
+    const res = await api().post('/api/ordenes/nueva').set(auth(mesero)).send({ idTipoOrden: 999999 });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('TIPO_ORDEN_INVALIDO');
+  });
+
   it('arma el árbol completo con precios del catálogo y recalcula el total', async () => {
     const orden = await crearOrden();
 

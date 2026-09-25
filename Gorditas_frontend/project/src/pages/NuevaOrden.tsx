@@ -564,7 +564,9 @@ const NuevaOrden: React.FC = () => {
         const nuevaOrdenData = {
           idMesa: mesaParaOrden?._id || selectedMesa._id,
           nombreMesa: mesaParaOrden?.nombre || selectedMesa.nombre,
-          idTipoOrden: 1,
+          // Sin idTipoOrden a propósito: los ids de catálogo se generan por restaurante, así
+          // que mandar uno fijo solo acertaba en el primero dado de alta y rompía el resto.
+          // El backend resuelve el tipo por omisión del restaurante.
           nombreTipoOrden: 'Mesa',
           nombreCliente: nombreClienteFinal,
           total: ordenData.total,

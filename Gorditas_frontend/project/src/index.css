@@ -30,6 +30,22 @@
     line-height: 1.5;
   }
 
+  /* Las pantallas de operación también usan tamaños arbitrarios, que no pasan por la escala
+   * de Tailwind: 55 veces `text-[10px]`, 25 `text-[9px]` y hasta `text-[8px]`. A la distancia
+   * a la que se sostiene un teléfono eso no se lee, y en un comedor menos. Aparecieron al
+   * medir un diálogo que la primera pasada no había abierto. */
+  .text-\[8px\],
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-\[11px\],
+  .text-\[12px\],
+  .text-\[13px\],
+  .text-\[14px\],
+  .text-\[15px\] {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
   /* --- Área táctil ------------------------------------------------------------------------
    * 44px por lado: Apple HIG 44pt, WCAG 2.5.5 44px, Material 48dp. Con un dedo de 1.6–2cm,
    * por debajo de eso los fallos de puntería dejan de ser anecdóticos.
