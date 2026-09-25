@@ -38,12 +38,12 @@ const Landing: React.FC = () => {
             <div className="w-9 h-9 bg-orange-500 rounded-lg flex items-center justify-center">
               <ChefHat className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-xl">Kustodela <span className="text-orange-500">POS</span></span>
+            <span className="font-bold text-titulo">Kustodela <span className="text-orange-500">POS</span></span>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-sm text-gray-600">
+          <div className="hidden md:flex items-center gap-6 text-cuerpo text-gray-600">
             <a href="#features" className="hover:text-orange-500">Funciones</a>
             <a href="#pricing" className="hover:text-orange-500">Precios</a>
-            <button onClick={handleLogin} className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 font-medium">
+            <button onClick={handleLogin} className="btn bg-orange-500 text-white hover:bg-orange-600">
               Iniciar sesión
             </button>
           </div>
@@ -53,38 +53,38 @@ const Landing: React.FC = () => {
       {/* Hero */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-1.5 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-orange-50 text-orange-700 px-4 py-1.5 rounded-full text-cuerpo font-medium mb-6">
             <Star className="w-4 h-4" /> 14 días de prueba gratis
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
             El sistema de punto de venta que tu restaurante necesita
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-titulo text-gray-600 mb-8 max-w-2xl mx-auto">
             Gestiona órdenes, mesas, inventario y cobros desde cualquier dispositivo. 
             Sin instalaciones. Sin complicaciones. Listo en 5 minutos.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleStart}
-              className="bg-orange-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all"
+              className="btn bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all"
             >
               Prueba gratis 14 días
             </button>
             <a
               href="#pricing"
-              className="border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:border-orange-300 transition-all"
+              className="border-2 border-gray-200 text-gray-700 px-8 py-4 rounded-xl text-titulo font-semibold hover:border-orange-300 transition-all"
             >
               Ver precios
             </a>
           </div>
-          <p className="text-sm text-gray-500 mt-4">Sin tarjeta de crédito • Cancela cuando quieras</p>
+          <p className="text-cuerpo text-gray-500 mt-4">Sin tarjeta de crédito • Cancela cuando quieras</p>
         </div>
       </section>
 
       {/* Features */}
       <section id="features" className="py-20 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Todo lo que necesitas para operar</h2>
+          <h2 className="text-pantalla font-bold text-center mb-4">Todo lo que necesitas para operar</h2>
           <p className="text-gray-600 text-center mb-12 max-w-xl mx-auto">Desde la toma de orden hasta el cobro. Un sistema completo pensado para fondas, gorditerías, taquerías y restaurantes.</p>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -93,8 +93,8 @@ const Landing: React.FC = () => {
                 <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
                   <f.icon className="w-6 h-6 text-orange-600" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
-                <p className="text-gray-600 text-sm">{f.desc}</p>
+                <h3 className="font-semibold text-titulo mb-2">{f.title}</h3>
+                <p className="text-gray-600 text-cuerpo">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -104,22 +104,22 @@ const Landing: React.FC = () => {
       {/* How it works */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-12">Empieza en 3 pasos</h2>
+          <h2 className="text-pantalla font-bold mb-12">Empieza en 3 pasos</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">1</div>
+              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-titulo font-bold mx-auto mb-4">1</div>
               <h3 className="font-semibold mb-2">Crea tu cuenta</h3>
-              <p className="text-gray-600 text-sm">Regístrate con tu email en menos de 1 minuto.</p>
+              <p className="text-gray-600 text-cuerpo">Regístrate con tu email en menos de 1 minuto.</p>
             </div>
             <div>
-              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">2</div>
+              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-titulo font-bold mx-auto mb-4">2</div>
               <h3 className="font-semibold mb-2">Configura tu negocio</h3>
-              <p className="text-gray-600 text-sm">Agrega tus mesas, platillos y elige tu estilo.</p>
+              <p className="text-gray-600 text-cuerpo">Agrega tus mesas, platillos y elige tu estilo.</p>
             </div>
             <div>
-              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">3</div>
+              <div className="w-12 h-12 bg-orange-500 text-white rounded-full flex items-center justify-center text-titulo font-bold mx-auto mb-4">3</div>
               <h3 className="font-semibold mb-2">¡Listo para vender!</h3>
-              <p className="text-gray-600 text-sm">Tu equipo puede empezar a tomar órdenes de inmediato.</p>
+              <p className="text-gray-600 text-cuerpo">Tu equipo puede empezar a tomar órdenes de inmediato.</p>
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ const Landing: React.FC = () => {
       {/* Pricing */}
       <section id="pricing" className="py-20 px-6 bg-gray-50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">Planes simples, sin sorpresas</h2>
+          <h2 className="text-pantalla font-bold text-center mb-4">Planes simples, sin sorpresas</h2>
           <p className="text-gray-600 text-center mb-12">14 días de prueba gratis en cualquier plan. Cancela cuando quieras.</p>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -138,19 +138,19 @@ const Landing: React.FC = () => {
                 className={`bg-white rounded-2xl p-8 shadow-sm relative ${plan.popular ? 'ring-2 ring-orange-500 scale-105' : ''}`}
               >
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-full text-meta font-bold">
                     Más popular
                   </div>
                 )}
-                <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                <p className="text-sm text-gray-500 mb-4">{plan.users}</p>
+                <h3 className="text-titulo font-bold mb-1">{plan.name}</h3>
+                <p className="text-cuerpo text-gray-500 mb-4">{plan.users}</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-gray-500 text-sm"> MXN/mes</span>
+                  <span className="text-gray-500 text-cuerpo"> MXN/mes</span>
                 </div>
                 <ul className="space-y-2 mb-8">
                   {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm text-gray-700">
+                    <li key={j} className="flex items-center gap-2 text-cuerpo text-gray-700">
                       <Check className="w-4 h-4 text-orange-500 flex-shrink-0" /> {f}
                     </li>
                   ))}
@@ -172,11 +172,11 @@ const Landing: React.FC = () => {
       {/* CTA */}
       <section className="py-20 px-6 bg-orange-500">
         <div className="max-w-3xl mx-auto text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">¿Listo para modernizar tu negocio?</h2>
-          <p className="text-orange-100 mb-8 text-lg">Únete a los restaurantes que ya usan Kustodela POS. Sin riesgo, sin compromiso.</p>
+          <h2 className="text-pantalla font-bold mb-4">¿Listo para modernizar tu negocio?</h2>
+          <p className="text-orange-100 mb-8 text-titulo">Únete a los restaurantes que ya usan Kustodela POS. Sin riesgo, sin compromiso.</p>
           <button
             onClick={handleStart}
-            className="bg-white text-orange-600 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-orange-50 transition-all"
+            className="btn bg-white text-orange-600 rounded-xl font-semibold hover:bg-orange-50 transition-all"
           >
             Crear mi cuenta gratis
           </button>
@@ -185,7 +185,7 @@ const Landing: React.FC = () => {
 
       {/* Footer */}
       <footer className="py-8 px-6 border-t">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between text-sm text-gray-500">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between text-cuerpo text-gray-500">
           <div className="flex items-center gap-2 mb-4 md:mb-0">
             <ChefHat className="w-5 h-5 text-orange-500" />
             <span className="font-semibold text-gray-700">Kustodela POS</span>
