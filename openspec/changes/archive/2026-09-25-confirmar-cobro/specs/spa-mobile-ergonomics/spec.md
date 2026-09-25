@@ -1,4 +1,10 @@
-## MODIFIED Requirements
+## REMOVED Requirements
+
+### Requirement: Destructive actions are not a tap away from routine ones
+Sustituido por el requisito de acciones irreversibles: cobrar no destruye nada y aun así no se
+puede deshacer, así que la categoría que importa es la reversibilidad, no la destrucción.
+
+## ADDED Requirements
 
 ### Requirement: Irreversible actions are not a tap away from routine ones
 An action the operator cannot undo SHALL require an explicit confirmation, so that a single mis-tap cannot remove an item from an order or close a sale.
