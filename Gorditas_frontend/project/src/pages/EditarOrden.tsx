@@ -924,13 +924,13 @@ const EditarOrden: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-6 py-2 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-6">
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">Editar Orden</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Selecciona una orden para ver detalles y modificar</p>
+          <h1 className="text-pantalla font-bold text-gray-900 break-words">Editar Orden</h1>
+          <p className="text-gray-600 mt-1 text-cuerpo">Selecciona una orden para ver detalles y modificar</p>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="flex-shrink-0 p-2 sm:px-4 sm:py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center justify-center disabled:opacity-50"
+          className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
           title="Actualizar"
         >
           <RefreshCw className={`w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 flex-shrink-0 ${loading ? 'animate-spin' : ''}`} />
@@ -955,14 +955,14 @@ const EditarOrden: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1.5 sm:p-6 min-w-0">
           <div className="flex items-center space-x-2 mb-2 sm:mb-6">
             <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" />
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900 break-words">Órdenes Editables</h2>
+            <h2 className="text-titulo font-semibold text-gray-900 break-words">Órdenes Editables</h2>
           </div>
 
           <div className="space-y-3 sm:space-y-4">
             {mesasAgrupadas.length === 0 ? (
               <div className="text-center py-6 sm:py-8">
                 <AlertCircle className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                <p className="text-gray-500 text-sm sm:text-base">No hay órdenes disponibles para editar</p>
+                <p className="text-gray-500 text-cuerpo">No hay órdenes disponibles para editar</p>
               </div>
             ) : (
               mesasAgrupadas.map((mesa) => (
@@ -979,22 +979,22 @@ const EditarOrden: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-xs sm:text-base lg:text-lg font-semibold text-gray-900 break-words">
+                            <h3 className="text-cuerpo lg:text-titulo font-semibold text-gray-900 break-words">
                               {mesa.nombreMesa}
                             </h3>
                             {/* Leyenda de Mesa/Pedido Pagado */}
                             {todasLasOrdenesDeMesaPagadas(mesa) && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-green-100 text-green-800 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-meta sm:text-meta font-semibold bg-green-100 text-green-800 whitespace-nowrap">
                                 {mesa.nombreMesa.toLowerCase().startsWith('pedido') ? 'Pedido Pagado' : 'Mesa Pagada'}
                               </span>
                             )}
                           </div>
-                          <p className="text-[10px] sm:text-sm text-gray-600">
+                          <p className="text-meta sm:text-cuerpo text-gray-600">
                             {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'}
                           </p>
                           {/* Lista de clientes de las órdenes en la mesa */}
                           {Object.keys(mesa.clientes).length > 0 && (
-                            <ul className="mt-1 text-xs text-gray-700 flex flex-wrap gap-1">
+                            <ul className="mt-1 text-meta text-gray-700 flex flex-wrap gap-1">
                               {Object.keys(mesa.clientes).map((cliente, idx) => (
                                 <li key={cliente + idx} className="bg-gray-100 rounded px-2 py-0.5 whitespace-nowrap">
                                   {cliente}
@@ -1006,10 +1006,10 @@ const EditarOrden: React.FC = () => {
                       </div>
                       <div className="flex items-center justify-between sm:justify-end space-x-2 sm:space-x-3 flex-shrink-0">
                         <div className="text-left sm:text-right">
-                          <p className="text-sm sm:text-base font-semibold text-green-600">
+                          <p className="text-cuerpo font-semibold text-green-600">
                             ${mesa.totalMonto.toFixed(2)}
                           </p>
-                          <p className="text-[10px] sm:text-xs text-gray-600">Total</p>
+                          <p className="text-meta sm:text-meta text-gray-600">Total</p>
                         </div>
                         <div className="flex items-center space-x-1">
                           {/* Botón para eliminar mesa completa */}
@@ -1018,7 +1018,7 @@ const EditarOrden: React.FC = () => {
                               e.stopPropagation(); // Evitar que se expanda/contraiga la mesa
                               handleDeleteMesa(mesa);
                             }}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                            className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
                             title="Eliminar mesa completa"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1046,7 +1046,7 @@ const EditarOrden: React.FC = () => {
                             iniciarSeleccionPlatillo();
                           }
                         }}
-                        className="flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+                        className="btn gap-1 sm:text-meta bg-orange-600 text-white hover:bg-orange-700"
                         title="Agregar platillo a la primera orden"
                       >
                         <Plus className="w-3 h-3" />
@@ -1063,7 +1063,7 @@ const EditarOrden: React.FC = () => {
                             setModalProductoOpen(true);
                           }
                         }}
-                        className="flex items-center gap-1 px-2 py-1 text-[10px] sm:text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                        className="btn gap-1 sm:text-meta bg-blue-600 text-white hover:bg-blue-700"
                         title="Agregar producto a la primera orden"
                       >
                         <Plus className="w-3 h-3" />
@@ -1078,7 +1078,7 @@ const EditarOrden: React.FC = () => {
                       <div className="space-y-3 sm:space-y-4">
                         {Object.entries(mesa.clientes).map(([cliente, ordenesCliente]) => (
                           <div key={cliente} className="bg-gray-50 rounded-lg p-3 sm:p-4">
-                            <h4 className="font-medium text-gray-900 mb-2 sm:mb-3 text-xs sm:text-base break-words">
+                            <h4 className="font-medium text-gray-900 mb-2 sm:mb-3 text-cuerpo break-words">
                               Cliente: {cliente} ({ordenesCliente.length} {ordenesCliente.length === 1 ? 'orden' : 'órdenes'})
                             </h4>
                             <div className="grid grid-cols-1 gap-3 sm:gap-4">
@@ -1098,16 +1098,16 @@ const EditarOrden: React.FC = () => {
                                       onClick={() => loadOrdenDetails(orden)}
                                       className="cursor-pointer min-w-0"
                                     >
-                                      <h5 className="font-medium text-gray-900 text-[11px] sm:text-sm break-words">
+                                      <h5 className="font-medium text-gray-900 text-meta sm:text-cuerpo break-words">
                                         Orden #{orden._id?.toString().slice(-6)}
                                       </h5>
-                                      <p className="text-[9px] sm:text-xs text-gray-600 mt-0.5">
+                                      <p className="text-meta sm:text-meta text-gray-600 mt-0.5">
                                         {new Date(orden.fechaHora ?? orden.fecha ?? '').toLocaleTimeString('es-ES', {
                                           hour: '2-digit',
                                           minute: '2-digit'
                                         })}
                                       </p>
-                                      <p className="text-[10px] sm:text-xs font-medium text-green-600 mt-0.5">
+                                      <p className="text-meta sm:text-meta font-medium text-green-600 mt-0.5">
                                         Total: ${orden.total.toFixed(2)}
                                       </p>
                                     </div>
@@ -1115,14 +1115,14 @@ const EditarOrden: React.FC = () => {
                                     {/* Columna derecha - Estatus y acciones */}
                                     <div className="flex flex-col items-end justify-between gap-1">
                                       <div className="flex flex-col items-end gap-1 w-full">
-                                        <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs font-medium rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
+                                        <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 text-meta sm:text-meta font-medium rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
                                           {orden.estatus}
                                         </span>
                                         {orden.estatus === 'Pendiente' && (
                                           <button
                                             onClick={() => handleUpdateStatus(orden._id!, 'Recepcion')}
                                             disabled={updatingStatus === orden._id}
-                                            className="flex items-center justify-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
+                                            className="btn gap-0.5 sm:text-meta bg-green-600 text-white hover:bg-green-700"
                                             title="Confirmar orden"
                                           >
                                             {updatingStatus === orden._id ? (
@@ -1140,7 +1140,7 @@ const EditarOrden: React.FC = () => {
                                           e.stopPropagation();
                                           handleDeleteOrder(orden);
                                         }}
-                                        className="p-0.5 sm:p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                                        className="btn text-red-600 hover:bg-red-100"
                                         title="Eliminar orden"
                                       >
                                         <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -1152,7 +1152,7 @@ const EditarOrden: React.FC = () => {
                                   {orden.notas && (
                                     <div className="flex items-start space-x-1 mt-1.5 pt-1.5 border-t border-gray-200">
                                       <StickyNote className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                      <p className="text-[9px] sm:text-xs text-gray-700 italic line-clamp-2 break-words">
+                                      <p className="text-meta sm:text-meta text-gray-700 italic line-clamp-2 break-words">
                                         {orden.notas}
                                       </p>
                                     </div>
@@ -1167,7 +1167,7 @@ const EditarOrden: React.FC = () => {
                                         loadOrdenDetails(orden, false); // No hacer scroll
                                         iniciarSeleccionPlatillo();
                                       }}
-                                      className="flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
+                                      className="btn gap-0.5 sm:gap-1 sm:text-meta bg-orange-600 text-white hover:bg-orange-700"
                                       title="Agregar platillo"
                                     >
                                       <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -1180,7 +1180,7 @@ const EditarOrden: React.FC = () => {
                                         loadOrdenDetails(orden, false); // No hacer scroll
                                         setModalProductoOpen(true);
                                       }}
-                                      className="flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 text-[9px] sm:text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                      className="btn gap-0.5 sm:gap-1 sm:text-meta bg-blue-600 text-white hover:bg-blue-700"
                                       title="Agregar producto"
                                     >
                                       <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -1200,8 +1200,8 @@ const EditarOrden: React.FC = () => {
                                         }}
                                       >
                                         <div className="flex items-center gap-1.5">
-                                          <h6 className="text-[10px] font-semibold text-gray-700">Resumen</h6>
-                                          <span className="text-[9px] text-gray-500">
+                                          <h6 className="text-meta font-semibold text-gray-700">Resumen</h6>
+                                          <span className="text-meta text-gray-500">
                                             ({ordenesDetalles[orden._id!].platillos.reduce((total: number, p: any) => total + (p.cantidad || 1), 0)} platillos)
                                           </span>
                                         </div>
@@ -1218,10 +1218,10 @@ const EditarOrden: React.FC = () => {
                                           {/* Platillos */}
                                           {ordenesDetalles[orden._id!].platillos.length > 0 && (
                                             <div className="mb-2">
-                                              <p className="text-[9px] font-medium text-orange-600 mb-1">Platillos:</p>
+                                              <p className="text-meta font-medium text-orange-600 mb-1">Platillos:</p>
                                               <div className="space-y-1">
                                                 {ordenesDetalles[orden._id!].platillos.map((platillo: any, idx: number) => (
-                                              <div key={idx} className="flex items-center justify-between text-[10px] bg-orange-50 rounded px-1.5 py-1">
+                                              <div key={idx} className="flex items-center justify-between text-meta bg-orange-50 rounded px-1.5 py-1">
                                                 <span className="text-gray-700 flex-1 truncate">
                                                   <span className="flex flex-wrap items-center gap-1">
                                                     <span>{platillo.cantidad}x {platillo.nombrePlatillo}</span>
@@ -1229,7 +1229,7 @@ const EditarOrden: React.FC = () => {
                                                       <span className="text-gray-500 italic">| Guiso: {platillo.nombreGuiso}</span>
                                                     )}
                                                     {platillo.extras && platillo.extras.length > 0 && (
-                                                      <span className="text-purple-600 text-[9px]">
+                                                      <span className="text-purple-600 text-meta">
                                                         +{platillo.extras.length} extra{platillo.extras.length > 1 ? 's' : ''}
                                                       </span>
                                                     )}
@@ -1258,7 +1258,7 @@ const EditarOrden: React.FC = () => {
                                                       await loadData();
                                                     }
                                                   }}
-                                                  className="ml-2 p-1 text-red-600 hover:bg-red-100 rounded transition-colors flex-shrink-0"
+                                                  className="btn ml-2 text-red-600 hover:bg-red-100 flex-shrink-0"
                                                   title="Eliminar platillo"
                                                 >
                                                   <Minus className="w-3 h-3" />
@@ -1272,10 +1272,10 @@ const EditarOrden: React.FC = () => {
                                       {/* Productos */}
                                       {ordenesDetalles[orden._id!].productos.length > 0 && (
                                         <div>
-                                          <p className="text-[9px] font-medium text-blue-600 mb-1">Productos:</p>
+                                          <p className="text-meta font-medium text-blue-600 mb-1">Productos:</p>
                                           <div className="space-y-1">
                                             {ordenesDetalles[orden._id!].productos.map((producto: any, idx: number) => (
-                                              <div key={idx} className="flex items-center justify-between text-[10px] bg-blue-50 rounded px-1.5 py-1">
+                                              <div key={idx} className="flex items-center justify-between text-meta bg-blue-50 rounded px-1.5 py-1">
                                                 <span className="text-gray-700 truncate flex-1">
                                                   {producto.cantidad}x {producto.nombreProducto}
                                                 </span>
@@ -1302,7 +1302,7 @@ const EditarOrden: React.FC = () => {
                                                       await loadData();
                                                     }
                                                   }}
-                                                  className="ml-2 p-1 text-red-600 hover:bg-red-100 rounded transition-colors flex-shrink-0"
+                                                  className="btn ml-2 text-red-600 hover:bg-red-100 flex-shrink-0"
                                                   title="Eliminar producto"
                                                 >
                                                   <Minus className="w-3 h-3" />
@@ -1316,7 +1316,7 @@ const EditarOrden: React.FC = () => {
                                           {/* Mensaje si no hay items */}
                                           {ordenesDetalles[orden._id!].platillos.length === 0 && 
                                            ordenesDetalles[orden._id!].productos.length === 0 && (
-                                            <p className="text-[9px] text-gray-500 italic">Sin items</p>
+                                            <p className="text-meta text-gray-500 italic">Sin items</p>
                                           )}
                                         </div>
                                       )}
@@ -1342,19 +1342,19 @@ const EditarOrden: React.FC = () => {
             {/* Header con información de la orden */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">
+                <h2 className="text-titulo font-semibold text-gray-900 break-words">
                   {selectedOrden
                     ? `${getMostrarNombreMesaOrden(selectedOrden)} | Folio: ${selectedOrden.folio}`
                     : 'Selecciona una orden'}
                 </h2>
                 {selectedOrden && selectedOrden.nombreCliente && (
-                  <p className="text-sm sm:text-base text-gray-600 mt-1 break-words">
+                  <p className="text-cuerpo text-gray-600 mt-1 break-words">
                     Cliente: <span className="font-medium">{selectedOrden.nombreCliente}</span>
                   </p>
                 )}
                 {selectedOrden && (
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    <span className={`px-2 py-1 rounded-full text-meta font-medium ${
                       selectedOrden.estatus === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
                       selectedOrden.estatus === 'Preparacion' ? 'bg-blue-100 text-blue-800' :
                       selectedOrden.estatus === 'Surtida' ? 'bg-green-100 text-green-800' :
@@ -1363,7 +1363,7 @@ const EditarOrden: React.FC = () => {
                     }`}>
                       {selectedOrden.estatus}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-cuerpo text-gray-500">
                       Total: <span className="font-semibold text-green-600">${selectedOrden.total.toFixed(2)}</span>
                     </span>
                   </div>
@@ -1374,7 +1374,7 @@ const EditarOrden: React.FC = () => {
               {selectedOrden && (
                 <button
                   onClick={() => handleDeleteOrder(selectedOrden)}
-                  className="w-24 sm:w-auto px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm flex items-center justify-center flex-shrink-0"
+                  className="btn w-24 sm:w-auto bg-red-600 text-white hover:bg-red-700 flex-shrink-0"
                   title="Eliminar orden"
                 >
                   <Trash2 className="w-4 h-4 mr-1 flex-shrink-0" />
@@ -1388,14 +1388,14 @@ const EditarOrden: React.FC = () => {
               <div className="flex flex-row space-x-2">
                 <button
                   onClick={iniciarSeleccionPlatillo}
-                  className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm flex items-center"
+                  className="btn bg-orange-600 text-white hover:bg-orange-700"
                 >
                   <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
                   <span>Platillo</span>
                 </button>
                 <button
                   onClick={() => setModalProductoOpen(true)}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center"
+                  className="btn bg-blue-600 text-white hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
                   <span>Producto</span>
@@ -1407,24 +1407,24 @@ const EditarOrden: React.FC = () => {
           {!selectedOrden ? (
             <div className="text-center py-8 sm:py-12">
               <ShoppingCart className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-              <p className="text-gray-500 text-sm sm:text-base">Selecciona una orden para ver los detalles</p>
+              <p className="text-gray-500 text-cuerpo">Selecciona una orden para ver los detalles</p>
             </div>
           ) : (
             <div className="space-y-6">
               {/* Platillos */}
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Platillos</h3>
-                  <span className="text-sm text-gray-500">{platillosDetalle.length} items</span>
+                  <h3 className="text-titulo font-semibold text-gray-900">Platillos</h3>
+                  <span className="text-cuerpo text-gray-500">{platillosDetalle.length} items</span>
                 </div>
                 <div className="space-y-3">
                     {platillosDetalle.length === 0 ? (
-                      <p className="text-gray-500 text-xs sm:text-sm">No hay platillos agregados</p>
+                      <p className="text-gray-500 text-meta">No hay platillos agregados</p>
                     ) : (
                       platillosDetalle.map((detalle, index) => (
                         <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{detalle.nombrePlatillo || detalle.platillo || `Platillo ${index + 1}`}</p>
+                            <p className="font-medium text-gray-900 text-cuerpo truncate">{detalle.nombrePlatillo || detalle.platillo || `Platillo ${index + 1}`}</p>
                             
                             {/* Sección de notas - editable */}
                             {editingNota === detalle._id ? (
@@ -1433,21 +1433,21 @@ const EditarOrden: React.FC = () => {
                                   type="text"
                                   value={tempNota}
                                   onChange={(e) => setTempNota(e.target.value)}
-                                  className="flex-1 px-2 py-1 text-xs border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="flex-1 px-2 py-1 text-meta border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                                   placeholder="Escribe una nota..."
                                   disabled={savingNota}
                                 />
                                 <button
                                   onClick={() => handleSaveNota(detalle._id!)}
                                   disabled={savingNota}
-                                  className="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                  className="btn bg-green-600 text-white hover:bg-green-700"
                                 >
                                   {savingNota ? 'Guardando...' : 'Guardar'}
                                 </button>
                                 <button
                                   onClick={handleCancelEditNota}
                                   disabled={savingNota}
-                                  className="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:opacity-50"
+                                  className="btn bg-gray-600 text-white hover:bg-gray-700"
                                 >
                                   Cancelar
                                 </button>
@@ -1459,11 +1459,11 @@ const EditarOrden: React.FC = () => {
                                     <StickyNote className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       {detalle.notas ? (
-                                        <p className="text-xs text-blue-600 italic break-words">
+                                        <p className="text-meta text-blue-600 italic break-words">
                                           Notas: {detalle.notas}
                                         </p>
                                       ) : (
-                                        <p className="text-xs text-gray-400 italic">
+                                        <p className="text-meta text-gray-400 italic">
                                           Sin notas
                                         </p>
                                       )}
@@ -1471,7 +1471,7 @@ const EditarOrden: React.FC = () => {
                                   </div>
                                   <button
                                     onClick={() => handleEditNota(detalle._id!, detalle.notas || '')}
-                                    className="ml-2 px-1.5 sm:px-2 py-0.5 sm:py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex-shrink-0"
+                                    className="btn ml-2 bg-blue-600 text-white hover:bg-blue-700 flex-shrink-0"
                                     title={detalle.notas ? "Editar nota" : "Agregar nota"}
                                   >
                                     {detalle.notas ? "Edit." : "+"} nota
@@ -1480,16 +1480,16 @@ const EditarOrden: React.FC = () => {
                               </div>
                             )}
                             
-                            <p className="text-xs sm:text-sm text-gray-600 truncate">Guiso: {detalle.nombreGuiso || detalle.guiso}</p>
-                            <p className="text-xs sm:text-sm text-gray-600">Cantidad: {detalle.cantidad}</p>
+                            <p className="text-meta text-gray-600 truncate">Guiso: {detalle.nombreGuiso || detalle.guiso}</p>
+                            <p className="text-meta text-gray-600">Cantidad: {detalle.cantidad}</p>
                             
                             {/* Mostrar extras del platillo */}
                             {detalle.extras && detalle.extras.length > 0 && (
                               <div className="mt-1 sm:mt-2 p-1 sm:p-2 bg-purple-50 rounded-md border border-purple-200">
-                                <p className="text-xs font-medium text-purple-800 mb-0.5 sm:mb-1">Extras:</p>
+                                <p className="text-meta font-medium text-purple-800 mb-0.5 sm:mb-1">Extras:</p>
                                 <div className="space-y-0.5 sm:space-y-1">
                                   {detalle.extras.map((extra, extraIndex) => (
-                                    <div key={extraIndex} className="flex justify-between items-center text-xs">
+                                    <div key={extraIndex} className="flex justify-between items-center text-meta">
                                       <span className="text-purple-700">
                                         {extra.nombreExtra} (x{extra.cantidad})
                                       </span>
@@ -1505,12 +1505,12 @@ const EditarOrden: React.FC = () => {
                             {/* Status indicators for dispatched items */}
                             <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                               {detalle.listo && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full whitespace-nowrap">
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-meta rounded-full whitespace-nowrap">
                                   Listo
                                 </span>
                               )}
                               {detalle.entregado && (
-                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full whitespace-nowrap">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 text-meta rounded-full whitespace-nowrap">
                                   Entregado
                                 </span>
                               )}
@@ -1538,7 +1538,7 @@ const EditarOrden: React.FC = () => {
                             </button>
                             <button
                               onClick={() => handleRemovePlatillo(detalle._id!)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="btn text-red-600 hover:bg-red-50"
                               title="Eliminar platillo"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1553,28 +1553,28 @@ const EditarOrden: React.FC = () => {
               {/* Productos */}
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Productos</h3>
-                  <span className="text-sm text-gray-500">{productosDetalle.length} items</span>
+                  <h3 className="text-titulo font-semibold text-gray-900">Productos</h3>
+                  <span className="text-cuerpo text-gray-500">{productosDetalle.length} items</span>
                 </div>
                 <div className="space-y-3">
                     {productosDetalle.length === 0 ? (
-                      <p className="text-gray-500 text-xs sm:text-sm">No hay productos agregados</p>
+                      <p className="text-gray-500 text-meta">No hay productos agregados</p>
                     ) : (
                       productosDetalle.map((detalle, index) => (
                         <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-gray-50 rounded-lg gap-3">
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{detalle.nombreProducto || detalle.producto || `Producto ${index + 1}`}</p>
-                            <p className="text-xs sm:text-sm text-gray-600 truncate">Tipo: {detalle.idProducto ? detalle.idProducto : 'N/A'}</p>
-                            <p className="text-xs sm:text-sm text-gray-600">Cantidad: {detalle.cantidad}</p>
+                            <p className="font-medium text-gray-900 text-cuerpo truncate">{detalle.nombreProducto || detalle.producto || `Producto ${index + 1}`}</p>
+                            <p className="text-meta text-gray-600 truncate">Tipo: {detalle.idProducto ? detalle.idProducto : 'N/A'}</p>
+                            <p className="text-meta text-gray-600">Cantidad: {detalle.cantidad}</p>
                             {/* Status indicators for dispatched items */}
                             <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                               {detalle.listo && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full whitespace-nowrap">
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-meta rounded-full whitespace-nowrap">
                                   Listo
                                 </span>
                               )}
                               {detalle.entregado && (
-                                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full whitespace-nowrap">
+                                <span className="px-2 py-1 bg-green-100 text-green-800 text-meta rounded-full whitespace-nowrap">
                                   Entregado
                                 </span>
                               )}
@@ -1583,7 +1583,7 @@ const EditarOrden: React.FC = () => {
                           <div className="flex items-center justify-end flex-shrink-0">
                             <button
                               onClick={() => handleRemoveProducto(detalle._id!)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              className="btn text-red-600 hover:bg-red-50"
                               title="Eliminar producto"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -1604,7 +1604,7 @@ const EditarOrden: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Selecciona un Platillo</h3>
+              <h3 className="text-titulo font-semibold text-gray-900">Selecciona un Platillo</h3>
               <button onClick={cancelarSeleccionPlatillo} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
@@ -1614,10 +1614,10 @@ const EditarOrden: React.FC = () => {
                 <button
                   key={platillo._id}
                   onClick={() => seleccionarPlatillo(platillo)}
-                  className="p-3 bg-orange-50 hover:bg-orange-100 border-2 border-orange-200 rounded-lg transition-colors text-left"
+                  className="btn bg-orange-50 hover:bg-orange-100 border-2 border-orange-200 text-left"
                 >
-                  <p className="font-medium text-gray-900 text-sm">{platillo.nombre}</p>
-                  <p className="text-orange-600 font-bold text-xs">${precioVenta(platillo).toFixed(2)}</p>
+                  <p className="font-medium text-gray-900 text-cuerpo">{platillo.nombre}</p>
+                  <p className="text-orange-600 font-bold text-meta">${precioVenta(platillo).toFixed(2)}</p>
                 </button>
               ))}
             </div>
@@ -1631,9 +1631,9 @@ const EditarOrden: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Selecciona un Guiso</h3>
+                <h3 className="text-titulo font-semibold text-gray-900">Selecciona un Guiso</h3>
                 {platilloEnConstruccion.platillo && (
-                  <p className="text-sm text-gray-600">Para: {platilloEnConstruccion.platillo.nombre}</p>
+                  <p className="text-cuerpo text-gray-600">Para: {platilloEnConstruccion.platillo.nombre}</p>
                 )}
               </div>
               <button onClick={cancelarSeleccionPlatillo} className="text-gray-500 hover:text-gray-700">
@@ -1645,9 +1645,9 @@ const EditarOrden: React.FC = () => {
                 <button
                   key={guiso._id}
                   onClick={() => seleccionarGuiso(guiso)}
-                  className="p-3 bg-green-50 hover:bg-green-100 border-2 border-green-200 rounded-lg transition-colors"
+                  className="btn bg-green-50 hover:bg-green-100 border-2 border-green-200"
                 >
-                  <p className="font-medium text-gray-900 text-sm">{guiso.nombre}</p>
+                  <p className="font-medium text-gray-900 text-cuerpo">{guiso.nombre}</p>
                 </button>
               ))}
             </div>
@@ -1661,8 +1661,8 @@ const EditarOrden: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Selección de Extras</h3>
-                <p className="text-sm text-gray-600">Haz clic en un extra para agregarlo. Se avanzará automáticamente.</p>
+                <h3 className="text-titulo font-semibold text-gray-900">Selección de Extras</h3>
+                <p className="text-cuerpo text-gray-600">Haz clic en un extra para agregarlo. Se avanzará automáticamente.</p>
               </div>
               <button onClick={cancelarSeleccionPlatillo} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
@@ -1692,10 +1692,10 @@ const EditarOrden: React.FC = () => {
                                 : 'bg-purple-50 hover:bg-purple-100 border-purple-200'
                             }`}
                           >
-                            <p className="font-medium text-gray-900 text-sm">{extra.nombre}</p>
-                            <p className="text-purple-600 font-bold text-xs">+${extra.costo}</p>
+                            <p className="font-medium text-gray-900 text-cuerpo">{extra.nombre}</p>
+                            <p className="text-purple-600 font-bold text-meta">+${extra.costo}</p>
                             {cantidad > 0 && (
-                              <p className="text-xs text-purple-700 font-bold mt-1">Cantidad: {cantidad}</p>
+                              <p className="text-meta text-purple-700 font-bold mt-1">Cantidad: {cantidad}</p>
                             )}
                           </button>
                         );
@@ -1712,13 +1712,13 @@ const EditarOrden: React.FC = () => {
                   setModalExtrasOpen(false);
                   setModalGuisoOpen(true);
                 }}
-                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                className="btn bg-gray-500 text-white hover:bg-gray-600"
               >
                 Volver a Guisos
               </button>
               <button
                 onClick={saltarExtras}
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                className="btn bg-orange-500 text-white hover:bg-orange-600"
               >
                 {platilloEnConstruccion.extras.length > 0 ? 'Siguiente' : 'Sin Extras'}
               </button>
@@ -1732,7 +1732,7 @@ const EditarOrden: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-2 sm:p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm sm:text-base font-semibold text-gray-900">Cantidad y Notas</h3>
+              <h3 className="text-cuerpo font-semibold text-gray-900">Cantidad y Notas</h3>
               <button onClick={cancelarSeleccionPlatillo} className="text-gray-500 hover:text-gray-700">
                 <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -1740,7 +1740,7 @@ const EditarOrden: React.FC = () => {
 
             {/* Selector de cantidad */}
             <div className="mb-2">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+              <label className="block text-meta font-medium text-gray-700 mb-1">Cantidad</label>
               <div className="flex items-center space-x-2 sm:space-x-3">
                 <button
                   onClick={() => {
@@ -1754,14 +1754,14 @@ const EditarOrden: React.FC = () => {
                       }))
                     }));
                   }}
-                  className="p-1 sm:p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  className="btn bg-gray-100 hover:bg-gray-200"
                 >
                   <Minus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
-                <span className="text-lg sm:text-xl font-bold w-12 sm:w-14 text-center">{platilloEnConstruccion.cantidad}</span>
+                <span className="text-titulo font-bold w-12 sm:w-14 text-center">{platilloEnConstruccion.cantidad}</span>
                 <button
                   onClick={() => setPlatilloEnConstruccion(prev => ({ ...prev, cantidad: prev.cantidad + 1 }))}
-                  className="p-1 sm:p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  className="btn bg-gray-100 hover:bg-gray-200"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
@@ -1770,7 +1770,7 @@ const EditarOrden: React.FC = () => {
 
             {/* Campo de notas */}
             <div className="mb-3">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-meta font-medium text-gray-700 mb-1">
                 Notas (Opcional)
               </label>
               <textarea
@@ -1778,10 +1778,10 @@ const EditarOrden: React.FC = () => {
                 onChange={(e) => setPlatilloEnConstruccion(prev => ({ ...prev, notas: e.target.value }))}
                 maxLength={200}
                 rows={2}
-                className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none text-xs sm:text-sm"
+                className="campo resize-none"
                 placeholder="Ej: Sin cebolla, extra salsa"
               />
-              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+              <p className="text-meta sm:text-meta text-gray-500 mt-0.5">
                 {platilloEnConstruccion.notas.length}/200
               </p>
             </div>
@@ -1789,15 +1789,15 @@ const EditarOrden: React.FC = () => {
             {/* Extras Seleccionados */}
             {platilloEnConstruccion.extras.length > 0 && (
               <div className="mb-2 p-1.5 sm:p-2 bg-purple-50 rounded-lg border border-purple-200 max-h-32 sm:max-h-36 overflow-y-auto">
-                <h4 className="font-semibold text-purple-700 mb-1 text-[10px] sm:text-xs">Extras</h4>
+                <h4 className="font-semibold text-purple-700 mb-1 text-meta sm:text-meta">Extras</h4>
                 <div className="space-y-0.5">
                   {platilloEnConstruccion.extras.map(extra => {
                     const alcanzoLimite = extra.cantidad >= platilloEnConstruccion.cantidad;
                     return (
-                      <div key={extra.idExtra} className="flex items-center justify-between bg-white p-1 rounded text-[10px] sm:text-xs">
+                      <div key={extra.idExtra} className="flex items-center justify-between bg-white p-1 rounded text-meta sm:text-meta">
                         <span className="font-medium text-gray-900 truncate flex-1 mr-1">{extra.nombreExtra}</span>
                         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                          <span className="text-[10px] sm:text-xs font-semibold text-purple-600">+${extra.costoExtra}</span>
+                          <span className="text-meta sm:text-meta font-semibold text-purple-600">+${extra.costoExtra}</span>
                           <button
                             onClick={() => {
                               if (extra.cantidad === 1) {
@@ -1806,11 +1806,11 @@ const EditarOrden: React.FC = () => {
                                 actualizarCantidadExtraEnConstruccion(extra.idExtra, extra.cantidad - 1);
                               }
                             }}
-                            className="p-1.5 sm:p-2 bg-gray-200 hover:bg-gray-300 rounded active:scale-95 transition-transform"
+                            className="btn bg-gray-200 hover:bg-gray-300 active:scale-95 transition-transform"
                           >
                             <Minus className="w-5 h-5 sm:w-6 sm:h-6" />
                           </button>
-                          <span className="w-8 sm:w-10 text-center text-sm sm:text-base font-bold">{extra.cantidad}</span>
+                          <span className="w-8 sm:w-10 text-center text-cuerpo font-bold">{extra.cantidad}</span>
                           <button
                             onClick={() => actualizarCantidadExtraEnConstruccion(extra.idExtra, extra.cantidad + 1)}
                             disabled={alcanzoLimite}
@@ -1827,7 +1827,7 @@ const EditarOrden: React.FC = () => {
                     );
                   })}
                 </div>
-                <p className="text-[9px] sm:text-[10px] text-purple-600 mt-0.5">
+                <p className="text-meta sm:text-meta text-purple-600 mt-0.5">
                   Máx. {platilloEnConstruccion.cantidad} por tipo
                 </p>
               </div>
@@ -1835,16 +1835,16 @@ const EditarOrden: React.FC = () => {
 
             {/* Resumen */}
             <div className="mb-2 p-1.5 sm:p-2 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-700 mb-0.5 text-[10px] sm:text-xs">Resumen</h4>
-              <p className="text-[10px] sm:text-xs text-gray-600">
+              <h4 className="font-semibold text-gray-700 mb-0.5 text-meta sm:text-meta">Resumen</h4>
+              <p className="text-meta sm:text-meta text-gray-600">
                 <span className="font-medium">{platilloEnConstruccion.platillo?.nombre}</span> con{' '}
                 <span className="font-medium">{platilloEnConstruccion.guiso?.nombre}</span>
               </p>
-              <p className="text-[10px] sm:text-xs text-gray-600">Cantidad: {platilloEnConstruccion.cantidad}</p>
+              <p className="text-meta sm:text-meta text-gray-600">Cantidad: {platilloEnConstruccion.cantidad}</p>
               {(() => {
                 const totalExtras = platilloEnConstruccion.extras.reduce((sum, e) => sum + e.cantidad, 0);
                 return (
-                  <p className="text-[10px] sm:text-xs text-gray-600">
+                  <p className="text-meta sm:text-meta text-gray-600">
                     {totalExtras} extra{totalExtras > 1 ? 's' : ''} agregado{totalExtras > 1 ? 's' : ''}
                   </p>
                 );
@@ -1857,20 +1857,20 @@ const EditarOrden: React.FC = () => {
                   setModalNotasOpen(false);
                   setModalExtrasOpen(true);
                 }}
-                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs sm:text-sm"
+                className="btn border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Volver a Extras
               </button>
               <button
                 onClick={cancelarSeleccionPlatillo}
-                className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs sm:text-sm"
+                className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={finalizarPlatillo}
                 disabled={saving}
-                className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 text-xs sm:text-sm"
+                className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
               >
                 {saving ? 'Agregando...' : 'Agregar'}
               </button>
@@ -1884,7 +1884,7 @@ const EditarOrden: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-2">
           <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Selecciona un Producto</h3>
+              <h3 className="text-titulo font-semibold text-gray-900">Selecciona un Producto</h3>
               <button onClick={() => setModalProductoOpen(false)} className="text-gray-500 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
@@ -1901,10 +1901,10 @@ const EditarOrden: React.FC = () => {
                       : 'bg-blue-50 hover:bg-blue-100 border-blue-200'
                   }`}
                 >
-                  <p className="font-medium text-gray-900 text-sm">{producto.nombre}</p>
-                  <p className="text-blue-600 font-bold text-xs">${producto.costo}</p>
+                  <p className="font-medium text-gray-900 text-cuerpo">{producto.nombre}</p>
+                  <p className="text-blue-600 font-bold text-meta">${producto.costo}</p>
                   {producto.cantidad < 1 && (
-                    <p className="text-xs text-red-600 mt-1">Sin stock</p>
+                    <p className="text-meta text-red-600 mt-1">Sin stock</p>
                   )}
                 </button>
               ))}
@@ -1919,8 +1919,8 @@ const EditarOrden: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Seleccionar Variante</h3>
-                <p className="text-sm text-gray-600 mt-1">{productoConVariantes.nombre}</p>
+                <h3 className="text-titulo font-semibold text-gray-900">Seleccionar Variante</h3>
+                <p className="text-cuerpo text-gray-600 mt-1">{productoConVariantes.nombre}</p>
               </div>
               <button
                 onClick={() => {
@@ -1939,13 +1939,13 @@ const EditarOrden: React.FC = () => {
                   key={index}
                   onClick={() => seleccionarVariante(variante)}
                   disabled={saving}
-                  className="p-4 rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 transition-colors text-center disabled:opacity-50"
+                  className="btn border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 text-center"
                 >
-                  <div className="text-base font-semibold text-gray-900">{variante}</div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="text-cuerpo font-semibold text-gray-900">{variante}</div>
+                  <div className="text-cuerpo text-gray-600 mt-1">
                     {productoConVariantes.nombre} - {variante}
                   </div>
-                  <div className="text-sm text-green-600 font-medium mt-2">
+                  <div className="text-cuerpo text-green-600 font-medium mt-2">
                     ${productoConVariantes.costo}
                   </div>
                 </button>
@@ -1958,7 +1958,7 @@ const EditarOrden: React.FC = () => {
                   setProductoConVariantes(null);
                   setModalProductoOpen(true);
                 }}
-                className="w-full px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="btn w-full text-gray-700 bg-gray-100 hover:bg-gray-200"
               >
                 Volver a Productos
               </button>
@@ -1971,20 +1971,20 @@ const EditarOrden: React.FC = () => {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <div className="bg-white rounded-xl p-3 sm:p-6 w-full max-w-sm">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            <h3 className="text-titulo font-semibold text-gray-900 mb-3 sm:mb-4">
               ¿Estás seguro que deseas eliminar este {confirmDelete.type === 'platillo' ? 'platillo' : 'producto'}?
             </h3>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base"
+                className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={confirmDeleteAction}
                 disabled={saving}
-                className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm sm:text-base"
+                className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
               >
                 {saving ? 'Eliminando...' : 'Eliminar'}
               </button>
@@ -1998,7 +1998,7 @@ const EditarOrden: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-white rounded-lg p-3 sm:p-6 max-w-md w-full max-h-96 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold text-purple-700">
+              <h3 className="text-titulo font-bold text-purple-700">
                 Gestionar Extras - {platillosDetalle.find(p => p._id === selectedPlatilloForExtras)?.nombrePlatillo}
               </h3>
               <button
@@ -2016,7 +2016,7 @@ const EditarOrden: React.FC = () => {
               {tiposExtras.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-gray-500">No hay tipos de extras disponibles</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-meta text-gray-400 mt-1">
                     Tipos de extras: {tiposExtras.length}, Extras: {extras.length}
                   </p>
                 </div>
@@ -2063,10 +2063,10 @@ const EditarOrden: React.FC = () => {
     {showDeleteMesaModal && selectedMesaToDelete && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
         <div className="bg-white rounded-xl p-3 sm:p-6 w-full max-w-sm">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+          <h3 className="text-titulo font-semibold text-gray-900 mb-3 sm:mb-4">
             ¿Eliminar mesa/pedido completa?
           </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-cuerpo text-gray-600 mb-4">
             Se eliminarán todas las {selectedMesaToDelete.totalOrdenes} órdenes de "{selectedMesaToDelete.nombreMesa}". Esta acción no se puede deshacer.
           </p>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
@@ -2076,14 +2076,14 @@ const EditarOrden: React.FC = () => {
                 setSelectedMesaToDelete(null);
               }}
               disabled={deletingMesa}
-              className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base"
+              className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               onClick={confirmDeleteMesa}
               disabled={deletingMesa}
-              className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm sm:text-base"
+              className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
             >
               {deletingMesa ? 'Eliminando...' : 'Eliminar Mesa'}
             </button>
@@ -2095,21 +2095,21 @@ const EditarOrden: React.FC = () => {
     {showDeleteOrderModal && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
         <div className="bg-white rounded-xl p-3 sm:p-6 w-full max-w-sm">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+          <h3 className="text-titulo font-semibold text-gray-900 mb-3 sm:mb-4">
             ¿Estás seguro que deseas eliminar esta orden? Esta acción no se puede deshacer.
           </h3>
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-6">
             <button
               onClick={() => setShowDeleteOrderModal(false)}
               disabled={deletingOrder}
-              className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm sm:text-base"
+              className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Cancelar
             </button>
             <button
               onClick={() => { console.log('Click en botón Eliminar del modal'); confirmDeleteOrder(); }}
               disabled={deletingOrder}
-              className="flex-1 px-3 sm:px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 text-sm sm:text-base"
+              className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
             >
               {deletingOrder ? 'Eliminando...' : 'Eliminar'}
             </button>
@@ -2215,14 +2215,14 @@ function ExtraCantidadControl(props: ExtraCantidadControlProps) {
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex items-center space-x-2">
-        <span className="text-sm">{extra.nombre}</span>
+        <span className="text-cuerpo">{extra.nombre}</span>
       </div>
       <div className="flex items-center gap-1">
-        <span className="text-sm font-semibold text-purple-600">
+        <span className="text-cuerpo font-semibold text-purple-600">
           +${extra.costo}
         </span>
         <button
-          className="p-1 bg-gray-200 rounded"
+          className="btn bg-gray-200"
           onClick={function() { handleCantidadChange(Number(inputCantidad) - 1); }}
           disabled={platilloDetalle?.entregado || Number(inputCantidad) <= 0}
         >
@@ -2233,18 +2233,18 @@ function ExtraCantidadControl(props: ExtraCantidadControlProps) {
           min={0}
           value={inputCantidad}
           onChange={function(e) { handleCantidadChange(Number(e.target.value)); }}
-          className="w-12 text-center border border-purple-300 rounded px-1 py-0.5 text-xs"
+          className="w-12 text-center border border-purple-300 rounded px-1 py-0.5 text-meta"
           disabled={platilloDetalle?.entregado}
         />
         <button
-          className="p-1 bg-gray-200 rounded"
+          className="btn bg-gray-200"
           onClick={function() { handleCantidadChange(Number(inputCantidad) + 1); }}
           disabled={platilloDetalle?.entregado}
         >
           <Plus className="w-3 h-3" />
         </button>
         <button
-          className="ml-2 px-2 py-1 bg-purple-600 text-white rounded text-xs font-bold hover:bg-purple-700"
+          className="btn ml-2 bg-purple-600 text-white font-bold hover:bg-purple-700"
           onClick={guardarCantidad}
           disabled={platilloDetalle?.entregado || !cantidadCambiada}
         >
