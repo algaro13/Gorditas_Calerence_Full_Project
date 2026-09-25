@@ -43,7 +43,7 @@ const Landing: React.FC = () => {
           <div className="hidden md:flex items-center gap-6 text-cuerpo text-gray-600">
             <a href="#features" className="hover:text-orange-500">Funciones</a>
             <a href="#pricing" className="hover:text-orange-500">Precios</a>
-            <button onClick={handleLogin} className="btn bg-orange-500 text-white hover:bg-orange-600">
+            <button onClick={handleLogin} className="btn btn-primario">
               Iniciar sesión
             </button>
           </div>
@@ -66,7 +66,7 @@ const Landing: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button
               onClick={handleStart}
-              className="btn bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 shadow-lg shadow-orange-200 transition-all"
+              className="btn rounded-xl font-semibold shadow-lg shadow-orange-200 transition-all btn-primario"
             >
               Prueba gratis 14 días
             </button>

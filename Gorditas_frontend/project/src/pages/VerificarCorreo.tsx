@@ -57,7 +57,7 @@ const VerificarCorreo: React.FC = () => {
           <button
             onClick={yaVerifique}
             disabled={enviando}
-            className="btn gap-2 bg-orange-600 text-white hover:bg-orange-700"
+            className="btn gap-2 btn-primario"
           >
             <RefreshCw className={`w-4 h-4 ${enviando ? 'animate-spin' : ''}`} /> Ya confirmé mi correo
           </button>

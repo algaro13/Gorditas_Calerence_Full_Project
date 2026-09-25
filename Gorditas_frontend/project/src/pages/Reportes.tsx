@@ -664,7 +664,7 @@ const Reportes: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={loadReports}
-            className="btn flex-1 sm:flex-none bg-blue-600 text-white hover:bg-blue-700"
+            className="btn flex-1 sm:flex-none btn-neutro"
           >
             <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Actualizar</span>
@@ -672,7 +672,7 @@ const Reportes: React.FC = () => {
           </button>
           <button
             onClick={handleExportReport}
-            className="btn flex-1 sm:flex-none bg-green-600 text-white hover:bg-green-700"
+            className="btn flex-1 sm:flex-none btn-neutro"
           >
             <Download className="w-4 h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Exportar</span>
@@ -738,7 +738,7 @@ const Reportes: React.FC = () => {
               {activeTab === 'gastos' && (
                 <button
                   onClick={() => setShowGastoModal(true)}
-                  className="btn bg-orange-600 text-white hover:bg-orange-700"
+                  className="btn btn-primario"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Crear Gasto
@@ -797,14 +797,14 @@ const Reportes: React.FC = () => {
                               />
                               <button
                                 onClick={confirmarAgregarCajaDiaActual}
-                                className="btn bg-green-500 text-white hover:bg-green-600"
+                                className="btn btn-neutro"
                                 title="Agregar a caja de hoy"
                               >
                                 ✓ Agregar
                               </button>
                               <button
                                 onClick={cancelarEdicionCajaDiaActual}
-                                className="btn bg-red-500 text-white hover:bg-red-600"
+                                className="btn btn-destructivo"
                                 title="Cancelar"
                               >
                                 ✕
@@ -813,7 +813,7 @@ const Reportes: React.FC = () => {
                           ) : (
                             <button
                               onClick={iniciarEdicionCajaDiaActual}
-                              className="btn bg-blue-500 text-white hover:bg-blue-600 mt-2"
+                              className="btn mt-2 btn-neutro"
                               title="Agregar dinero a caja de hoy"
                             >
                               💰 Agregar a Caja
@@ -896,13 +896,13 @@ const Reportes: React.FC = () => {
                                     <button
                                       onClick={confirmarEdicionCaja}
                                       disabled={guardandoCaja === reporte.fecha}
-                                      className="btn bg-green-500 text-white hover:bg-green-600"
+                                      className="btn btn-neutro"
                                     >
                                       {guardandoCaja === reporte.fecha ? '...' : '✓'}
                                     </button>
                                     <button
                                       onClick={cancelarEdicionCaja}
-                                      className="btn bg-red-500 text-white hover:bg-red-600"
+                                      className="btn btn-destructivo"
                                     >
                                       ✕
                                     </button>
@@ -914,7 +914,7 @@ const Reportes: React.FC = () => {
                                     </span>
                                     <button
                                       onClick={() => iniciarEdicionCaja(reporte.fecha)}
-                                      className="btn bg-gray-500 text-white hover:bg-gray-600"
+                                      className="btn btn-neutro"
                                     >
                                       ✏️
                                     </button>
@@ -924,7 +924,7 @@ const Reportes: React.FC = () => {
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">{reporte.ordenes}</td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4">
                                 <button
-                                  className="btn bg-blue-500 text-white"
+                                  className="btn btn-neutro"
                                   onClick={() => {
                                     mostrarOrdenesDeDia(reporte.fecha);
                                   }}
@@ -1136,7 +1136,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       <button
-                                        className="btn bg-orange-500 text-white"
+                                        className="btn btn-primario"
                                         onClick={() => setOrdenExpandida(grupoId === ordenExpandida ? null : grupoId)}
                                       >
                                         {grupoId === ordenExpandida ? 'Ocultar' : 'Ver Detalles'}
@@ -1580,7 +1580,7 @@ const Reportes: React.FC = () => {
               <button
                 onClick={handleCreateGasto}
                 disabled={savingGasto}
-                className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
+                className="btn flex-1 btn-primario"
               >
                 {savingGasto ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

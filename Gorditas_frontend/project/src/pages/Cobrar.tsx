@@ -602,14 +602,14 @@ const Cobrar: React.FC = () => {
                       <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                         <button
                           onClick={() => handleGenerateMesaTicket(mesa)}
-                          className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                          className="btn flex-1 btn-neutro"
                         >
                           <Receipt className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">PDF</span>
                         </button>
                         <button
                           onClick={() => handlePrintMesaTicket(mesa)}
-                          className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700"
+                          className="btn flex-1 btn-neutro"
                         >
                           <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">Imprimir</span>
@@ -620,7 +620,7 @@ const Cobrar: React.FC = () => {
                         <button
                           onClick={() => handleCobrarTodaLaMesa(mesa)}
                           disabled={processing}
-                          className="btn w-full bg-green-600 text-white hover:bg-green-700"
+                          className="btn w-full btn-avanzar"
                         >
                           <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
                           <span className="truncate">
@@ -714,16 +714,16 @@ const Cobrar: React.FC = () => {
                           {/* Acciones */}
                           <div className="flex flex-col gap-1 mt-2">
                             <div className="flex gap-1">
-                              <button onClick={() => handleGenerateTicket(orden)} className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700">
+                              <button onClick={() => handleGenerateTicket(orden)} className="btn flex-1 btn-neutro">
                                 <Receipt className="w-3 h-3 mr-0.5 flex-shrink-0" />
                                 <span className="truncate">PDF</span>
                               </button>
-                              <button onClick={() => handlePrintTicket(orden)} className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700">
+                              <button onClick={() => handlePrintTicket(orden)} className="btn flex-1 btn-neutro">
                                 <Printer className="w-3 h-3 mr-0.5 flex-shrink-0" />
                                 <span className="truncate">Impr.</span>
                               </button>
                             </div>
-                            <button onClick={() => handleFinalizarOrden(orden)} disabled={processing} className="btn w-full bg-green-600 text-white hover:bg-green-700">
+                            <button onClick={() => handleFinalizarOrden(orden)} disabled={processing} className="btn w-full btn-avanzar">
                               <CheckCircle className="w-3 h-3 mr-1 flex-shrink-0" />
                               <span className="truncate">
                                 {esOrdenPagada(orden.nombreCliente) ? 'Entregar' : 'Cobrar'}
@@ -743,14 +743,14 @@ const Cobrar: React.FC = () => {
                         <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
                           <button
                             onClick={() => handleGenerateMesaTicket(mesa)}
-                            className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700"
+                            className="btn flex-1 btn-neutro"
                           >
                             <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                             <span className="truncate">PDF Mesa</span>
                           </button>
                           <button
                             onClick={() => handlePrintMesaTicket(mesa)}
-                            className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700"
+                            className="btn flex-1 btn-neutro"
                           >
                             <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                             <span className="truncate">Imprimir</span>
@@ -761,7 +761,7 @@ const Cobrar: React.FC = () => {
                           <button
                             onClick={() => handleCobrarTodaLaMesa(mesa)}
                             disabled={processing}
-                            className="btn w-full bg-green-600 text-white hover:bg-green-700"
+                            className="btn w-full btn-avanzar"
                           >
                             <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0" />
                             <span className="truncate">

@@ -1,21 +1,21 @@
 ## 1. El sistema
 
-- [ ] 1.1 Cuatro clases semánticas en el estándar
-- [ ] 1.2 Documentadas en docs/estandar-ui.md con cuándo usar cada una
+- [x] 1.1 Cuatro clases semánticas en el estándar
+- [x] 1.2 Documentadas en docs/estandar-ui.md con cuándo usar cada una
 
 ## 2. Migración
 
-- [ ] 2.1 Avanzar la orden en verde: Preparar, Surtir, Listo, Entregar, Cobrar
-- [ ] 2.2 Destruir en rojo, lo demás en gris o naranja según sea principal
-- [ ] 2.3 Morado, amarillo e índigo fuera de los botones
-- [ ] 2.4 Quitar las abreviaturas que ya no hacen falta
+- [x] 2.1 Avanzar la orden en verde: Preparar, Surtir, Listo, Entregar, Cobrar
+- [x] 2.2 Destruir en rojo, lo demás en gris o naranja según sea principal
+- [x] 2.3 Morado, amarillo e índigo fuera de los botones
+- [x] 2.4 Quitar las abreviaturas que ya no hacen falta
 
 ## 3. Verificación
 
-- [ ] 3.1 Ninguna acción de avance con un color que no sea el suyo
-- [ ] 3.2 Las pastillas de estado siguen igual
-- [ ] 3.3 La suite entera verde
+- [x] 3.1 Ninguna acción de avance con un color que no sea el suyo
+- [x] 3.2 Las pastillas de estado siguen igual
+- [x] 3.3 La suite entera verde
 
 ## 4. Cierre
 
-- [ ] 4.1 Commit y `openspec archive`
+- [x] 4.1 Commit y `openspec archive`

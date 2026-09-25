@@ -931,7 +931,7 @@ const EditarOrden: React.FC = () => {
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
+          className="btn flex-shrink-0 btn-neutro"
           title="Actualizar"
         >
           <RefreshCw className={`w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 flex-shrink-0 ${loading ? 'animate-spin' : ''}`} />
@@ -1039,7 +1039,7 @@ const EditarOrden: React.FC = () => {
                             iniciarSeleccionPlatillo();
                           }
                         }}
-                        className="btn gap-1 sm:text-meta bg-orange-600 text-white hover:bg-orange-700"
+                        className="btn gap-1 sm:text-meta btn-neutro"
                         title="Agregar platillo a la primera orden"
                       >
                         <Plus className="w-3 h-3" />
@@ -1056,7 +1056,7 @@ const EditarOrden: React.FC = () => {
                             setModalProductoOpen(true);
                           }
                         }}
-                        className="btn gap-1 sm:text-meta bg-blue-600 text-white hover:bg-blue-700"
+                        className="btn gap-1 sm:text-meta btn-neutro"
                         title="Agregar producto a la primera orden"
                       >
                         <Plus className="w-3 h-3" />
@@ -1115,7 +1115,7 @@ const EditarOrden: React.FC = () => {
                                           <button
                                             onClick={() => handleUpdateStatus(orden._id!, 'Recepcion')}
                                             disabled={updatingStatus === orden._id}
-                                            className="btn gap-0.5 sm:text-meta bg-green-600 text-white hover:bg-green-700"
+                                            className="btn gap-0.5 sm:text-meta btn-neutro"
                                             title="Confirmar orden"
                                           >
                                             {updatingStatus === orden._id ? (
@@ -1160,7 +1160,7 @@ const EditarOrden: React.FC = () => {
                                         loadOrdenDetails(orden, false); // No hacer scroll
                                         iniciarSeleccionPlatillo();
                                       }}
-                                      className="btn gap-0.5 sm:gap-1 sm:text-meta bg-orange-600 text-white hover:bg-orange-700"
+                                      className="btn gap-0.5 sm:gap-1 sm:text-meta btn-neutro"
                                       title="Agregar platillo"
                                     >
                                       <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -1173,7 +1173,7 @@ const EditarOrden: React.FC = () => {
                                         loadOrdenDetails(orden, false); // No hacer scroll
                                         setModalProductoOpen(true);
                                       }}
-                                      className="btn gap-0.5 sm:gap-1 sm:text-meta bg-blue-600 text-white hover:bg-blue-700"
+                                      className="btn gap-0.5 sm:gap-1 sm:text-meta btn-neutro"
                                       title="Agregar producto"
                                     >
                                       <Plus className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
@@ -1367,7 +1367,7 @@ const EditarOrden: React.FC = () => {
               {selectedOrden && (
                 <button
                   onClick={() => handleDeleteOrder(selectedOrden)}
-                  className="btn w-24 sm:w-auto bg-red-600 text-white hover:bg-red-700 flex-shrink-0"
+                  className="btn w-24 sm:w-auto flex-shrink-0 btn-destructivo"
                   title="Eliminar orden"
                 >
                   <Trash2 className="w-4 h-4 mr-1 flex-shrink-0" />
@@ -1381,14 +1381,14 @@ const EditarOrden: React.FC = () => {
               <div className="flex flex-row space-x-2">
                 <button
                   onClick={iniciarSeleccionPlatillo}
-                  className="btn bg-orange-600 text-white hover:bg-orange-700"
+                  className="btn btn-neutro"
                 >
                   <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
                   <span>Platillo</span>
                 </button>
                 <button
                   onClick={() => setModalProductoOpen(true)}
-                  className="btn bg-blue-600 text-white hover:bg-blue-700"
+                  className="btn btn-neutro"
                 >
                   <Plus className="w-4 h-4 mr-1 flex-shrink-0" />
                   <span>Producto</span>
@@ -1433,14 +1433,14 @@ const EditarOrden: React.FC = () => {
                                 <button
                                   onClick={() => handleSaveNota(detalle._id!)}
                                   disabled={savingNota}
-                                  className="btn bg-green-600 text-white hover:bg-green-700"
+                                  className="btn btn-primario"
                                 >
                                   {savingNota ? 'Guardando...' : 'Guardar'}
                                 </button>
                                 <button
                                   onClick={handleCancelEditNota}
                                   disabled={savingNota}
-                                  className="btn bg-gray-600 text-white hover:bg-gray-700"
+                                  className="btn btn-neutro"
                                 >
                                   Cancelar
                                 </button>
@@ -1464,7 +1464,7 @@ const EditarOrden: React.FC = () => {
                                   </div>
                                   <button
                                     onClick={() => handleEditNota(detalle._id!, detalle.notas || '')}
-                                    className="btn ml-2 bg-blue-600 text-white hover:bg-blue-700 flex-shrink-0"
+                                    className="btn ml-2 flex-shrink-0 btn-neutro"
                                     title={detalle.notas ? "Editar nota" : "Agregar nota"}
                                   >
                                     {detalle.notas ? "Edit." : "+"} nota
@@ -1705,13 +1705,13 @@ const EditarOrden: React.FC = () => {
                   setModalExtrasOpen(false);
                   setModalGuisoOpen(true);
                 }}
-                className="btn bg-gray-500 text-white hover:bg-gray-600"
+                className="btn btn-neutro"
               >
                 Volver a Guisos
               </button>
               <button
                 onClick={saltarExtras}
-                className="btn bg-orange-500 text-white hover:bg-orange-600"
+                className="btn btn-primario"
               >
                 {platilloEnConstruccion.extras.length > 0 ? 'Siguiente' : 'Sin Extras'}
               </button>
@@ -1863,7 +1863,7 @@ const EditarOrden: React.FC = () => {
               <button
                 onClick={finalizarPlatillo}
                 disabled={saving}
-                className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
+                className="btn flex-1 btn-primario"
               >
                 {saving ? 'Agregando...' : 'Agregar'}
               </button>
@@ -1977,7 +1977,7 @@ const EditarOrden: React.FC = () => {
               <button
                 onClick={confirmDeleteAction}
                 disabled={saving}
-                className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
+                className="btn flex-1 btn-destructivo"
               >
                 {saving ? 'Eliminando...' : 'Eliminar'}
               </button>
@@ -2076,7 +2076,7 @@ const EditarOrden: React.FC = () => {
             <button
               onClick={confirmDeleteMesa}
               disabled={deletingMesa}
-              className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
+              className="btn flex-1 btn-destructivo"
             >
               {deletingMesa ? 'Eliminando...' : 'Eliminar Mesa'}
             </button>
@@ -2102,7 +2102,7 @@ const EditarOrden: React.FC = () => {
             <button
               onClick={() => { console.log('Click en botón Eliminar del modal'); confirmDeleteOrder(); }}
               disabled={deletingOrder}
-              className="btn flex-1 bg-red-600 text-white hover:bg-red-700"
+              className="btn flex-1 btn-destructivo"
             >
               {deletingOrder ? 'Eliminando...' : 'Eliminar'}
             </button>
@@ -2237,7 +2237,7 @@ function ExtraCantidadControl(props: ExtraCantidadControlProps) {
           <Plus className="w-3 h-3" />
         </button>
         <button
-          className="btn ml-2 bg-purple-600 text-white font-bold hover:bg-purple-700"
+          className="btn ml-2 font-bold btn-primario"
           onClick={guardarCantidad}
           disabled={platilloDetalle?.entregado || !cantidadCambiada}
         >

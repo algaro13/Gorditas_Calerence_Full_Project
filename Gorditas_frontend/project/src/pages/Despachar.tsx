@@ -747,7 +747,7 @@ const Despachar: React.FC = () => {
                                 e.stopPropagation();
                                 handleMarkAllMesaAsDelivered(mesa);
                               }}
-                              className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
+                              className="btn flex-shrink-0 btn-avanzar"
                               title="Entregar todas las órdenes de esta mesa"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
@@ -880,7 +880,7 @@ const Despachar: React.FC = () => {
                 <button
                   onClick={handleCompleteDispatch}
                   disabled={dispatching}
-                  className="btn w-full sm:w-auto bg-green-600 text-white hover:bg-green-700 flex-shrink-0"
+                  className="btn w-full sm:w-auto flex-shrink-0 btn-neutro"
                 >
                   {dispatching ? (
                     <>
@@ -962,7 +962,7 @@ const Despachar: React.FC = () => {
                           ) : (
                             <button
                               onClick={() => handleMarkAsDelivered(producto._id!, 'producto')}
-                              className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
+                              className="btn flex-shrink-0 btn-avanzar"
                             >
                               Entregar
                             </button>
@@ -1025,7 +1025,7 @@ const Despachar: React.FC = () => {
                               ) : puedeEntregar ? (
                                 <button
                                   onClick={() => handleMarkAsDelivered(platillo._id!, 'platillo')}
-                                  className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
+                                  className="btn flex-shrink-0 btn-avanzar"
                                 >
                                   Entregar
                                 </button>

@@ -854,7 +854,7 @@ const NuevaOrden: React.FC = () => {
         {currentStep === 2 && (
           <button
             onClick={reiniciarComponente}
-            className="btn flex-shrink-0 gap-2 bg-red-600 text-white hover:bg-red-700"
+            className="btn flex-shrink-0 gap-2 btn-destructivo"
             title="Reiniciar formulario"
           >
             <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -1066,7 +1066,7 @@ const NuevaOrden: React.FC = () => {
               <div className={`grid gap-0.5 ${(platillosSeleccionados.length > 0 || productosSeleccionados.length > 0) ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <button
                   onClick={iniciarSeleccionPlatillo}
-                  className="btn btn-lg w-full bg-orange-600 text-white hover:bg-orange-700"
+                  className="btn btn-lg w-full btn-neutro"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Agregar Platillo</span><span className="sm:hidden">Platillo</span>
@@ -1098,7 +1098,7 @@ const NuevaOrden: React.FC = () => {
                       }
                     }}
                     disabled={loading || !nombreSuborden || (platillosSeleccionados.length === 0 && productosSeleccionados.length === 0)}
-                    className="btn btn-lg w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="btn btn-lg w-full disabled:opacity-50 disabled:cursor-not-allowed btn-neutro"
                   >
                     <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                     <span className="hidden sm:inline">Agregar Cliente</span><span className="sm:hidden">Cliente</span>
@@ -1107,7 +1107,7 @@ const NuevaOrden: React.FC = () => {
 
                 <button
                   onClick={() => setModalProductoOpen(true)}
-                  className="btn btn-lg w-full bg-green-600 text-white hover:bg-green-700"
+                  className="btn btn-lg w-full btn-neutro"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Agregar Producto</span><span className="sm:hidden">Producto</span>
@@ -1118,7 +1118,7 @@ const NuevaOrden: React.FC = () => {
                   <button
                     onClick={handleSubmitOrder}
                     disabled={loading || !selectedMesa || !nombreSuborden || (platillosSeleccionados.length === 0 && productosSeleccionados.length === 0)}
-                    className="btn btn-lg w-full bg-purple-600 text-white hover:bg-purple-700"
+                    className="btn btn-lg w-full btn-primario"
                   >
                     {loading ? (
                       <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-white mr-2"></div>
@@ -1541,7 +1541,7 @@ const NuevaOrden: React.FC = () => {
             <button
               onClick={() => setCurrentStep(currentStep + 1)}
               disabled={!canProceedToNext()}
-              className="btn bg-orange-600 text-white hover:bg-orange-700"
+              className="btn btn-primario"
             >
               <span className="block sm:hidden">Sig</span>
               <span className="hidden sm:block">Siguiente</span>
@@ -1682,13 +1682,13 @@ const NuevaOrden: React.FC = () => {
                   setModalExtrasOpen(false);
                   setModalGuisoOpen(true);
                 }}
-                className="btn bg-gray-600 text-white hover:bg-gray-700"
+                className="btn btn-neutro"
               >
                 Volver a Guisos
               </button>
               <button
                 onClick={saltarExtras}
-                className="btn bg-orange-600 text-white hover:bg-orange-700"
+                className="btn btn-primario"
               >
                 {platilloEnConstruccion.extras.length > 0 ? 'Siguiente' : 'Sin Extras'}
               </button>
@@ -1847,7 +1847,7 @@ const NuevaOrden: React.FC = () => {
                   setModalNotasOpen(false);
                   setModalExtrasOpen(true);
                 }}
-                className="btn bg-gray-500 text-white hover:bg-gray-600"
+                className="btn btn-neutro"
               >
                 Volver a Extras
               </button>
@@ -1859,7 +1859,7 @@ const NuevaOrden: React.FC = () => {
               </button>
               <button
                 onClick={finalizarPlatillo}
-                className="btn flex-1 bg-green-600 text-white hover:bg-green-700"
+                className="btn flex-1 btn-primario"
               >
                 Agregar
               </button>

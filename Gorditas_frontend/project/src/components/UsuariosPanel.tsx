@@ -201,7 +201,7 @@ const UsuariosPanel: React.FC = () => {
         {allowed.length > 0 && !sobreCupo && (
           <button
             onClick={() => setShowForm((v) => !v)}
-            className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
+            className="btn flex-shrink-0 btn-neutro"
           >
             {showForm ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {showForm ? 'Cancelar' : 'Invitar usuario'}
@@ -252,7 +252,7 @@ const UsuariosPanel: React.FC = () => {
             <button
               type="submit"
               disabled={busy === 'invitar'}
-              className="btn bg-green-600 text-white hover:bg-green-700"
+              className="btn btn-neutro"
             >
               <Mail className="w-4 h-4 mr-2" /> {busy === 'invitar' ? 'Enviando...' : 'Enviar invitación'}
             </button>

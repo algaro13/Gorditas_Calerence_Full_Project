@@ -821,7 +821,7 @@ const Catalogos: React.FC = () => {
                     setNuevaVariante('');
                   }
                 }}
-                className="btn bg-orange-600 text-white hover:bg-orange-700 whitespace-nowrap"
+                className="btn whitespace-nowrap btn-primario"
               >
                 Agregar
               </button>
@@ -924,7 +924,7 @@ const Catalogos: React.FC = () => {
           {!['tipousuario', 'usuario'].includes(selectedModel.id) && (
             <button
               onClick={handleCreate}
-              className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
+              className="btn flex-shrink-0 btn-primario"
             >
               <Plus className="w-4 h-4 mr-2 flex-shrink-0" />
               <span className="truncate">Nuevo {selectedModel.name.slice(0, -1)}</span>
@@ -1127,7 +1127,7 @@ const Catalogos: React.FC = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
+                  className="btn flex-1 btn-primario"
                 >
                   {saving ? 'Guardando...' : 'Guardar'}
                 </button>

@@ -55,6 +55,35 @@ el campo y descuadra la página. Es la razón de que el mínimo sea ese y no 14.
 La casilla y su texto van dentro de la misma `<label>` a propósito: la caja se queda en 24 px
 —agrandarla desencaja el texto— y el objetivo que responde al dedo es la etiqueta entera.
 
+## Color
+
+Cuatro significados y ninguno más.
+
+| Clase | Color | Significa |
+|---|---|---|
+| `btn-primario` | naranja | La acción principal de la pantalla. **Una sola** |
+| `btn-avanzar` | verde | Mover la orden al siguiente estado |
+| `btn-destructivo` | rojo | Borrar, cancelar, reiniciar |
+| `btn-neutro` | blanco con borde | Todo lo demás: imprimir, exportar, volver |
+
+```jsx
+<button className="btn btn-avanzar">Cobrar</button>
+<button className="btn btn-neutro">Imprimir</button>
+```
+
+**El color no se usa para distinguir botones vecinos.** Para eso están su icono y su nombre;
+gastarlo ahí no deja ninguno para significar algo. Hubo un momento en que «Agregar Platillo» era
+naranja, «Agregar Producto» verde y «Agregar Cliente» azul: tres hermanos, tres colores, cero
+información.
+
+Lo que motivó la regla fue peor: **avanzar una orden se pintaba de cuatro colores** —«Preparar»
+amarillo, «Surtir» morado, «Surtir Todas» azul, «Cobrar» verde—. El color enseñaba una regla y
+luego la incumplía, que es peor que no tener regla: el operador deja de fiarse y lee cada botón
+igual.
+
+Las **pastillas de estado** (verde «Activo», rojo «Inactivo») no son acciones y conservan sus
+colores.
+
 ## Espaciado
 
 `sp-1` 8 · `sp-2` 12 · `sp-3` 16 · `sp-4` 24 · `sp-5` 32 · `sp-6` 48

@@ -403,7 +403,7 @@ const Onboarding: React.FC = () => {
               <div className="flex gap-2 mb-2">
                 <input type="text" placeholder="Ej: Gordita de chicharrón" value={newPlatillo.nombre} onChange={(e) => setNewPlatillo({ ...newPlatillo, nombre: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
                 <input type="number" placeholder="$25" value={newPlatillo.precio || ''} onChange={(e) => setNewPlatillo({ ...newPlatillo, precio: parseInt(e.target.value) || 0 })} className="w-20 px-3 py-2 border rounded-lg text-cuerpo" />
-                <button onClick={addPlatillo} className="btn bg-orange-500 text-white" aria-label="Agregar platillo">
+                <button onClick={addPlatillo} className="btn btn-neutro" aria-label="Agregar platillo">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -424,7 +424,7 @@ const Onboarding: React.FC = () => {
               <label className="text-cuerpo font-medium text-gray-700 mb-1 block">Guisos</label>
               <div className="flex gap-2 mb-2">
                 <input type="text" placeholder="Ej: Chicharrón prensado" value={newGuiso} onChange={(e) => setNewGuiso(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
-                <button onClick={addGuiso} className="btn bg-orange-500 text-white" aria-label="Agregar guiso">
+                <button onClick={addGuiso} className="btn btn-primario" aria-label="Agregar guiso">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -454,7 +454,7 @@ const Onboarding: React.FC = () => {
             <button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
-              className="btn gap-1 bg-orange-500 text-white hover:bg-orange-600"
+              className="btn gap-1 btn-primario"
             >
               Siguiente <ArrowRight className="w-4 h-4" />
             </button>
@@ -462,7 +462,7 @@ const Onboarding: React.FC = () => {
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="btn gap-1 bg-green-600 text-white hover:bg-green-700"
+              className="btn gap-1 btn-neutro"
             >
               {loading ? 'Creando...' : 'Completar'} <Check className="w-4 h-4" />
             </button>

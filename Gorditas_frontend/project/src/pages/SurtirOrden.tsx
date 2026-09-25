@@ -535,7 +535,7 @@ const SurtirOrden: React.FC = () => {
                               handleSurtirTodasLasOrdenes(mesa);
                             }}
                             disabled={updating === `mesa-${mesa.idMesa}`}
-                            className="btn bg-blue-600 text-white rounded-full hover:bg-blue-700"
+                            className="btn rounded-full btn-neutro"
                           >
                             {updating === `mesa-${mesa.idMesa}` ? (
                               <>
@@ -681,7 +681,7 @@ const SurtirOrden: React.FC = () => {
                               <button
                                 onClick={() => handleIniciarPreparacion(orden._id!)}
                                 disabled={updating === orden._id || orden.estatus === 'Pendiente'}
-                                className="btn w-full bg-blue-600 text-white hover:bg-blue-700"
+                                className="btn w-full btn-avanzar"
                               >
                                 {updating === orden._id ? (
                                   <>
@@ -891,7 +891,7 @@ const SurtirOrden: React.FC = () => {
                         <button
                           onClick={() => handleCompletarOrden(selectedOrden._id!)}
                           disabled={updating === selectedOrden._id || !isOrderReadyToComplete(selectedOrden)}
-                          className="btn w-full sm:w-auto bg-green-600 text-white hover:bg-green-700"
+                          className="btn w-full sm:w-auto btn-neutro"
                         >
                           {updating === selectedOrden._id ? (
                             <>

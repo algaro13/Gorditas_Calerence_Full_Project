@@ -15,7 +15,7 @@ const BillingSuccess: React.FC = () => {
         </p>
         <button
           onClick={() => navigate('/')}
-          className="btn w-full bg-orange-600 text-white hover:bg-orange-700"
+          className="btn w-full btn-primario"
         >
           Ir al Panel Principal
         </button>

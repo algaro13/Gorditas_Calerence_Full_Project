@@ -355,7 +355,7 @@ const RecibirProductos: React.FC = () => {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
+          className="btn flex-shrink-0 btn-primario"
         >
           <Plus className="w-4 h-4 mr-2 flex-shrink-0" />
           <span className="truncate">Nuevo Producto</span>
@@ -576,7 +576,7 @@ const RecibirProductos: React.FC = () => {
               <button
                 onClick={handleCreateProducto}
                 disabled={saving}
-                className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
+                className="btn flex-1 btn-primario"
               >
                 {saving ? 'Guardando...' : 'Crear Producto'}
               </button>

@@ -21,6 +21,35 @@
            transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* --- Qué significa cada color ----------------------------------------------------------
+   * Cuatro significados y ninguno más. Habia ocho colores, y lo grave no era el desorden sino
+   * que avanzar una orden se pintaba de cuatro maneras: «Preparar» amarillo, «Surtir» morado,
+   * «Surtir Todas» azul, «Cobrar» verde. El color ensenaba una regla y luego la incumplia,
+   * que es peor que no tener regla: el operador deja de fiarse y lee cada boton igual.
+   *
+   * Con cuatro, un mesero nuevo aprende «verde avanza, rojo borra» en un turno.
+   */
+
+  /* La accion principal de la pantalla. Una sola: si hay dos, ninguna destaca. */
+  .btn-primario {
+    @apply bg-orange-600 text-white hover:bg-orange-700;
+  }
+
+  /* Mover la orden al siguiente estado: preparar, surtir, listo, entregar, cobrar. */
+  .btn-avanzar {
+    @apply bg-green-600 text-white hover:bg-green-700;
+  }
+
+  /* Borrar, cancelar, reiniciar. */
+  .btn-destructivo {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+
+  /* Todo lo demas: imprimir, exportar, volver. Sin fondo, para no competir con las de arriba. */
+  .btn-neutro {
+    @apply bg-white text-gray-700 border border-gray-300 hover:bg-gray-50;
+  }
+
   /* El suelo. Solo donde de verdad no cabe el normal; nunca por debajo. */
   .btn-min {
     @apply h-control-min px-sp-2 text-meta;
