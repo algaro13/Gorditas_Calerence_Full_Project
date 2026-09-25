@@ -193,12 +193,12 @@ const Onboarding: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
             <Check className="w-8 h-8 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">¡Tu restaurante está listo!</h1>
+          <h1 className="text-pantalla font-bold text-gray-900 mb-2">¡Tu restaurante está listo!</h1>
           <p className="text-gray-600 mb-4">
             La dirección de <strong>{nombre}</strong> es{' '}
             <span className="font-mono font-bold text-orange-600">{tenantHostLabel(result.slug)}</span>
           </p>
-          <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-3 text-sm text-left flex gap-2 mb-6">
+          <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-3 text-cuerpo text-left flex gap-2 mb-6">
             <Mail className="w-5 h-5 flex-shrink-0" />
             <span>
               Enviamos un correo a <strong>{result.email}</strong> para verificar tu cuenta. Revísalo antes de iniciar sesión.
@@ -211,7 +211,7 @@ const Onboarding: React.FC = () => {
             Ir a mi restaurante <ExternalLink className="w-4 h-4" />
           </a>
           {isLocalHost() && (
-            <p className="text-xs text-gray-400 mt-3">
+            <p className="text-meta text-gray-400 mt-3">
               Entorno local: se guardó <code>devTenantSlug={result.slug}</code> para este navegador.
             </p>
           )}
@@ -228,7 +228,7 @@ const Onboarding: React.FC = () => {
           {Array.from({ length: STEPS }, (_, i) => (
             <div key={i} className="flex items-center">
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-cuerpo font-bold ${
                   i + 1 < step ? 'bg-green-500 text-white' : i + 1 === step ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
                 }`}
               >
@@ -239,16 +239,16 @@ const Onboarding: React.FC = () => {
           ))}
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg mb-4 text-sm break-words">{error}</div>}
+        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg mb-4 text-cuerpo break-words">{error}</div>}
 
         {/* Paso 1: cuenta */}
         {step === 1 && (
           <div>
             <div className="flex items-center gap-2 mb-1">
               <UserPlus className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">Tu cuenta</h2>
+              <h2 className="text-titulo font-bold">Tu cuenta</h2>
             </div>
-            <p className="text-gray-500 text-sm mb-4">Serás el administrador del restaurante en {appConfig.brandName}.</p>
+            <p className="text-gray-500 text-cuerpo mb-4">Serás el administrador del restaurante en {appConfig.brandName}.</p>
             <div className="grid grid-cols-2 gap-3 mb-3">
               <input type="text" value={admin.nombre} onChange={(e) => setAdmin({ ...admin, nombre: e.target.value })} className={inputCls} placeholder="Nombre" autoComplete="given-name" />
               <input type="text" value={admin.apellido} onChange={(e) => setAdmin({ ...admin, apellido: e.target.value })} className={inputCls} placeholder="Apellido" autoComplete="family-name" />
@@ -256,8 +256,8 @@ const Onboarding: React.FC = () => {
             <input type="email" value={admin.email} onChange={(e) => setAdmin({ ...admin, email: e.target.value })} className={`${inputCls} mb-3`} placeholder="Correo electrónico" autoComplete="email" />
             <input type="password" value={admin.password} onChange={(e) => setAdmin({ ...admin, password: e.target.value })} className={`${inputCls} mb-3`} placeholder="Contraseña" autoComplete="new-password" />
             <input type="password" value={admin.confirm} onChange={(e) => setAdmin({ ...admin, confirm: e.target.value })} className={inputCls} placeholder="Confirmar contraseña" autoComplete="new-password" />
-            <p className={`text-xs mt-2 ${passwordError() ? 'text-red-600' : 'text-gray-400'}`}>{passwordError() ?? PASSWORD_HINT}</p>
-            <p className="text-xs text-gray-400 mt-3">
+            <p className={`text-meta mt-2 ${passwordError() ? 'text-red-600' : 'text-gray-400'}`}>{passwordError() ?? PASSWORD_HINT}</p>
+            <p className="text-meta text-gray-400 mt-3">
               ¿Ya tienes restaurante?{' '}
               <Link to="/login" className="text-orange-600 hover:underline">
                 Inicia sesión
@@ -271,7 +271,7 @@ const Onboarding: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Store className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">¿Cómo se llama tu negocio?</h2>
+              <h2 className="text-titulo font-bold">¿Cómo se llama tu negocio?</h2>
             </div>
             <input
               type="text"
@@ -281,7 +281,7 @@ const Onboarding: React.FC = () => {
               placeholder="Ej: Gorditas El Sazón, Taquería Don Pepe, Fonda La Abuela"
             />
             {slug.length >= 3 && (
-              <div className="text-sm mb-2">
+              <div className="text-cuerpo mb-2">
                 <span className="text-gray-500">Tu dirección: </span>
                 <span className="font-mono font-bold text-orange-600">{tenantHostLabel(slug)}</span>
                 {slugChecking && <span className="ml-2 text-gray-400">verificando...</span>}
@@ -297,9 +297,9 @@ const Onboarding: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Image className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">Imagen de tu negocio</h2>
+              <h2 className="text-titulo font-bold">Imagen de tu negocio</h2>
             </div>
-            <p className="text-gray-500 text-sm mb-4">Sube el logo o una foto de tu local (opcional)</p>
+            <p className="text-gray-500 text-cuerpo mb-4">Sube el logo o una foto de tu local (opcional)</p>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               {imagePreview ? (
                 <div>
@@ -309,7 +309,7 @@ const Onboarding: React.FC = () => {
                       setImageFile(null);
                       setImagePreview(null);
                     }}
-                    className="text-sm text-red-500"
+                    className="text-cuerpo text-red-500"
                   >
                     Quitar imagen
                   </button>
@@ -318,7 +318,7 @@ const Onboarding: React.FC = () => {
                 <label className="cursor-pointer">
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-2" />
                   <p className="text-gray-500">Click para subir imagen</p>
-                  <p className="text-xs text-gray-400">JPG, PNG o WebP (max 2MB)</p>
+                  <p className="text-meta text-gray-400">JPG, PNG o WebP (max 2MB)</p>
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" />
                 </label>
               )}
@@ -331,7 +331,7 @@ const Onboarding: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Palette className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">Elige tu paleta de colores</h2>
+              <h2 className="text-titulo font-bold">Elige tu paleta de colores</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {palettes.map((p) => (
@@ -346,7 +346,7 @@ const Onboarding: React.FC = () => {
                     <div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.primary }} />
                     <div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.sidebarBg }} />
                   </div>
-                  <span className="text-sm font-medium">{p.name}</span>
+                  <span className="text-cuerpo font-medium">{p.name}</span>
                   {selectedPalette === p.id && <Check className="w-4 h-4 text-orange-500 ml-auto" />}
                 </button>
               ))}
@@ -359,14 +359,14 @@ const Onboarding: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Grid3X3 className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">¿Cuántas mesas tienes?</h2>
+              <h2 className="text-titulo font-bold">¿Cuántas mesas tienes?</h2>
             </div>
             <div className="flex items-center gap-4 mb-4">
               <input type="range" min="1" max="30" value={numMesas} onChange={(e) => setNumMesas(parseInt(e.target.value))} className="flex-1" />
-              <span className="text-2xl font-bold text-orange-600 w-12 text-center">{numMesas}</span>
+              <span className="text-pantalla font-bold text-orange-600 w-12 text-center">{numMesas}</span>
             </div>
-            <p className="text-sm text-gray-500">Se crearán {numMesas} mesas automáticamente (Mesa 1, Mesa 2...). Puedes agregar más después en Catálogos.</p>
-            <p className="text-xs text-gray-400 mt-2">💡 Tip: También se agrega automáticamente la opción "Nuevo pedido" para órdenes para llevar.</p>
+            <p className="text-cuerpo text-gray-500">Se crearán {numMesas} mesas automáticamente (Mesa 1, Mesa 2...). Puedes agregar más después en Catálogos.</p>
+            <p className="text-meta text-gray-400 mt-2">💡 Tip: También se agrega automáticamente la opción "Nuevo pedido" para órdenes para llevar.</p>
           </div>
         )}
 
@@ -375,9 +375,9 @@ const Onboarding: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <BookOpen className="w-6 h-6 text-orange-500" />
-              <h2 className="text-xl font-bold">Catálogo rápido</h2>
+              <h2 className="text-titulo font-bold">Catálogo rápido</h2>
             </div>
-            <p className="text-gray-500 text-sm mb-3">Agrega algunos platillos y guisos para empezar (opcional)</p>
+            <p className="text-gray-500 text-cuerpo mb-3">Agrega algunos platillos y guisos para empezar (opcional)</p>
 
             {platillos.length === 0 && guisos.length === 0 && (
               <button
@@ -391,23 +391,23 @@ const Onboarding: React.FC = () => {
                   ]);
                   setGuisos(['Chicharrón prensado', 'Rajas con queso', 'Picadillo', 'Mole verde', 'Frijoles con queso', 'Deshebrada', 'Papas con chorizo']);
                 }}
-                className="w-full mb-4 py-2 px-4 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                className="btn w-full mb-4 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
               >
                 📋 Cargar ejemplos de gorditas (puedes editarlos después)
               </button>
             )}
 
             <div className="mb-4">
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Platillos</label>
+              <label className="text-cuerpo font-medium text-gray-700 mb-1 block">Platillos</label>
               <div className="flex gap-2 mb-2">
-                <input type="text" placeholder="Ej: Gordita de chicharrón" value={newPlatillo.nombre} onChange={(e) => setNewPlatillo({ ...newPlatillo, nombre: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg text-sm" />
-                <input type="number" placeholder="$25" value={newPlatillo.precio || ''} onChange={(e) => setNewPlatillo({ ...newPlatillo, precio: parseInt(e.target.value) || 0 })} className="w-20 px-3 py-2 border rounded-lg text-sm" />
-                <button onClick={addPlatillo} className="p-2 bg-orange-500 text-white rounded-lg" aria-label="Agregar platillo">
+                <input type="text" placeholder="Ej: Gordita de chicharrón" value={newPlatillo.nombre} onChange={(e) => setNewPlatillo({ ...newPlatillo, nombre: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
+                <input type="number" placeholder="$25" value={newPlatillo.precio || ''} onChange={(e) => setNewPlatillo({ ...newPlatillo, precio: parseInt(e.target.value) || 0 })} className="w-20 px-3 py-2 border rounded-lg text-cuerpo" />
+                <button onClick={addPlatillo} className="btn bg-orange-500 text-white" aria-label="Agregar platillo">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
               {platillos.map((p, i) => (
-                <div key={i} className="flex justify-between items-center text-sm bg-gray-50 px-3 py-1.5 rounded mb-1">
+                <div key={i} className="flex justify-between items-center text-cuerpo bg-gray-50 px-3 py-1.5 rounded mb-1">
                   <span>{p.nombre}</span>
                   <span className="flex items-center gap-2">
                     ${p.precio}{' '}
@@ -420,15 +420,15 @@ const Onboarding: React.FC = () => {
             </div>
 
             <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">Guisos</label>
+              <label className="text-cuerpo font-medium text-gray-700 mb-1 block">Guisos</label>
               <div className="flex gap-2 mb-2">
-                <input type="text" placeholder="Ej: Chicharrón prensado" value={newGuiso} onChange={(e) => setNewGuiso(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-sm" />
-                <button onClick={addGuiso} className="p-2 bg-orange-500 text-white rounded-lg" aria-label="Agregar guiso">
+                <input type="text" placeholder="Ej: Chicharrón prensado" value={newGuiso} onChange={(e) => setNewGuiso(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
+                <button onClick={addGuiso} className="btn bg-orange-500 text-white" aria-label="Agregar guiso">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
               {guisos.map((g, i) => (
-                <div key={i} className="flex justify-between items-center text-sm bg-gray-50 px-3 py-1.5 rounded mb-1">
+                <div key={i} className="flex justify-between items-center text-cuerpo bg-gray-50 px-3 py-1.5 rounded mb-1">
                   <span>{g}</span>
                   <button onClick={() => setGuisos(guisos.filter((_, j) => j !== i))} aria-label="Quitar guiso">
                     <X className="w-3 h-3 text-red-500" />
@@ -442,7 +442,7 @@ const Onboarding: React.FC = () => {
         {/* Navegación */}
         <div className="flex justify-between mt-8">
           {step > 1 ? (
-            <button onClick={() => setStep(step - 1)} className="flex items-center gap-1 px-4 py-2 text-gray-600 hover:text-gray-800">
+            <button onClick={() => setStep(step - 1)} className="btn gap-1 text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-4 h-4" /> Anterior
             </button>
           ) : (
@@ -453,7 +453,7 @@ const Onboarding: React.FC = () => {
             <button
               onClick={() => setStep(step + 1)}
               disabled={!canProceed()}
-              className="flex items-center gap-1 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn gap-1 bg-orange-500 text-white hover:bg-orange-600"
             >
               Siguiente <ArrowRight className="w-4 h-4" />
             </button>
@@ -461,7 +461,7 @@ const Onboarding: React.FC = () => {
             <button
               onClick={handleComplete}
               disabled={loading}
-              className="flex items-center gap-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+              className="btn gap-1 bg-green-600 text-white hover:bg-green-700"
             >
               {loading ? 'Creando...' : 'Completar'} <Check className="w-4 h-4" />
             </button>
