@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             {/* Botón de hamburguesa para abrir panel completo */}
             <button
               onClick={onToggleSidebar}
-              className="lg:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="btn lg:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               aria-label="Abrir menú completo"
             >
               <Menu className="w-6 h-6" />
@@ -41,8 +41,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 </div>
               )}
               <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900">{tenantNombre}</h1>
-                <p className="text-sm text-gray-600">Panel de Administración</p>
+                <h1 className="text-titulo font-bold text-gray-900">{tenantNombre}</h1>
+                <p className="text-cuerpo text-gray-600">Panel de Administración</p>
               </div>
             </div>
           </div>
@@ -52,8 +52,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               <>
                 <div className="hidden sm:flex items-center space-x-3">
                   <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900">{user.nombre}</p>
-                    <p className="text-xs text-gray-600">{user.roles.join(' · ')}</p>
+                    <p className="text-cuerpo font-medium text-gray-900">{user.nombre}</p>
+                    <p className="text-meta text-gray-600">{user.roles.join(' · ')}</p>
                   </div>
                   <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                     <User className="w-4 h-4 text-orange-600" />
@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 </div>
                 <button
                   onClick={() => void logout()}
-                  className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="btn space-x-2 text-gray-600 hover:text-red-600 hover:bg-red-50"
                 >
                   <LogOut className="w-4 h-4" />
                   <span className="hidden sm:inline">Cerrar Sesión</span>
