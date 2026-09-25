@@ -413,7 +413,7 @@ const SurtirOrden: React.FC = () => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-orange-600 mb-6"></div>
-          <span className="text-white text-2xl font-bold">Cargando órdenes...</span>
+          <span className="text-white text-pantalla font-bold">Cargando órdenes...</span>
         </div>
       </div>
     );
@@ -426,20 +426,20 @@ const SurtirOrden: React.FC = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-60 cursor-wait select-none" style={{ pointerEvents: 'all' }}>
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-4 border-orange-500 mb-8"></div>
-            <span className="text-white text-2xl font-bold drop-shadow-lg">Procesando órdenes, por favor espera...</span>
+            <span className="text-white text-pantalla font-bold drop-shadow-lg">Procesando órdenes, por favor espera...</span>
           </div>
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-6">
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-lg sm:text-3xl font-bold text-gray-900">Órdenes Recientes</h1>
-          <p className="text-xs sm:text-base text-gray-600 mt-1">Gestiona las órdenes que acaban de hacerse y están listas para preparar</p>
+          <h1 className="text-titulo sm:text-pantalla font-bold text-gray-900">Órdenes Recientes</h1>
+          <p className="text-cuerpo text-gray-600 mt-1">Gestiona las órdenes que acaban de hacerse y están listas para preparar</p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="bg-white rounded-lg px-3 sm:px-4 py-2 shadow-sm border border-gray-200">
             <div className="flex items-center space-x-2">
               <Clock className="w-4 sm:w-5 h-4 sm:h-5 text-orange-600" />
-              <span className="text-xs sm:text-sm font-medium text-gray-700">
+              <span className="text-meta font-medium text-gray-700">
                 {ordenes.length} órdenes pendientes
               </span>
             </div>
@@ -448,13 +448,13 @@ const SurtirOrden: React.FC = () => {
             <div className="bg-green-100 rounded-lg px-3 py-2 shadow-sm border border-green-200">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-green-700">
+                <span className="text-meta font-medium text-green-700">
                   Nuevas órdenes
                 </span>
               </div>
             </div>
           )}
-          <div className="text-xs text-gray-500">
+          <div className="text-meta text-gray-500">
            {lastUpdateTime.toLocaleTimeString('es-ES')}
           </div>
         </div>
@@ -476,7 +476,7 @@ const SurtirOrden: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
           <div className="text-center">
             <ChefHat className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No hay órdenes para preparar</h2>
+            <h2 className="text-titulo font-semibold text-gray-900 mb-2">No hay órdenes para preparar</h2>
             <p className="text-gray-600">No hay órdenes pendientes o en recepción</p>
           </div>
         </div>
@@ -508,17 +508,17 @@ const SurtirOrden: React.FC = () => {
                         <Users className="w-5 h-5 text-orange-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-lg font-semibold text-gray-900 break-words">
+                        <h3 className="text-titulo font-semibold text-gray-900 break-words">
                           {mesa.nombreMesa}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 break-words">
+                        <p className="text-meta text-gray-600 break-words">
                           {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'}
                         </p>
                         {/* Lista de clientes de la mesa */}
                         {mesa.ordenes.length > 0 && (
                           <div className="mt-1">
-                            <span className="text-xs sm:text-[20px] text-gray-500 font-medium">Cliente(s): </span>
-                            <span className="text-xs sm:text-[20px] text-gray-700">
+                            <span className="text-meta sm:text-titulo text-gray-500 font-medium">Cliente(s): </span>
+                            <span className="text-meta sm:text-titulo text-gray-700">
                               {Array.from(new Set(mesa.ordenes.map(o => o.nombreCliente || 'Sin nombre'))).join(', ')}
                             </span>
                           </div>
@@ -527,7 +527,7 @@ const SurtirOrden: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <div className="text-left sm:text-right">
-                        <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-600 mb-1">
+                        <div className="flex items-center space-x-1 text-meta text-gray-600 mb-1">
                           <Timer className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                           <span className="font-medium">{timeElapsed}</span>
                         </div>
@@ -542,7 +542,7 @@ const SurtirOrden: React.FC = () => {
                               handleSurtirTodasLasOrdenes(mesa);
                             }}
                             disabled={updating === `mesa-${mesa.idMesa}`}
-                            className="px-3 py-1 text-xs bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                            className="btn bg-blue-600 text-white rounded-full hover:bg-blue-700"
                           >
                             {updating === `mesa-${mesa.idMesa}` ? (
                               <>
@@ -582,26 +582,26 @@ const SurtirOrden: React.FC = () => {
                         >
                           {/* Nombre del cliente arriba de la orden */}
                           <div className="mb-1">
-                            <span className="text-sm sm:text-[20px] font-semibold text-gray-700">Cliente: </span>
-                            <span className="text-sm sm:text-[20px] text-gray-900">{orden.nombreCliente || 'Sin nombre'}</span>
+                            <span className="text-cuerpo sm:text-titulo font-semibold text-gray-700">Cliente: </span>
+                            <span className="text-cuerpo sm:text-titulo text-gray-900">{orden.nombreCliente || 'Sin nombre'}</span>
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
                             <div className="min-w-0 flex-1">
                               {orden.notas && (
                                 <div className="flex items-start space-x-1 mt-1">
                                   <StickyNote className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                                  <p className="text-xs text-gray-700 italic break-words">
+                                  <p className="text-meta text-gray-700 italic break-words">
                                     {orden.notas}
                                   </p>
                                 </div>
                               )}
                             </div>
                             <div className="text-left sm:text-right flex-shrink-0">
-                              <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-600 mb-1">
+                              <div className="flex items-center space-x-1 text-meta text-gray-600 mb-1">
                                 <Timer className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                                 <span>{timeElapsed}</span>
                               </div>
-                              <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                              <span className={`inline-block px-2 py-1 text-meta font-medium rounded-full ${
                                 orden.estatus === 'Recepcion' 
                                   ? 'bg-blue-100 text-blue-800' 
                                   : orden.estatus === 'Pendiente'
@@ -628,12 +628,12 @@ const SurtirOrden: React.FC = () => {
 
                           {/* Resumen de la orden */}
                           <div className="bg-gray-50 rounded-lg p-2 sm:p-3 mb-4 space-y-2">
-                            <h6 className="text-sm sm:text-lg font-semibold text-gray-900 mb-2">Resumen de la orden:</h6>
+                            <h6 className="text-titulo font-semibold text-gray-900 mb-2">Resumen de la orden:</h6>
                             {/* Platillos */}
                             {orden.platillos && orden.platillos.filter((platillo: any) => platillo.listo !== true && platillo.entregado !== true).length > 0 && (
                               <div className="space-y-1">
                                 {orden.platillos.filter((platillo: any) => platillo.listo !== true && platillo.entregado !== true).map((platillo: any, index: number) => (
-                                  <div key={index} className="flex justify-between items-start text-xs sm:text-lg">
+                                  <div key={index} className="flex justify-between items-start text-titulo">
                                     <div className="flex-1 min-w-0">
                                       <span className="font-semibold text-gray-800">
                                         {platillo.cantidad}x {platillo.nombrePlatillo || platillo.platillo}
@@ -650,7 +650,7 @@ const SurtirOrden: React.FC = () => {
                                       {platillo.extras && platillo.extras.filter((extra: any) => extra.listo !== true && extra.entregado !== true).length > 0 && (
                                         <div className="ml-2 mt-1">
                                           {platillo.extras.filter((extra: any) => extra.listo !== true && extra.entregado !== true).map((extra: any, extraIndex: number) => (
-                                            <div key={extraIndex} className="text-purple-600 text-xs sm:text-lg">
+                                            <div key={extraIndex} className="text-purple-600 text-titulo">
                                               + {extra.cantidad}x {extra.nombreExtra}
                                             </div>
                                           ))}
@@ -666,7 +666,7 @@ const SurtirOrden: React.FC = () => {
                             {orden.productos && orden.productos.filter((producto: any) => producto.listo !== true && producto.entregado !== true).length > 0 && (
                               <div className="space-y-1 pt-2 border-t border-gray-200">
                                 {orden.productos.filter((producto: any) => producto.listo !== true && producto.entregado !== true).map((producto: any, index: number) => (
-                                  <div key={index} className="flex justify-between items-center text-xs sm:text-lg">
+                                  <div key={index} className="flex justify-between items-center text-titulo">
                                     <span className="font-semibold text-gray-800">
                                       {producto.cantidad}x {producto.nombreProducto || producto.producto}
                                     </span>
@@ -678,7 +678,7 @@ const SurtirOrden: React.FC = () => {
                             {/* Mensaje si no hay items pendientes */}
                             {(!orden.platillos || orden.platillos.filter((p: any) => !p.entregado).length === 0) && 
                              (!orden.productos || orden.productos.filter((p: any) => !p.entregado).length === 0) && (
-                              <div className="text-xs sm:text-lg text-gray-500 italic">
+                              <div className="text-titulo text-gray-500 italic">
                                 Todos los items han sido entregados
                               </div>
                             )}
@@ -688,7 +688,7 @@ const SurtirOrden: React.FC = () => {
                               <button
                                 onClick={() => handleIniciarPreparacion(orden._id!)}
                                 disabled={updating === orden._id || orden.estatus === 'Pendiente'}
-                                className="w-full bg-blue-600 text-white py-2 px-3 rounded text-xs sm:text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                                className="btn w-full bg-blue-600 text-white hover:bg-blue-700"
                               >
                                 {updating === orden._id ? (
                                   <>
@@ -707,7 +707,7 @@ const SurtirOrden: React.FC = () => {
                             </div>
                           ) : (
                             <div className="space-y-2">
-                              <span className="text-xs sm:text-sm text-orange-600 font-medium">
+                              <span className="text-meta text-orange-600 font-medium">
                                 ⏳ En preparación...
                               </span>
                             </div>
@@ -731,16 +731,16 @@ const SurtirOrden: React.FC = () => {
             <div className="p-3 sm:p-6 border-b border-gray-200">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 break-words">
+                  <h2 className="text-titulo font-bold text-gray-900 break-words">
                     Detalles de Orden - {getMostrarNombreMesaOrden(selectedOrden)}
                   </h2>
-                  <p className="text-sm text-gray-600 mt-1 break-words">
+                  <p className="text-cuerpo text-gray-600 mt-1 break-words">
                     Estado: {selectedOrden.estatus}
                   </p>
                 </div>
                 <button
                   onClick={() => setSelectedOrden(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl self-start sm:self-center flex-shrink-0"
+                  className="text-gray-400 hover:text-gray-600 text-pantalla self-start sm:self-center flex-shrink-0"
                 >
                   ×
                 </button>
@@ -751,7 +751,7 @@ const SurtirOrden: React.FC = () => {
               {/* Products Section */}
               {selectedOrden.productos && selectedOrden.productos.filter((producto) => !producto.listo).length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <h3 className="text-titulo font-semibold text-gray-900 mb-3 flex items-center">
                     <Package className="w-5 h-5 mr-2 text-orange-600 flex-shrink-0" />
                     Productos
                   </h3>
@@ -769,7 +769,7 @@ const SurtirOrden: React.FC = () => {
                           }`}></div>
                           <div className="min-w-0 flex-1">
                             <p className="font-medium text-gray-900 break-words">{producto.producto || producto.nombre}</p>
-                            <p className="text-sm text-gray-600">Cantidad: {producto.cantidad}</p>
+                            <p className="text-cuerpo text-gray-600">Cantidad: {producto.cantidad}</p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-2">
@@ -787,7 +787,7 @@ const SurtirOrden: React.FC = () => {
               {/* Dishes Section */}
               {selectedOrden.platillos && selectedOrden.platillos.filter((platillo) => !platillo.listo).length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                  <h3 className="text-titulo font-semibold text-gray-900 mb-3 flex items-center">
                     <ChefHat className="w-5 h-5 mr-2 text-orange-600 flex-shrink-0" />
                     Platillos
                   </h3>
@@ -806,11 +806,11 @@ const SurtirOrden: React.FC = () => {
                             <div className="min-w-0 flex-1">
                               <p className="font-medium text-gray-900 break-words">{platillo.platillo}</p>
                               {platillo.notas && (
-                                <p className="text-xs text-blue-600 italic mt-1 break-words">
+                                <p className="text-meta text-blue-600 italic mt-1 break-words">
                                   Notas: {platillo.notas}
                                 </p>
                               )}
-                              <p className="text-sm text-gray-600 break-words">
+                              <p className="text-cuerpo text-gray-600 break-words">
                                 Guiso: {platillo.guiso} | Cantidad: {platillo.cantidad}
                               </p>
                             </div>
@@ -837,10 +837,10 @@ const SurtirOrden: React.FC = () => {
                                     extra.entregado ? 'bg-green-500' : extra.listo ? 'bg-yellow-500' : 'bg-purple-400'
                                   }`}></div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium text-purple-900 break-words">
+                                    <p className="text-cuerpo font-medium text-purple-900 break-words">
                                       Extra: {extra.nombreExtra}
                                     </p>
-                                    <p className="text-xs text-purple-700">
+                                    <p className="text-meta text-purple-700">
                                       Cantidad: {extra.cantidad}
                                     </p>
                                   </div>
@@ -856,7 +856,7 @@ const SurtirOrden: React.FC = () => {
                                       <button
                                         onClick={() => handleMarkItemAsReady(extra._id, 'extra')}
                                         disabled={markingItem === extra._id}
-                                        className="px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                                        className="btn bg-purple-100 text-purple-700 hover:bg-purple-200"
                                       >
                                         {markingItem === extra._id ? (
                                           <>
@@ -889,8 +889,8 @@ const SurtirOrden: React.FC = () => {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-blue-900">Progreso de preparación</p>
-                        <p className="text-xs text-blue-700">
+                        <p className="text-cuerpo font-medium text-blue-900">Progreso de preparación</p>
+                        <p className="text-meta text-blue-700">
                           Marca cada item como listo cuando esté preparado
                         </p>
                       </div>
@@ -898,7 +898,7 @@ const SurtirOrden: React.FC = () => {
                         <button
                           onClick={() => handleCompletarOrden(selectedOrden._id!)}
                           disabled={updating === selectedOrden._id || !isOrderReadyToComplete(selectedOrden)}
-                          className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+                          className="btn w-full sm:w-auto bg-green-600 text-white hover:bg-green-700"
                         >
                           {updating === selectedOrden._id ? (
                             <>
@@ -924,19 +924,19 @@ const SurtirOrden: React.FC = () => {
 
       {/* Legend */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-8">
-        <h3 className="text-sm sm:text-lg font-semibold text-gray-900 mb-4">Código de Prioridad</h3>
+        <h3 className="text-titulo font-semibold text-gray-900 mb-4">Código de Prioridad</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-green-200 border-2 border-green-500 rounded flex-shrink-0"></div>
-            <span className="text-xs sm:text-sm text-gray-700">Normal (hasta 20 min)</span>
+            <span className="text-meta text-gray-700">Normal (hasta 20 min)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-yellow-200 border-2 border-yellow-500 rounded flex-shrink-0"></div>
-            <span className="text-xs sm:text-sm text-gray-700">Atención (20-40 min)</span>
+            <span className="text-meta text-gray-700">Atención (20-40 min)</span>
           </div>
           <div className="flex items-center space-x-3">
             <div className="w-3 h-3 sm:w-4 sm:h-4 bg-red-200 border-2 border-red-500 rounded flex-shrink-0"></div>
-            <span className="text-xs sm:text-sm text-gray-700">Urgente (más de 40 min)</span>
+            <span className="text-meta text-gray-700">Urgente (más de 40 min)</span>
           </div>
         </div>
       </div>
