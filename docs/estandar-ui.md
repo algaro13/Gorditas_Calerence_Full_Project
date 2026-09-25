@@ -95,9 +95,10 @@ cuenta al colocar la acción principal.
 
 ## Las pantallas que ya existen
 
-No están migradas. Las cubre una capa en `src/index.css` que, por debajo de 640 px, sube el
-texto a 16 px y lleva todo control a 44 px. **Es una red de seguridad, no el estándar**: sirve
-para que lo ya escrito no estorbe hoy, no para escribir lo de mañana.
+**Todas migradas** (25 de septiembre de 2026). No queda ninguna clase de tamaño antigua:
+689 usos de tipografía pasaron a los cuatro nombres, 146 botones a `btn` y 38 campos a `campo`.
 
-Al tocar una pantalla por otro motivo, conviene pasarla a estas clases. Una migración masiva de
-13.000 líneas no la puede revisar nadie, y la capa ya evita el daño mientras tanto.
+La capa de ergonomía de `src/index.css` **se queda**, aunque ya no haga falta para las clases
+escritas a mano. Sigue cubriendo las que se componen en tiempo de ejecución
+(`` className={`px-2 py-1 text-${...}`} ``), que el estándar no puede alcanzar porque no existen
+en el código hasta que se ejecutan. Quitarla dejaría esas sin red por un ahorro de nada.
