@@ -507,7 +507,7 @@ const Catalogos: React.FC = () => {
             <select
               value={value || ''}
               onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="campo"
               disabled={!!esAdminOEncargadoEdit && !!esMeseroODespachador}
             >
               <option value="">Selecciona tipo de usuario</option>
@@ -517,11 +517,11 @@ const Catalogos: React.FC = () => {
             </select>
             {/* Mensaje si no puede editar tipo de usuario */}
             {esAdminOEncargadoEdit && esMeseroODespachador && (
-              <div className="text-xs text-red-600 mt-1">No puedes cambiar el tipo de usuario de un Administrador o Encargado.</div>
+              <div className="text-meta text-red-600 mt-1">No puedes cambiar el tipo de usuario de un Administrador o Encargado.</div>
             )}
             {/* Mensaje si está creando y no puede crear admin/encargado */}
             {!editingItem && esMeseroODespachador && (
-              <div className="text-xs text-orange-600 mt-1">No puedes crear usuarios tipo Administrador o Encargado.</div>
+              <div className="text-meta text-orange-600 mt-1">No puedes crear usuarios tipo Administrador o Encargado.</div>
             )}
           </div>
         );
@@ -532,7 +532,7 @@ const Catalogos: React.FC = () => {
           <select
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
           >
             <option value="">Selecciona tipo de platillo</option>
             {(Array.isArray(tiposPlatillo) ? tiposPlatillo : []).map(tipo => (
@@ -547,7 +547,7 @@ const Catalogos: React.FC = () => {
           <select
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
           >
             <option value="">Selecciona tipo de extra</option>
             {(Array.isArray(tiposExtra) ? tiposExtra : []).map(tipo => (
@@ -562,7 +562,7 @@ const Catalogos: React.FC = () => {
           <select
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
           >
             <option value="">Selecciona tipo de producto</option>
             {(Array.isArray(tiposProducto) ? tiposProducto : []).map(tipo => (
@@ -580,7 +580,7 @@ const Catalogos: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, [field]: e.target.checked })}
               className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
             />
-            <label className="ml-2 text-sm text-gray-700">Activo</label>
+            <label className="ml-2 text-cuerpo text-gray-700">Activo</label>
           </div>
         );
       case 'password': {
@@ -595,18 +595,18 @@ const Catalogos: React.FC = () => {
                 type="password"
                 value={value || ''}
                 onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="campo"
                 placeholder="Dejar vacío para no cambiar"
                 disabled={!!noPuedeEditar}
               />
               {noPuedeEditar && (
-                <div className="text-xs text-red-600 mt-1">No puedes editar la contraseña de un Administrador o Encargado.</div>
+                <div className="text-meta text-red-600 mt-1">No puedes editar la contraseña de un Administrador o Encargado.</div>
               )}
               {value && value.length > 0 && value.length < 6 && !noPuedeEditar && (
-                <div className="text-xs text-red-600 mt-1">La contraseña debe tener al menos 6 caracteres.</div>
+                <div className="text-meta text-red-600 mt-1">La contraseña debe tener al menos 6 caracteres.</div>
               )}
               {!noPuedeEditar && (
-                <div className="text-xs text-gray-500 mt-1">Dejar vacío para mantener la contraseña actual.</div>
+                <div className="text-meta text-gray-500 mt-1">Dejar vacío para mantener la contraseña actual.</div>
               )}
             </div>
           );
@@ -618,11 +618,11 @@ const Catalogos: React.FC = () => {
               type="password"
               value={value || ''}
               onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="campo"
               placeholder={`Ingresa ${field}`}
             />
             {selectedModel.id === 'usuario' && value && value.length > 0 && value.length < 6 && (
-              <div className="text-xs text-red-600 mt-1">La contraseña debe tener al menos 6 caracteres.</div>
+              <div className="text-meta text-red-600 mt-1">La contraseña debe tener al menos 6 caracteres.</div>
             )}
           </div>
         );
@@ -644,17 +644,17 @@ const Catalogos: React.FC = () => {
               type="email"
               value={value || ''}
               onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="campo"
               placeholder={`Ingresa ${field}`}
               pattern="^[\w-.]+@[\w-]+\.[a-zA-Z]{2,}$"
               required={isUsuario}
               disabled={!!noPuedeEditarCorreo}
             />
             {noPuedeEditarCorreo && (
-              <div className="text-xs text-red-600 mt-1">No puedes editar el correo de un Administrador o Encargado.</div>
+              <div className="text-meta text-red-600 mt-1">No puedes editar el correo de un Administrador o Encargado.</div>
             )}
             {showEmailFormatError && !noPuedeEditarCorreo && (
-              <div className="text-xs text-red-600 mt-1">Formato: ejemplo@gmail.com</div>
+              <div className="text-meta text-red-600 mt-1">Formato: ejemplo@gmail.com</div>
             )}
           </div>
         );
@@ -687,7 +687,7 @@ const Catalogos: React.FC = () => {
             type="number"
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: parseFloat(e.target.value) || 0 })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
             placeholder={`Ingresa ${field}`}
             min="0"
             step={['costo', 'precio'].includes(field) ? '0.01' : '1'}
@@ -699,7 +699,7 @@ const Catalogos: React.FC = () => {
           <textarea
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
             placeholder={`Ingresa ${field}`}
             rows={3}
           />
@@ -746,7 +746,7 @@ const Catalogos: React.FC = () => {
               {!mesaEspecialExists && (
                 <button
                   type="button"
-                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs whitespace-nowrap"
+                  className="btn bg-blue-100 text-blue-700 whitespace-nowrap"
                   onClick={() => setFormData({ ...formData, nombre: 'Nuevo pedido' })}
                 >
                   Crear Nuevo pedido
@@ -760,7 +760,7 @@ const Catalogos: React.FC = () => {
             type="text"
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
             placeholder={`Ingresa ${field}`}
           />
         );
@@ -776,14 +776,14 @@ const Catalogos: React.FC = () => {
               <div className="space-y-1">
                 {variantes.map((variante: string, index: number) => (
                   <div key={index} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                    <span className="flex-1 text-sm">{variante}</span>
+                    <span className="flex-1 text-cuerpo">{variante}</span>
                     <button
                       type="button"
                       onClick={() => {
                         const nuevasVariantes = variantes.filter((_: string, i: number) => i !== index);
                         setFormData({ ...formData, variantes: nuevasVariantes });
                       }}
-                      className="text-red-600 hover:text-red-800 text-xs"
+                      className="text-red-600 hover:text-red-800 text-meta"
                     >
                       Eliminar
                     </button>
@@ -808,7 +808,7 @@ const Catalogos: React.FC = () => {
                     }
                   }
                 }}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="campo flex-1"
                 placeholder="Escribe una variante y presiona Enter"
               />
               <button
@@ -820,12 +820,12 @@ const Catalogos: React.FC = () => {
                     setNuevaVariante('');
                   }
                 }}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 whitespace-nowrap"
+                className="btn bg-orange-600 text-white hover:bg-orange-700 whitespace-nowrap"
               >
                 Agregar
               </button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-meta text-gray-500">
               Las variantes son opcionales y no afectan el precio del producto
             </p>
           </div>
@@ -837,7 +837,7 @@ const Catalogos: React.FC = () => {
             type="text"
             value={value || ''}
             onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="campo"
             placeholder={`Ingresa ${field}`}
           />
         );
@@ -873,14 +873,14 @@ const Catalogos: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6 px-1 py-2 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 truncate">Catálogos</h1>
-            <p className="text-gray-600 mt-1 text-sm sm:text-base">Gestiona los catálogos maestros del sistema</p>
+            <h1 className="text-pantalla font-bold text-gray-900 truncate">Catálogos</h1>
+            <p className="text-gray-600 mt-1 text-cuerpo">Gestiona los catálogos maestros del sistema</p>
           </div>
           {/* Solo mostrar botón de nuevo si NO es tipos de usuario */}
           {!['tipousuario', 'usuario'].includes(selectedModel.id) && (
             <button
               onClick={handleCreate}
-              className="flex-shrink-0 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center"
+              className="btn flex-shrink-0 bg-orange-600 text-white hover:bg-orange-700"
             >
               <Plus className="w-4 h-4 mr-2 flex-shrink-0" />
               <span className="truncate">Nuevo {selectedModel.name.slice(0, -1)}</span>
@@ -889,13 +889,13 @@ const Catalogos: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-sm break-words">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-cuerpo break-words">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-sm break-words">
+          <div className="bg-green-50 border border-green-200 text-green-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-cuerpo break-words">
             {success}
           </div>
         )}
@@ -905,7 +905,7 @@ const Catalogos: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 px-1 py-2 sm:p-6">
             <div className="flex items-center space-x-2 mb-2 sm:mb-4">
               <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-orange-600 flex-shrink-0" />
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">Catálogos</h2>
+              <h2 className="text-titulo font-semibold text-gray-900 truncate">Catálogos</h2>
             </div>
             
             <div className="space-y-1 sm:space-y-2">
@@ -913,7 +913,7 @@ const Catalogos: React.FC = () => {
                 <button
                   key={model.id}
                   onClick={() => handleModelSelect(model)}
-                  className={`w-full text-left px-2 py-1 sm:px-3 sm:py-2 rounded-lg transition-colors truncate text-sm sm:text-base ${
+                  className={`w-full text-left px-2 py-1 sm:px-3 sm:py-2 rounded-lg transition-colors truncate text-cuerpo ${
                     selectedModel.id === model.id
                       ? 'bg-orange-100 text-orange-700 font-medium'
                       : 'text-gray-700 hover:bg-gray-100'
@@ -928,7 +928,7 @@ const Catalogos: React.FC = () => {
           {/* Items List */}
           <div ref={itemsListRef} className="lg:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 px-1 py-2 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-3 sm:mb-6">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{selectedModel.name}</h2>
+              <h2 className="text-titulo font-semibold text-gray-900 truncate">{selectedModel.name}</h2>
               {/* Solo mostrar búsqueda y filtro si NO es tipos de usuario */}
               {!['tipousuario', 'usuario'].includes(selectedModel.id) && (
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
@@ -938,21 +938,21 @@ const Catalogos: React.FC = () => {
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="min-w-0 flex-1 sm:w-48 px-2 py-1 sm:px-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm"
+                      className="campo min-w-0 flex-1 sm:w-48"
                       placeholder="Buscar..."
                     />
                   </div>
                   {selectedModel.hasActivo && (
                     <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
                       <Filter className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 flex-shrink-0" />
-                      <label className="flex items-center whitespace-nowrap text-xs sm:text-sm">
+                      <label className="flex items-center whitespace-nowrap text-meta">
                         <input
                           type="checkbox"
                           checked={showActiveOnly}
                           onChange={(e) => setShowActiveOnly(e.target.checked)}
                           className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Solo activos</span>
+                        <span className="ml-2 text-cuerpo text-gray-700">Solo activos</span>
                       </label>
                     </div>
                   )}
@@ -968,15 +968,15 @@ const Catalogos: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Tipo de Usuario</th>
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Descripción</th>
+                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Tipo de Usuario</th>
+                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Descripción</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tiposUsuarioFijos.map(tipo => (
                       <tr key={tipo.value} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base truncate">{tipo.label}</td>
-                        <td className="py-2 px-1 sm:py-3 sm:px-4 text-gray-700 text-xs sm:text-base break-words hyphens-auto">{tipo.descripcion}</td>
+                        <td className="py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo truncate">{tipo.label}</td>
+                        <td className="py-2 px-1 sm:py-3 sm:px-4 text-gray-700 text-cuerpo break-words hyphens-auto">{tipo.descripcion}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -988,12 +988,12 @@ const Catalogos: React.FC = () => {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Nombre</th>
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Estado</th>
+                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Nombre</th>
+                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Estado</th>
                       {(selectedModel.id === 'producto' || selectedModel.id === 'platillo' || selectedModel.id === 'extra') && (
-                        <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Precio</th>
+                        <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Precio</th>
                       )}
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-xs sm:text-base">Acciones</th>
+                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1001,16 +1001,16 @@ const Catalogos: React.FC = () => {
                       <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-2 px-1 sm:py-3 sm:px-4">
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 text-xs sm:text-base truncate break-words hyphens-auto">{item.nombre}</p>
+                            <p className="font-medium text-gray-900 text-cuerpo truncate break-words hyphens-auto">{item.nombre}</p>
                             {item.descripcion && (
-                              <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 break-words hyphens-auto">{item.descripcion}</p>
+                              <p className="text-meta text-gray-600 line-clamp-2 break-words hyphens-auto">{item.descripcion}</p>
                             )}
                           </div>
                         </td>
                         <td className="py-2 px-1 sm:py-3 sm:px-4">
                           {selectedModel.hasActivo ? (
                             <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full whitespace-nowrap ${
+                              className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
                                 item.activo
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-red-100 text-red-800'
@@ -1019,14 +1019,14 @@ const Catalogos: React.FC = () => {
                               {item.activo ? 'Activo' : 'Inactivo'}
                             </span>
                           ) : (
-                            <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">
+                            <span className="px-2 py-1 text-meta font-medium rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">
                               N/A
                             </span>
                           )}
                         </td>
                         {(selectedModel.id === 'producto' || selectedModel.id === 'platillo' || selectedModel.id === 'extra') && (
                           <td className="py-2 px-1 sm:py-3 sm:px-4">
-                            <span className="font-medium text-green-600 text-xs sm:text-base whitespace-nowrap">
+                            <span className="font-medium text-green-600 text-cuerpo whitespace-nowrap">
                               ${((item as any).precio || (item as any).costo || 0).toFixed(2)}
                             </span>
                           </td>
@@ -1036,14 +1036,14 @@ const Catalogos: React.FC = () => {
                             {selectedModel.id !== 'mesa' && (
                               <button
                                 onClick={() => handleEdit(item)}
-                                className="p-1 text-blue-600 hover:bg-blue-50 rounded flex-shrink-0"
+                                className="btn text-blue-600 hover:bg-blue-50 flex-shrink-0"
                               >
                                 <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
                               </button>
                             )}
                             <button
                               onClick={() => handleDelete(item)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded flex-shrink-0"
+                              className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
                             >
                               <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </button>
@@ -1068,14 +1068,14 @@ const Catalogos: React.FC = () => {
         {showModal && !['tipousuario', 'usuario'].includes(selectedModel.id) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-1 py-2 sm:p-4">
             <div className="bg-white rounded-xl px-2 py-3 sm:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 truncate break-words hyphens-auto">
+              <h3 className="text-titulo font-semibold text-gray-900 mb-2 sm:mb-4 truncate break-words hyphens-auto">
                 {editingItem ? 'Editar' : 'Crear'} {selectedModel.name.slice(0, -1)}
               </h3>
               
               <div className="space-y-2 sm:space-y-4">
                 {selectedModel.fields.map((field) => (
                   <div key={field}>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 truncate break-words">
+                    <label className="block text-meta font-medium text-gray-700 mb-1 sm:mb-2 truncate break-words">
                       {getFieldLabel(field)}
                     </label>
                     {renderField(field, formData[field])}
@@ -1084,7 +1084,7 @@ const Catalogos: React.FC = () => {
                 
                 {selectedModel.hasActivo && (
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    <label className="block text-meta font-medium text-gray-700 mb-1 sm:mb-2">
                       Estado
                     </label>
                     {renderField('activo', formData.activo)}
@@ -1095,14 +1095,14 @@ const Catalogos: React.FC = () => {
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 mt-3 sm:mt-6">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-2 py-1 sm:px-4 sm:py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs sm:text-base"
+                  className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 px-2 py-1 sm:px-4 sm:py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors text-xs sm:text-base"
+                  className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
                 >
                   {saving ? 'Guardando...' : 'Guardar'}
                 </button>
