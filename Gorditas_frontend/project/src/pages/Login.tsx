@@ -59,7 +59,7 @@ const Login: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600"></div>
-        <p className="text-sm text-gray-600">Entrando a tu restaurante...</p>
+        <p className="text-cuerpo text-gray-600">Entrando a tu restaurante...</p>
       </div>
     );
   }
@@ -103,22 +103,22 @@ const Login: React.FC = () => {
                 <ChefHat className="w-8 h-8 text-white" />
               </div>
             )}
-            <h1 className="text-2xl font-bold text-gray-900">{tenant?.nombre ?? appConfig.brandName}</h1>
+            <h1 className="text-pantalla font-bold text-gray-900">{tenant?.nombre ?? appConfig.brandName}</h1>
             <p className="text-gray-600 mt-2">
               {tenant ? appConfig.brandName : 'Entra con tu correo y te llevamos a tu restaurante'}
             </p>
-            {slug && <p className="text-xs text-gray-400 mt-1 font-mono">{tenantHostLabel(slug)}</p>}
+            {slug && <p className="text-meta text-gray-400 mt-1 font-mono">{tenantHostLabel(slug)}</p>}
           </div>
 
           {(error || tenantError) && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-sm">{error || tenantError}</div>
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-6 text-cuerpo">{error || tenantError}</div>
           )}
 
           {(!slug || tenant) && (
             <button
               onClick={handleLogin}
               disabled={busy || authLoading}
-              className="w-full flex items-center justify-center gap-3 bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="btn w-full gap-3 bg-orange-600 text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-all duration-200"
             >
               <LogIn className="w-5 h-5" />
               {busy ? 'Redirigiendo...' : 'Iniciar sesión'}
@@ -126,7 +126,7 @@ const Login: React.FC = () => {
           )}
 
           {!slug && (
-            <p className="text-sm text-gray-600 text-center mt-4">
+            <p className="text-cuerpo text-gray-600 text-center mt-4">
               ¿Aún no tienes restaurante?{' '}
               <a href={`${appUrl()}/onboarding`} className="text-orange-600 font-medium hover:underline">
                 Regístralo gratis
@@ -136,7 +136,7 @@ const Login: React.FC = () => {
 
           {isLocalHost() && (
             <div className="mt-6 border-t border-dashed border-gray-200 pt-4">
-              <p className="text-xs text-gray-500 mb-2">Entorno local: restaurante de pruebas (slug)</p>
+              <p className="text-meta text-gray-500 mb-2">Entorno local: restaurante de pruebas (slug)</p>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -144,17 +144,17 @@ const Login: React.FC = () => {
                   onChange={(e) => setDevSlug(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && applyDevSlug()}
                   placeholder="demo"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
+                  className="campo flex-1"
                   aria-label="Slug del restaurante"
                 />
-                <button onClick={applyDevSlug} className="px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200">
+                <button onClick={applyDevSlug} className="btn bg-gray-100 hover:bg-gray-200">
                   Usar
                 </button>
               </div>
             </div>
           )}
 
-          <p className="text-center text-sm text-gray-500 mt-6">Al iniciar sesión, aceptas los términos y condiciones del servicio.</p>
+          <p className="text-center text-cuerpo text-gray-500 mt-6">Al iniciar sesión, aceptas los términos y condiciones del servicio.</p>
         </div>
       </div>
     </div>
