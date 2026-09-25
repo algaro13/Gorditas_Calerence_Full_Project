@@ -100,6 +100,9 @@ Tres suites, en `Gorditas_frontend/project/e2e/`:
   estándar de `docs/estandar-ui.md` convertido en regla que se ejecuta.
 - **flujo-orden**: tomar, surtir, despachar y cobrar una orden, incluida la confirmación de
   cobro.
+- **edicion**: que los cambios se guarden — el precio de un platillo y la paleta del negocio.
+  Cada una recarga antes de comprobar, porque afirmar sin recargar solo demuestra que el cliente
+  actualizó su estado, y deja lo que tocó como estaba.
 
 Corren a ancho de teléfono. Dejan órdenes de prueba con el cliente `E2E <marca de tiempo>`; se
 pueden borrar sin más:
