@@ -448,6 +448,15 @@ const NuevaOrden: React.FC = () => {
     setPlatillosSeleccionados(prev => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * El botón de restar cambia de significado al llegar a 1: deja de reducir y borra la línea.
+   * En un teléfono, con prisa, un toque de más se lleva el platillo sin que nadie lo pida, así
+   * que el paso de 1 a 0 pide confirmación. Los demás toques siguen siendo inmediatos: pedirla
+   * siempre estorbaría al ritmo del servicio, que es lo que esto intenta proteger.
+   */
+  const confirmarQuitar = (nombre: string) =>
+    window.confirm(`¿Quitar ${nombre} de la orden?`);
+
   const handleSubmitOrder = async () => {
     if (orderSubmitting || loading) {
       // Doble verificación: si ya está en proceso, no continuar
@@ -1203,12 +1212,12 @@ const NuevaOrden: React.FC = () => {
                                 }
                                 return p;
                               }));
-                            } else {
+                            } else if (confirmarQuitar(item.platillo.nombre)) {
                               handleRemovePlatillo(index);
                             }
                           }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={item.cantidad > 1 ? "Reducir cantidad" : "Eliminar platillo"}
+                          title={item.cantidad > 1 ? "Reducir cantidad" : "Quitar platillo de la orden"}
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -1252,12 +1261,12 @@ const NuevaOrden: React.FC = () => {
                               setProductosSeleccionados(prev => prev.map((p, i) => 
                                 i === index ? { ...p, cantidad: p.cantidad - 1 } : p
                               ));
-                            } else {
+                            } else if (confirmarQuitar(item.nombreProducto)) {
                               setProductosSeleccionados(prev => prev.filter((_, i) => i !== index));
                             }
                           }}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title={item.cantidad > 1 ? "Reducir cantidad" : "Eliminar producto"}
+                          title={item.cantidad > 1 ? "Reducir cantidad" : "Quitar producto de la orden"}
                         >
                           <Minus className="w-4 h-4" />
                         </button>

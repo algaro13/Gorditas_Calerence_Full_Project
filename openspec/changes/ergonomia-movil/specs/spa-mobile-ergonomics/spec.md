@@ -27,8 +27,14 @@ Text SHALL NOT be smaller on a phone than on a larger screen. Sizing that shrink
 - **THEN** the phone rendering uses type at least as large as the desktop one
 
 ### Requirement: Destructive actions are not a tap away from routine ones
-A control whose meaning changes from routine to destructive SHALL NOT perform the destructive action on the same tap as the routine one. Removing an item from an order SHALL be a distinct action from reducing its quantity.
+A control whose meaning changes from routine to destructive SHALL require an explicit confirmation before the destructive outcome, so that a single mis-tap cannot remove an item from an order.
+
+The confirmation SHALL apply only to the destructive transition. Asking on every tap would slow the service rhythm this requirement exists to protect, and an operator who is prompted constantly stops reading the prompt.
 
 #### Scenario: Reducing a quantity to zero
 - **WHEN** an item's quantity is 1 and the operator taps the reduce control
-- **THEN** the item is not removed by that tap alone
+- **THEN** the item is not removed by that tap alone; removal happens only after the operator confirms
+
+#### Scenario: Reducing a quantity above one
+- **WHEN** an item's quantity is above 1 and the operator taps the reduce control
+- **THEN** the quantity drops immediately, with no confirmation

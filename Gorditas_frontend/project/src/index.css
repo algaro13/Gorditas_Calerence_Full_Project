@@ -1,3 +1,119 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Ergonomía en teléfono.
+ *
+ * La app se construyó con la convención al revés: `text-xs sm:text-sm`, `px-2 sm:px-4` y
+ * equivalentes aparecen en unos 340 sitios, así que el teléfono recibía el tamaño pequeño y la
+ * pantalla grande el cómodo — justo al contrario de donde los dedos son menos precisos y hay
+ * más prisa. Medido a 375px, el flujo de tomar una orden tenía controles de 13×20px.
+ *
+ * Esto se corrige aquí y no repartido por componente por dos razones: 340 ediciones a mano
+ * serían imposibles de revisar, y sobre todo dejarían el criterio sin escribir en ninguna
+ * parte, así que el siguiente componente volvería a nacer igual de apretado.
+ *
+ * Solo aplica por debajo del punto de corte `sm` de Tailwind (640px). Tablet y escritorio se
+ * quedan exactamente como están.
+ */
+@media (max-width: 639px) {
+  /* --- Tamaño de texto -------------------------------------------------------------------
+   * 16px es el mínimo para leer cómodo a la distancia a la que se sostiene un teléfono, y en
+   * los campos de formulario es además lo que evita que Safari haga zoom al enfocar.
+   * Se sube el suelo sin tocar la jerarquía: lo que era más grande sigue siéndolo.
+   */
+  .text-xs,
+  .text-sm,
+  .text-base {
+    font-size: 1rem; /* 16px */
+    line-height: 1.5;
+  }
+
+  /* --- Área táctil ------------------------------------------------------------------------
+   * 44px por lado: Apple HIG 44pt, WCAG 2.5.5 44px, Material 48dp. Con un dedo de 1.6–2cm,
+   * por debajo de eso los fallos de puntería dejan de ser anecdóticos.
+   *
+   * Se usa min-height y no height para no romper los controles que ya son más altos, y
+   * `inline-flex` con centrado para que el contenido no quede pegado arriba al crecer la caja.
+   */
+  button,
+  [role="button"],
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+
+  /* El ancho importa tanto como el alto: los botones de solo icono del encabezado medían
+   * 40px de ancho aun con el alto ya corregido. No se aplica a inputs de texto, que se
+   * estiran solos, ni rompe los de ancho completo. */
+  button,
+  [role="button"] {
+    min-width: 44px;
+  }
+
+  /* Centrado vertical al crecer la caja, para que el contenido no quede pegado arriba.
+   * No se toca `display`: las clases de Tailwind (`flex`, `block`, `grid`) ganan por
+   * especificidad de todos modos, así que forzarlo aquí solo crearía conflictos. */
+  button,
+  [role="button"] {
+    align-items: center;
+  }
+
+  /* --- Casillas y radios ------------------------------------------------------------------
+   * Se llevan a 24px, el piso de cumplimiento de WCAG 2.5.8. No se usa un pseudoelemento para
+   * ampliar el área a 44px porque los inputs son elementos reemplazados y no admiten ::before
+   * ni ::after: la regla existiría en la hoja pero no pintaría nada. Llegar a 44px exige que
+   * la etiqueta sea el objetivo, y eso se hace en el componente (ver `label` abajo).
+   *
+   * El selector va duplicado para ganar en especificidad (0,2,1) a las clases `w-4 h-4` que
+   * las pantallas ya traen puestas; con un solo atributo perdería contra ellas.
+   */
+  input[type="checkbox"][type="checkbox"],
+  input[type="radio"][type="radio"] {
+    width: 1.5rem;  /* 24px */
+    height: 1.5rem;
+    /* Sin esto la casilla se encoge dentro de su fila flex: medía 13px de ancho aunque la
+     * regla de arriba pidiera 24. El alto se respetaba y el ancho no, que es la pista de que
+     * el problema era el reparto de espacio y no la especificidad. */
+    flex-shrink: 0;
+  }
+
+  /* Una etiqueta que envuelve o apunta a una casilla se vuelve parte del objetivo: es lo que
+   * permite llegar a los 44px sin agrandar la caja hasta desencajar el texto. */
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    gap: 0.5rem;
+  }
+
+  /* --- Separación entre objetivos ---------------------------------------------------------
+   * Los objetivos pequeños necesitan MÁS separación, no menos, y al crecer los controles a
+   * 44px algunos quedaron casi pegados: los botones «Platillo» y «Producto» a 2px, y las
+   * tarjetas del menú a 6px.
+   *
+   * Solo se elevan las separaciones que estaban por debajo de 8px. No se toca `gap-2` ni
+   * nada mayor, así que las pantallas que ya respetaban el mínimo se quedan igual.
+   */
+  .gap-0\.5,
+  .gap-1,
+  .gap-1\.5,
+  .gap-x-1,
+  .gap-y-1 {
+    gap: 0.5rem;
+  }
+
+  .space-y-1 > :not([hidden]) ~ :not([hidden]),
+  .space-y-1\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.5rem;
+  }
+
+  .space-x-1 > :not([hidden]) ~ :not([hidden]),
+  .space-x-1\.5 > :not([hidden]) ~ :not([hidden]) {
+    margin-left: 0.5rem;
+  }
+}
