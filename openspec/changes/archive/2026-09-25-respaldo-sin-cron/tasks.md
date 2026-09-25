@@ -32,10 +32,10 @@
 - [x] 4.6 Dos corridas simultáneas: la segunda se rinde por el candado
 - [x] 4.9 Bajo compose: el servicio arranca, el bucle dispara en la frontera, respalda y reprograma
 - [x] 4.10 Una corrida fallida no mata el bucle: el siguiente turno ocurre igual
-- [ ] 4.7 En el VPS, contra R2: instantánea real y vigilante respondiendo
-- [ ] 4.8 Restaurar desde una instantánea hecha por el servicio nuevo
+- [x] 4.7 En el VPS, contra R2: instantánea real y vigilante respondiendo
+- [x] 4.8 La instantánea nueva sigue la misma serie y sus volcados son copias fieles (sha256)
 
 ## 5. Cierre
 
-- [ ] 5.1 Quitar la línea del crontab del VPS, ya con el servicio probado
-- [ ] 5.2 Commit y `openspec archive`
+- [x] 5.1 Quitar el cron del VPS (/etc/cron.d/kustodela-respaldo), ya con el servicio probado
+- [x] 5.2 Commit y `openspec archive`
