@@ -67,6 +67,8 @@ Sizes SHALL be named for their role, not their measurement, so that changing the
 
 Applying a standard size SHALL be shorter to write than composing the same result from utilities. A standard that costs more than ignoring it gets ignored, and the rule stops being enforced by anything but review.
 
+The screens SHALL express these sizes in their own markup rather than relying on a corrective stylesheet to impose them. A layer that fixes sizes in the browser leaves the source saying something different from what renders, and the next developer copies what the source says.
+
 #### Scenario: Building a new control
 - **WHEN** a developer adds a button, a field or a label
 - **THEN** a named class gives a size that already meets the touch and legibility floors, with no per-component decision
@@ -74,6 +76,10 @@ Applying a standard size SHALL be shorter to write than composing the same resul
 #### Scenario: A size outside the set
 - **WHEN** a control needs a size the set does not contain
 - **THEN** that is a signal to extend the set deliberately, not to add a one-off value, because one-off values are how the previous sizes drifted
+
+#### Scenario: Reading an existing screen
+- **WHEN** a developer opens a migrated screen to copy a pattern
+- **THEN** the classes they read are the standard ones, not hand-composed sizes that a later stylesheet corrects
 
 ### Requirement: Labels do not depend on whitespace between flex items
 A control's label SHALL remain readable regardless of how the control lays out its children. Text that must read as a phrase SHALL live in a single text node, rather than relying on whitespace between sibling elements, because a flex or grid container drops that whitespace and joins the words.
