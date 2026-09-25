@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
+import NavegacionInferior from './NavegacionInferior';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -32,15 +33,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         />
       </div>
 
-      {/* Barra lateral móvil - solo iconos siempre visible (se oculta cuando panel está abierto) */}
-      <div className={`lg:hidden ${sidebarOpen ? 'hidden' : 'block'}`}>
-        <Sidebar 
-          minimized={true} 
-          onToggleMinimized={() => {}} // No hace nada, solo navega
-          isMobile={false}
-          isIconBar={true}
-        />
-      </div>
+      {/* El riel de iconos de la izquierda se sustituyo por la navegacion inferior: ocupaba
+          70 de 375 px —un 19 %— y estaba en la zona peor para el pulgar. */}
 
       {/* Panel completo para móvil con overlay */}
       {sidebarOpen && (
@@ -64,11 +58,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
         <Header onToggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-          <div className="container mx-auto px-6 py-8">
+          {/* El hueco de abajo reserva sitio a la barra: sin el, el ultimo control de cada
+              pantalla quedaria debajo de ella y seria intocable. */}
+          <div
+            className="container mx-auto px-6 py-8"
+            style={{ paddingBottom: 'calc(var(--hueco-nav, 1rem) + 1rem)' }}
+          >
             {children}
           </div>
         </main>
       </div>
+
+      <NavegacionInferior onAbrirMas={toggleSidebar} />
     </div>
   );
 };

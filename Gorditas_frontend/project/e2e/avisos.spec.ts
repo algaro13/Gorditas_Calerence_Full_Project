@@ -39,15 +39,29 @@ test('un error provocado desde abajo se ve sin desplazar la pantalla', async ({ 
   // pocos, y eso no es el problema. Lo que importa —que el mensaje caiga dentro de lo visible
   // sin que el operador busque— ya lo cubre la comprobación de arriba.
 
-  // No debe tapar el botón que lo provocó.
-  const solapa = await aviso.evaluate((e, sel) => {
-    const b = document.querySelector(sel) as HTMLElement | null;
-    if (!b) return false;
-    const a = e.getBoundingClientRect();
-    const r = b.getBoundingClientRect();
-    return !(a.bottom < r.top || a.top > r.bottom || a.right < r.left || a.left > r.right);
-  }, 'button');
-  expect(solapa, 'el aviso tapa un control').toBe(false);
+  // No debe tapar el botón que lo provocó. Antes se comparaba contra el primer `button` del
+  // documento, que es el del encabezado: arriba del todo, así que jamás podía solapar con un
+  // aviso anclado abajo y la comprobación pasaba sin comprobar nada. Ahora se mide contra el
+  // botón de guardar, que es el que está en la zona en disputa.
+  const caja = (l: typeof guardar) => l.evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    return { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
+  });
+  const a = await caja(aviso as never);
+  const g = await caja(guardar);
+  const solapa = !(a.bottom < g.top || a.top > g.bottom || a.right < g.left || a.left > g.right);
+  expect(solapa, 'el aviso tapa el botón de guardar').toBe(false);
+
+  // Y que no lo tape nadie a él. No se afirma «queda por encima de la barra», porque dentro de
+  // un diálogo la barra está cubierta por el fondo oscuro y ahí subirlo es justo lo que lo
+  // ponía sobre «Guardar». Se afirma lo que importa en los dos casos: que en el centro del
+  // aviso, lo que el navegador dibuja arriba del todo es el aviso.
+  const tapado = await aviso.evaluate((e) => {
+    const r = e.getBoundingClientRect();
+    const arriba = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return arriba && e.contains(arriba) ? null : (arriba as HTMLElement)?.className ?? 'nada';
+  });
+  expect(tapado, 'algo se dibuja por encima del aviso').toBe(null);
 });
 
 /**

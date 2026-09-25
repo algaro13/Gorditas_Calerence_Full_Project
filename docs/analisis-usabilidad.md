@@ -148,6 +148,10 @@ Por daño, no por facilidad:
 4. **Semántica del color.** Reducir de ocho colores a tres con significado, y quitar las
    abreviaturas que dejan de hacer falta al no competir por ancho.
 5. **Navegación inferior.** Transversal y el de más riesgo; mejor con lo demás ya asentado.
+   *Hecho.* El riel de iconos dejó de existir y el contenido recuperó los 70 px. El riesgo que
+   se anticipaba apareció donde no se esperaba: subir los avisos por encima de la barra los
+   puso encima del botón «Guardar» de los diálogos, 24 de sus 44 px. El aviso pregunta ahora
+   quién está encima de la barra antes de esquivarla.
 6. **Reportes.** Ocho tablas, mucho trabajo, y es la pantalla que menos se toca en servicio.
 
 ## Cómo sabremos si funcionó

@@ -225,3 +225,9 @@
     margin-left: 0.5rem;
   }
 }
+
+/* Cuánto tiene que subir un aviso flotante para no quedar detrás de la navegación inferior.
+ * En escritorio la barra no existe y basta el margen normal. */
+/* El margen de abajo cuando no hay barra que esquivar. La propia NavegacionInferior lo
+   sobrescribe con su altura medida mientras esta en pantalla. */
+:root { --hueco-nav: 1rem; }

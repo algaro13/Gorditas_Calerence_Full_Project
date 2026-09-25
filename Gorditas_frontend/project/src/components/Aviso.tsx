@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, CheckCircle, X } from 'lucide-react';
 
@@ -28,6 +28,7 @@ export const Aviso: React.FC<Props> = ({ error, exito }) => {
   const mensaje = error || exito || '';
   const tipo: 'error' | 'exito' = error ? 'error' : 'exito';
   const [visible, setVisible] = useState(false);
+  const [esquivarBarra, setEsquivarBarra] = useState(true);
 
   useEffect(() => {
     if (!mensaje) return;
@@ -36,6 +37,27 @@ export const Aviso: React.FC<Props> = ({ error, exito }) => {
     const t = setTimeout(() => setVisible(false), DURACION[tipo]);
     return () => clearTimeout(t);
   }, [mensaje, tipo]);
+
+  // ¿Hay que esquivar la navegación de abajo, o está tapada?
+  //
+  // Subir el aviso por encima de la barra creó un choque nuevo: dentro de un diálogo, la fila
+  // de botones queda justo ahí, y el aviso cubría 24 de los 44 px de «Guardar» —el control que
+  // hay que volver a pulsar después de corregir—. Pero cuando hay un diálogo abierto su fondo
+  // oscuro ya cubre la barra, así que no hay nada que esquivar.
+  //
+  // En vez de reconocer diálogos por sus clases, que cambian, se le pregunta al navegador quién
+  // está encima de la barra: si no es ella, es que algo la tapa.
+  useLayoutEffect(() => {
+    if (!mensaje || !visible) return;
+    const barra = document.querySelector('nav[aria-label="Navegación principal"]');
+    if (!(barra instanceof HTMLElement) || barra.offsetHeight === 0) {
+      setEsquivarBarra(false);
+      return;
+    }
+    const r = barra.getBoundingClientRect();
+    const encima = document.elementFromPoint(r.left + r.width / 2, r.top + 4);
+    setEsquivarBarra(encima instanceof Node && barra.contains(encima));
+  }, [mensaje, visible]);
 
   if (!mensaje || !visible) return null;
 
@@ -50,8 +72,18 @@ export const Aviso: React.FC<Props> = ({ error, exito }) => {
       // `pointer-events-none` en el contenedor y `auto` en la tarjeta: el aviso ocupa el ancho
       // pero no intercepta toques fuera de sí mismo, para no bloquear lo que hay debajo.
       className="fixed inset-x-0 z-50 flex justify-center px-sp-3 pointer-events-none"
-      // Por encima de la barra inferior del teléfono, no pegado al borde.
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}
+      // Por encima de la navegación inferior, que vive abajo por debajo del corte de
+      // escritorio. Sin este hueco, la barra taparía justo el mensaje que este componente
+      // existe para hacer visible.
+      //
+      // `--hueco-nav` ya lo mide la barra con su relleno seguro incluido, así que no se le
+      // suma otra vez. El `max` cubre las pantallas sin barra —la de entrar, por ejemplo—,
+      // donde no hay nadie que publique la variable pero el indicador del teléfono sigue ahí.
+      style={{
+        bottom: esquivarBarra
+          ? 'max(var(--hueco-nav, 1rem), calc(env(safe-area-inset-bottom, 0px) + 1rem))'
+          : 'calc(env(safe-area-inset-bottom, 0px) + 1rem)',
+      }}
     >
       <div
         // `alert` interrumpe al lector de pantalla y `status` no: el error merece la
