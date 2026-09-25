@@ -21,8 +21,8 @@ const Callback: React.FC = () => {
       <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-900 mb-2">No se pudo iniciar sesión</h1>
-          <p className="text-sm text-gray-600 mb-6 break-words">{error}</p>
+          <h1 className="text-titulo font-bold text-gray-900 mb-2">No se pudo iniciar sesión</h1>
+          <p className="text-cuerpo text-gray-600 mb-6 break-words">{error}</p>
           <Link to="/login" className="inline-block px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
             Volver a intentar
           </Link>
@@ -35,7 +35,7 @@ const Callback: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center gap-4">
         <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-600"></div>
-        <p className="text-sm text-gray-600">{user && hayQueSaltar ? 'Entrando a tu restaurante...' : 'Iniciando sesión...'}</p>
+        <p className="text-cuerpo text-gray-600">{user && hayQueSaltar ? 'Entrando a tu restaurante...' : 'Iniciando sesión...'}</p>
       </div>
     );
   }
