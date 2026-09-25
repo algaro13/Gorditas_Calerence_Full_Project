@@ -130,6 +130,9 @@ Si ya hay uno en curso, ese se rinde solo: comparten un candado, así que no se 
 
 ### Migrar desde el cron viejo
 
+> **Ya hecho en el VPS el 25 de septiembre de 2026.** Se conserva por si aparece otro servidor
+> con el cron antiguo; si no, no hay nada que hacer aquí.
+
 Sólo aplica a un servidor que aún tenga la línea en el crontab. El orden importa por dos
 razones, y conviene tenerlas claras antes de empezar:
 
@@ -214,6 +217,41 @@ la base de negocio en una base desechable comparando las cuentas con producción
 **Lo que ese ensayo no prueba** es la parte de identidad: el dominio externo de Zitadel está
 grabado en su base, así que restaurarla en otro sitio no se comporta igual. Eso solo se
 verifica con el ensayo completo.
+
+### Probar la alarma
+
+Una alarma que nunca ha sonado es una hipótesis, igual que un respaldo que nunca se ha
+restaurado. El vigilante es lo que convierte «el respaldo dejó de ocurrir» en «alguien se
+entera», así que conviene comprobar de vez en cuando que suena de verdad.
+
+Se ejercita sin tocar nada en marcha: una corrida a mano con el margen de frescura a cero
+hace que la comprobación falle, que es el mismo camino que seguiría si `pg-backup` dejara de
+producir. No toca `pg-backup` ni el servicio programado, que sigue con su turno intacto.
+
+```bash
+docker compose -f docker-compose.behind-proxy.yaml run --rm -e RESPALDO_FRESCURA_HORAS=0 respaldo respaldar.sh
+```
+
+Debe fallar diciendo **qué volcado y de cuándo**, no un error genérico:
+
+```
+El volcado de kustodela es de 2026-09-25 06:00 — más de 0h. pg-backup dejó de producir.
+FALLÓ con código 1
+```
+
+Y devolverlo a verde en el acto:
+
+```bash
+docker compose -f docker-compose.behind-proxy.yaml run --rm respaldo respaldar.sh
+```
+
+> **Llega un correo de alarma de verdad.** Es el objetivo del ejercicio, pero conviene avisar
+> a quien reciba los avisos para que no lo confunda con un fallo real.
+
+**Comprobado el 25 de septiembre de 2026.** El guion detectó el volcado viejo, salió con
+código 1, no mandó el ping de éxito, y healthchecks aceptó el aviso de fallo (`200`). La
+corrida siguiente lo devolvió a verde. El servicio programado no se enteró: siguió arriba con
+su turno siguiente sin cambios, que es lo que el candado debía garantizar.
 
 ### Ensayo completo
 
