@@ -70,14 +70,14 @@ const Plans: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">Elige tu plan</h1>
-          <p className="text-gray-600 text-lg">14 días de prueba gratis. Cancela cuando quieras.</p>
+          <h1 className="text-pantalla font-bold text-gray-900 mb-3">Elige tu plan</h1>
+          <p className="text-gray-600 text-titulo">14 días de prueba gratis. Cancela cuando quieras.</p>
           {tenant && (
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-cuerpo text-gray-500 mt-2">
               Plan actual: <span className="font-medium">{tenant.plan}</span> ({tenant.planStatus})
             </p>
           )}
-          <div className="mt-4 flex justify-center gap-4 text-sm">
+          <div className="mt-4 flex justify-center gap-4 text-cuerpo">
             <button onClick={() => navigate('/')} className="text-gray-600 hover:text-gray-900 underline">
               Volver al panel
             </button>
@@ -87,8 +87,8 @@ const Plans: React.FC = () => {
               </button>
             )}
           </div>
-          {!isAdmin && <p className="text-sm text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
-          {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+          {!isAdmin && <p className="text-cuerpo text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
+          {error && <p className="text-cuerpo text-red-600 mt-3">{error}</p>}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
@@ -100,22 +100,22 @@ const Plans: React.FC = () => {
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-4 py-1 rounded-full text-cuerpo font-medium">
                   Más popular
                 </div>
               )}
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-              <p className="text-sm text-gray-500 mb-4">{plan.maxUsers}</p>
+              <h3 className="text-titulo font-bold text-gray-900 mb-2">{plan.name}</h3>
+              <p className="text-cuerpo text-gray-500 mb-4">{plan.maxUsers}</p>
 
               <div className="mb-6">
                 <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                <span className="text-gray-500 text-sm"> MXN{plan.period}</span>
+                <span className="text-gray-500 text-cuerpo"> MXN{plan.period}</span>
               </div>
 
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature, i) => (
-                  <li key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                  <li key={i} className="flex items-center gap-2 text-cuerpo text-gray-700">
                     <Check className="w-4 h-4 text-orange-500 flex-shrink-0" />
                     {feature}
                   </li>
