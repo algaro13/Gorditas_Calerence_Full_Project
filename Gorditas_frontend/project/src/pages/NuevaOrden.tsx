@@ -1069,10 +1069,10 @@ const NuevaOrden: React.FC = () => {
               <div className={`grid gap-0.5 ${(platillosSeleccionados.length > 0 || productosSeleccionados.length > 0) ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <button
                   onClick={iniciarSeleccionPlatillo}
-                  className="w-full h-12 sm:h-14 bg-orange-600 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg font-medium hover:bg-orange-700 transition-colors text-xs sm:text-base flex items-center justify-center"
+                  className="btn btn-lg w-full bg-orange-600 text-white hover:bg-orange-700"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Agregar </span>Platillo
+                  <span className="hidden sm:inline">Agregar Platillo</span><span className="sm:hidden">Platillo</span>
                 </button>
 
                 {/* Botones de confirmación solo cuando hay items seleccionados */}
@@ -1101,19 +1101,19 @@ const NuevaOrden: React.FC = () => {
                       }
                     }}
                     disabled={loading || !nombreSuborden || (platillosSeleccionados.length === 0 && productosSeleccionados.length === 0)}
-                    className="w-full h-12 sm:h-14 bg-blue-600 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs sm:text-base flex items-center justify-center"
+                    className="btn btn-lg w-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Agregar </span>Cliente
+                    <span className="hidden sm:inline">Agregar Cliente</span><span className="sm:hidden">Cliente</span>
                   </button>
                 ) : null}
 
                 <button
                   onClick={() => setModalProductoOpen(true)}
-                  className="w-full h-12 sm:h-14 bg-green-600 text-white px-2 sm:px-4 py-2 sm:py-3 rounded-lg font-medium hover:bg-green-700 transition-colors text-xs sm:text-base flex items-center justify-center"
+                  className="btn btn-lg w-full bg-green-600 text-white hover:bg-green-700"
                 >
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Agregar </span>Producto
+                  <span className="hidden sm:inline">Agregar Producto</span><span className="sm:hidden">Producto</span>
                 </button>
 
                 {/* Botón de crear orden solo cuando hay items seleccionados */}

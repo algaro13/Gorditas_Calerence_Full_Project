@@ -3,6 +3,69 @@
 @tailwind utilities;
 
 /**
+ * Clases del estándar. Ver docs/estandar-ui.md y tailwind.config.js.
+ *
+ * Existen para que aplicar el tamaño correcto sea MÁS CORTO que componerlo a mano: `btn` en vez
+ * de `h-12 min-w-[44px] px-4 text-base rounded-lg inline-flex items-center justify-center`. Un
+ * estándar que cuesta más que ignorarlo se ignora, y entonces solo lo sostiene la revisión.
+ *
+ * La capa de ergonomía de abajo sigue cubriendo las 19 pantallas ya escritas, que no se migran
+ * aquí. Esto es para lo que venga.
+ */
+@layer components {
+  /* --- Botones -------------------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-sp-1
+           h-control min-w-control px-sp-3
+           rounded-lg font-medium text-cuerpo
+           transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* El suelo. Solo donde de verdad no cabe el normal; nunca por debajo. */
+  .btn-min {
+    @apply h-control-min px-sp-2 text-meta;
+  }
+
+  /* La acción principal de una pantalla de servicio: se toca con prisa y sin mirar. */
+  .btn-lg {
+    @apply h-control-lg px-sp-4 text-titulo;
+  }
+
+  /* --- Campos --------------------------------------------------------------------------- */
+  /* Una sola altura a propósito: un formulario con campos de alturas distintas se lee peor y
+   * no hay ninguna razón de uso para variarlos. 16px de letra no es estético, es lo que evita
+   * que iOS acerque la pantalla al enfocar. */
+  .campo {
+    @apply w-full h-control px-sp-2 text-cuerpo
+           border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent;
+  }
+
+  .campo-multilinea {
+    @apply w-full min-h-control px-sp-2 py-sp-1 text-cuerpo
+           border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent;
+  }
+
+  /* La etiqueta y su campo son una unidad; el hueco entre ambos es siempre el mismo. */
+  .etiqueta {
+    @apply block mb-sp-1 text-meta font-medium text-gray-700;
+  }
+
+  /* --- Casillas ------------------------------------------------------------------------- */
+  /* La caja se queda en 24px (agrandarla desencaja el texto) y el objetivo real es la
+   * etiqueta, que llega a 44. Por eso van juntas en una sola clase. */
+  .casilla {
+    @apply inline-flex items-center gap-sp-1 min-h-control-min cursor-pointer text-cuerpo;
+  }
+
+  .casilla > input[type="checkbox"],
+  .casilla > input[type="radio"] {
+    @apply w-6 h-6 flex-shrink-0;
+  }
+}
+
+/**
  * Ergonomía en teléfono.
  *
  * La app se construyó con la convención al revés: `text-xs sm:text-sm`, `px-2 sm:px-4` y
