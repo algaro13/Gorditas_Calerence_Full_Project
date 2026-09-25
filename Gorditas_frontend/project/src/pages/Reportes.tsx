@@ -657,13 +657,13 @@ const Reportes: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reportes</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base">Análisis y estadísticas del restaurante</p>
+          <h1 className="text-pantalla font-bold text-gray-900">Reportes</h1>
+          <p className="text-gray-600 mt-1 text-cuerpo">Análisis y estadísticas del restaurante</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={loadReports}
-            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-sm"
+            className="btn flex-1 sm:flex-none bg-blue-600 text-white hover:bg-blue-700"
           >
             <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Actualizar</span>
@@ -671,7 +671,7 @@ const Reportes: React.FC = () => {
           </button>
           <button
             onClick={handleExportReport}
-            className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center text-sm"
+            className="btn flex-1 sm:flex-none bg-green-600 text-white hover:bg-green-700"
           >
             <Download className="w-4 h-4 mr-1 sm:mr-2" />
             <span className="hidden sm:inline">Exportar</span>
@@ -696,7 +696,7 @@ const Reportes: React.FC = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-meta transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -718,21 +718,21 @@ const Reportes: React.FC = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:space-x-4">
                 <div className="flex items-center space-x-2">
                   <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-700">Período:</span>
+                  <span className="text-cuerpo font-medium text-gray-700">Período:</span>
                 </div>
                 <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2 sm:gap-4">
                   <input
                     type="date"
                     value={fechaInicio}
                     onChange={(e) => setFechaInicio(e.target.value)}
-                    className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="campo sm:w-auto"
                   />
                   <span className="hidden sm:block text-gray-500">hasta</span>
                   <input
                     type="date"
                     value={fechaFin}
                     onChange={(e) => setFechaFin(e.target.value)}
-                    className="w-full sm:w-auto px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="campo sm:w-auto"
                   />
                 </div>
               </div>
@@ -741,7 +741,7 @@ const Reportes: React.FC = () => {
               {activeTab === 'gastos' && (
                 <button
                   onClick={() => setShowGastoModal(true)}
-                  className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center"
+                  className="btn bg-orange-600 text-white hover:bg-orange-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Crear Gasto
@@ -767,8 +767,8 @@ const Reportes: React.FC = () => {
                     <div className="bg-green-50 p-4 sm:p-6 rounded-lg border border-green-200">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs sm:text-sm text-green-600">Total Ventas</p>
-                          <p className="text-xl sm:text-2xl font-bold text-green-900">
+                          <p className="text-meta text-green-600">Total Ventas</p>
+                          <p className="text-pantalla font-bold text-green-900">
                             ${getTotalVentas().toFixed(2)}
                           </p>
                         </div>
@@ -779,11 +779,11 @@ const Reportes: React.FC = () => {
                     <div className="bg-blue-50 p-4 sm:p-6 rounded-lg border border-blue-200">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <p className="text-xs sm:text-sm text-blue-600">Total Caja</p>
-                          <p className="text-xl sm:text-2xl font-bold text-blue-900">
+                          <p className="text-meta text-blue-600">Total Caja</p>
+                          <p className="text-pantalla font-bold text-blue-900">
                             ${getTotalCaja().toFixed(2)}
                           </p>
-                          <p className="text-xs text-blue-500 mt-1">
+                          <p className="text-meta text-blue-500 mt-1">
                             Hoy: ${getCajaDiaActual().toFixed(2)}
                           </p>
                           {editandoCajaDiaActual ? (
@@ -792,7 +792,7 @@ const Reportes: React.FC = () => {
                                 type="number"
                                 value={montoAgregarCaja}
                                 onChange={(e) => setMontoAgregarCaja(parseFloat(e.target.value) || 0)}
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-xs"
+                                className="w-24 px-2 py-1 border border-gray-300 rounded text-meta"
                                 placeholder="Agregar..."
                                 step="0.01"
                                 min="0"
@@ -800,14 +800,14 @@ const Reportes: React.FC = () => {
                               />
                               <button
                                 onClick={confirmarAgregarCajaDiaActual}
-                                className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                className="btn bg-green-500 text-white hover:bg-green-600"
                                 title="Agregar a caja de hoy"
                               >
                                 ✓ Agregar
                               </button>
                               <button
                                 onClick={cancelarEdicionCajaDiaActual}
-                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                                className="btn bg-red-500 text-white hover:bg-red-600"
                                 title="Cancelar"
                               >
                                 ✕
@@ -816,7 +816,7 @@ const Reportes: React.FC = () => {
                           ) : (
                             <button
                               onClick={iniciarEdicionCajaDiaActual}
-                              className="bg-blue-500 text-white px-3 py-1 rounded text-xs hover:bg-blue-600 mt-2"
+                              className="btn bg-blue-500 text-white hover:bg-blue-600 mt-2"
                               title="Agregar dinero a caja de hoy"
                             >
                               💰 Agregar a Caja
@@ -830,8 +830,8 @@ const Reportes: React.FC = () => {
                     <div className="bg-red-50 p-4 sm:p-6 rounded-lg border border-red-200">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs sm:text-sm text-red-600">Total Gastos</p>
-                          <p className="text-xl sm:text-2xl font-bold text-red-900">
+                          <p className="text-meta text-red-600">Total Gastos</p>
+                          <p className="text-pantalla font-bold text-red-900">
                             ${getTotalGastos().toFixed(2)}
                           </p>
                         </div>
@@ -842,11 +842,11 @@ const Reportes: React.FC = () => {
                     <div className="bg-purple-50 p-4 sm:p-6 rounded-lg border border-purple-200">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-xs sm:text-sm text-purple-600">Utilidad Final</p>
-                          <p className="text-xl sm:text-2xl font-bold text-purple-900">
+                          <p className="text-meta text-purple-600">Utilidad Final</p>
+                          <p className="text-pantalla font-bold text-purple-900">
                             ${getTotalUtilidad().toFixed(2)}
                           </p>
-                          <p className="text-xs text-purple-500 mt-1">
+                          <p className="text-meta text-purple-500 mt-1">
                             (Ventas + Caja) - Gastos
                           </p>
                         </div>
@@ -858,10 +858,10 @@ const Reportes: React.FC = () => {
                   {/* Sales Summary Table */}
                   <div className="overflow-x-auto -mx-6 sm:mx-0">
                     <div className="inline-block min-w-full align-middle">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen por Día</h3>
+                      <h3 className="text-titulo font-semibold text-gray-900 mb-4">Resumen por Día</h3>
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead>
-                          <tr className="text-xs sm:text-sm">
+                          <tr className="text-meta">
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Fecha</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Ventas</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Caja</th>
@@ -871,7 +871,7 @@ const Reportes: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                           {reporteVentas.map((reporte, index) => (
-                            <tr key={index} className="text-xs sm:text-sm">
+                            <tr key={index} className="text-meta">
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">
                                 {(() => {
                                   // Usar directamente la fecha del backend (ya procesada en UTC)
@@ -891,7 +891,7 @@ const Reportes: React.FC = () => {
                                       type="number"
                                       value={montoTemporal}
                                       onChange={(e) => setMontoTemporal(parseFloat(e.target.value) || 0)}
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded text-xs"
+                                      className="w-20 px-2 py-1 border border-gray-300 rounded text-meta"
                                       placeholder="0.00"
                                       step="0.01"
                                       min="0"
@@ -899,13 +899,13 @@ const Reportes: React.FC = () => {
                                     <button
                                       onClick={confirmarEdicionCaja}
                                       disabled={guardandoCaja === reporte.fecha}
-                                      className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 disabled:opacity-50"
+                                      className="btn bg-green-500 text-white hover:bg-green-600"
                                     >
                                       {guardandoCaja === reporte.fecha ? '...' : '✓'}
                                     </button>
                                     <button
                                       onClick={cancelarEdicionCaja}
-                                      className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
+                                      className="btn bg-red-500 text-white hover:bg-red-600"
                                     >
                                       ✕
                                     </button>
@@ -917,7 +917,7 @@ const Reportes: React.FC = () => {
                                     </span>
                                     <button
                                       onClick={() => iniciarEdicionCaja(reporte.fecha)}
-                                      className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
+                                      className="btn bg-gray-500 text-white hover:bg-gray-600"
                                     >
                                       ✏️
                                     </button>
@@ -927,7 +927,7 @@ const Reportes: React.FC = () => {
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">{reporte.ordenes}</td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4">
                                 <button
-                                  className="bg-blue-500 text-white px-2 py-1 rounded text-xs"
+                                  className="btn bg-blue-500 text-white"
                                   onClick={() => {
                                     mostrarOrdenesDeDia(reporte.fecha);
                                   }}
@@ -944,14 +944,14 @@ const Reportes: React.FC = () => {
                   {/* Tabla de órdenes del día */}
                   {diaSeleccionado && (
                     <div className="mt-6">
-                      <h3 className="font-bold text-lg mb-2">
+                      <h3 className="font-bold text-titulo mb-2">
                         Órdenes del día {diaSeleccionado}
-                        <button className="ml-4 text-sm text-gray-500" onClick={() => setDiaSeleccionado(null)}>
+                        <button className="ml-4 text-cuerpo text-gray-500" onClick={() => setDiaSeleccionado(null)}>
                           Cerrar
                         </button>
                       </h3>
                       <div className="overflow-x-auto w-full">
-                        <table className="min-w-full divide-y divide-gray-200 text-xs sm:text-sm">
+                        <table className="min-w-full divide-y divide-gray-200 text-meta">
                           <thead>
                             <tr>
                               <th className="text-left px-2 py-2 font-medium text-gray-900">Folio(s)</th>
@@ -1040,7 +1040,7 @@ const Reportes: React.FC = () => {
                                           <span className="font-semibold text-blue-700">
                                             {grupo.ordenes.length} órdenes
                                           </span>
-                                          <span className="text-xs text-gray-600">
+                                          <span className="text-meta text-gray-600">
                                             {grupo.ordenes.map((o: any) => o.folio).join(', ')}
                                           </span>
                                         </div>
@@ -1050,7 +1050,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       {grupo.esGrupo ? (
-                                        <div className="flex flex-col text-xs">
+                                        <div className="flex flex-col text-meta">
                                           {Object.keys(resumenPorCliente).map((cliente, idx) => (
                                             <span key={idx} className="text-gray-700 font-medium">
                                               {cliente}
@@ -1073,7 +1073,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-left px-2 py-2">
                                       {grupo.esGrupo ? (
-                                        <div className="flex flex-col text-xs space-y-1">
+                                        <div className="flex flex-col text-meta space-y-1">
                                           {Object.entries(resumenPorCliente).map(([, datos], idx) => (
                                             <div key={idx} className="border-b border-gray-300 pb-1 last:border-b-0">
                                               {datos.platillos > 0 && (
@@ -1093,7 +1093,7 @@ const Reportes: React.FC = () => {
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="flex flex-col text-xs">
+                                        <div className="flex flex-col text-meta">
                                           {totalPlatillos > 0 && (
                                             <span className="text-gray-700">
                                               🍽️ {totalPlatillos} platillo{totalPlatillos !== 1 ? 's' : ''}
@@ -1112,7 +1112,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-right px-2 py-2">
                                       {grupo.esGrupo ? (
-                                        <div className="flex flex-col text-xs space-y-1">
+                                        <div className="flex flex-col text-meta space-y-1">
                                           {Object.entries(resumenPorCliente).map(([, datos], idx) => (
                                             <div key={idx} className="text-gray-700 border-b border-gray-300 pb-1 last:border-b-0">
                                               ${datos.total.toFixed(2)}
@@ -1128,7 +1128,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       {grupo.esGrupo ? (
-                                        <div className="flex flex-col text-xs">
+                                        <div className="flex flex-col text-meta">
                                           <span>{new Date(grupo.primeraOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}</span>
                                           <span className="text-gray-500">-</span>
                                           <span>{new Date(grupo.ultimaOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}</span>
@@ -1139,7 +1139,7 @@ const Reportes: React.FC = () => {
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       <button
-                                        className="bg-orange-500 text-white px-2 py-1 rounded text-xs"
+                                        className="btn bg-orange-500 text-white"
                                         onClick={() => setOrdenExpandida(grupoId === ordenExpandida ? null : grupoId)}
                                       >
                                         {grupoId === ordenExpandida ? 'Ocultar' : 'Ver Detalles'}
@@ -1152,10 +1152,10 @@ const Reportes: React.FC = () => {
                                         <div className="bg-gray-50 p-2 sm:p-4 rounded-lg overflow-x-auto">
                                           {grupo.esGrupo && (
                                             <div className="mb-4 p-2 bg-blue-100 rounded border border-blue-300">
-                                              <h4 className="font-semibold text-sm text-blue-800 mb-2">
+                                              <h4 className="font-semibold text-cuerpo text-blue-800 mb-2">
                                                 Órdenes Agrupadas ({grupo.ordenes.length})
                                               </h4>
-                                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-meta">
                                                 {grupo.ordenes.map((o: any) => (
                                                   <div key={o._id} className="bg-white p-2 rounded border border-blue-200">
                                                     <div><strong>Folio:</strong> {o.folio}</div>
@@ -1167,10 +1167,10 @@ const Reportes: React.FC = () => {
                                               </div>
                                             </div>
                                           )}
-                                          <h4 className="font-semibold mb-2 text-xs sm:text-sm">Productos</h4>
+                                          <h4 className="font-semibold mb-2 text-meta">Productos</h4>
                                           {productosGrupo.length > 0 ? (
                                             <div className="overflow-x-auto">
-                                              <table className="min-w-full mb-2 text-xs sm:text-sm">
+                                              <table className="min-w-full mb-2 text-meta">
                                                 <thead>
                                                   <tr>
                                                     <th className="text-left px-2 py-2 w-1/2 font-medium text-gray-900">Nombre</th>
@@ -1201,12 +1201,12 @@ const Reportes: React.FC = () => {
                                               </table>
                                             </div>
                                           ) : (
-                                            <p className="text-gray-500 text-xs sm:text-sm">No hay productos.</p>
+                                            <p className="text-gray-500 text-meta">No hay productos.</p>
                                           )}
-                                          <h4 className="font-semibold mb-2 text-xs sm:text-sm">Platillos</h4>
+                                          <h4 className="font-semibold mb-2 text-meta">Platillos</h4>
                                           {platillosConExtras.length > 0 ? (
                                             <div className="overflow-x-auto">
-                                              <table className="min-w-full text-xs sm:text-sm">
+                                              <table className="min-w-full text-meta">
                                                 <thead>
                                                   <tr>
                                                     <th className="text-left px-2 py-2 w-2/5 font-medium text-gray-900">Nombre</th>
@@ -1228,16 +1228,16 @@ const Reportes: React.FC = () => {
                                                       {/* Mostrar notas del platillo si existen */}
                                                       {pl.notas && (
                                                         <tr className="bg-blue-50">
-                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-blue-700 italic text-xs">
+                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-blue-700 italic text-meta">
                                                             Nota: {pl.notas}
                                                           </td>
-                                                          <td className="text-left px-2 py-1 w-2/5 text-blue-600 italic text-xs">
+                                                          <td className="text-left px-2 py-1 w-2/5 text-blue-600 italic text-meta">
                                                             -
                                                           </td>
-                                                          <td className="text-center px-2 py-1 w-1/10 text-blue-600 text-xs">
+                                                          <td className="text-center px-2 py-1 w-1/10 text-blue-600 text-meta">
                                                             -
                                                           </td>
-                                                          <td className="text-right px-2 py-1 w-1/10 text-blue-600 text-xs">
+                                                          <td className="text-right px-2 py-1 w-1/10 text-blue-600 text-meta">
                                                             -
                                                           </td>
                                                         </tr>
@@ -1261,16 +1261,16 @@ const Reportes: React.FC = () => {
                                                         </tr>
                                                       )) : (
                                                         <tr key={`${pl._id}-no-extras`} className="bg-gray-50">
-                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-gray-500 italic text-xs">
+                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-gray-500 italic text-meta">
                                                             Sin extras
                                                           </td>
-                                                          <td className="text-left px-2 py-1 w-2/5 text-gray-500 italic text-xs">
+                                                          <td className="text-left px-2 py-1 w-2/5 text-gray-500 italic text-meta">
                                                             -
                                                           </td>
-                                                          <td className="text-center px-2 py-1 w-1/10 text-gray-500 text-xs">
+                                                          <td className="text-center px-2 py-1 w-1/10 text-gray-500 text-meta">
                                                             -
                                                           </td>
-                                                          <td className="text-right px-2 py-1 w-1/10 text-gray-500 text-xs">
+                                                          <td className="text-right px-2 py-1 w-1/10 text-gray-500 text-meta">
                                                             $0.00
                                                           </td>
                                                         </tr>
@@ -1297,7 +1297,7 @@ const Reportes: React.FC = () => {
                                               </table>
                                             </div>
                                           ) : (
-                                            <p className="text-gray-500 text-xs sm:text-sm">No hay platillos.</p>
+                                            <p className="text-gray-500 text-meta">No hay platillos.</p>
                                           )}
                                           
                                           {/* Mostrar extras independientes si los hay */}
@@ -1317,9 +1317,9 @@ const Reportes: React.FC = () => {
                                             if (extrasIndependientes.length > 0) {
                                               return (
                                                 <>
-                                                  <h4 className="font-semibold mb-2 text-xs sm:text-sm mt-4">Extras Adicionales</h4>
+                                                  <h4 className="font-semibold mb-2 text-meta mt-4">Extras Adicionales</h4>
                                                   <div className="overflow-x-auto">
-                                                    <table className="min-w-full text-xs sm:text-sm">
+                                                    <table className="min-w-full text-meta">
                                                       <thead>
                                                         <tr>
                                                           <th className="text-left px-2 py-2 w-1/2 font-medium text-gray-900">Extra</th>
@@ -1370,8 +1370,8 @@ const Reportes: React.FC = () => {
                   <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-orange-600">Valor Total del Inventario</p>
-                        <p className="text-2xl font-bold text-orange-900">
+                        <p className="text-cuerpo text-orange-600">Valor Total del Inventario</p>
+                        <p className="text-pantalla font-bold text-orange-900">
                           ${getTotalInventario().toFixed(2)}
                         </p>
                       </div>
@@ -1399,7 +1399,7 @@ const Reportes: React.FC = () => {
                             <td className="py-3 px-4 font-medium">${item.valorTotal.toFixed(2)}</td>
                             <td className="py-3 px-4">
                               <span
-                                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                className={`px-2 py-1 text-meta font-medium rounded-full ${
                                   item.stockMinimo
                                     ? 'bg-red-100 text-red-800'
                                     : 'bg-green-100 text-green-800'
@@ -1470,7 +1470,7 @@ const Reportes: React.FC = () => {
                             <button
                               onClick={() => handleDeleteGasto(gasto._id, gasto.nombre)}
                               disabled={deletingGasto === gasto._id}
-                              className="text-red-600 hover:text-red-800 disabled:opacity-50 transition-colors p-1"
+                              className="btn text-red-600 hover:text-red-800"
                               title="Eliminar gasto"
                             >
                               {deletingGasto === gasto._id ? (
@@ -1503,7 +1503,7 @@ const Reportes: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Crear Nuevo Gasto</h3>
+              <h3 className="text-titulo font-semibold text-gray-900">Crear Nuevo Gasto</h3>
               <button
                 onClick={() => setShowGastoModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -1514,26 +1514,26 @@ const Reportes: React.FC = () => {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-cuerpo font-medium text-gray-700 mb-2">
                   Nombre del Gasto
                 </label>
                 <input
                   type="text"
                   value={nuevoGasto.nombre}
                   onChange={(e) => setNuevoGasto({ ...nuevoGasto, nombre: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="campo"
                   placeholder="Ej: Compra de ingredientes"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-cuerpo font-medium text-gray-700 mb-2">
                   Tipo de Gasto
                 </label>
                 <select
                   value={nuevoGasto.idTipoGasto}
                   onChange={(e) => setNuevoGasto({ ...nuevoGasto, idTipoGasto: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="campo"
                 >
                   <option value="">Selecciona un tipo</option>
                   {tiposGasto.map((tipo) => (
@@ -1545,7 +1545,7 @@ const Reportes: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-cuerpo font-medium text-gray-700 mb-2">
                   Monto
                 </label>
                 <input
@@ -1554,19 +1554,19 @@ const Reportes: React.FC = () => {
                   min="0"
                   value={nuevoGasto.gastoTotal}
                   onChange={(e) => setNuevoGasto({ ...nuevoGasto, gastoTotal: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="campo"
                   placeholder="0.00"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-cuerpo font-medium text-gray-700 mb-2">
                   Descripción (Opcional)
                 </label>
                 <textarea
                   value={nuevoGasto.descripcion}
                   onChange={(e) => setNuevoGasto({ ...nuevoGasto, descripcion: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="campo"
                   rows={3}
                   placeholder="Detalles adicionales del gasto..."
                 />
@@ -1576,14 +1576,14 @@ const Reportes: React.FC = () => {
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={() => setShowGastoModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="btn flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleCreateGasto}
                 disabled={savingGasto}
-                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center"
+                className="btn flex-1 bg-orange-600 text-white hover:bg-orange-700"
               >
                 {savingGasto ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
