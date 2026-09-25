@@ -36,16 +36,23 @@ test('cambiar el precio de un platillo lo guarda', async ({ page }) => {
   await page.goto('/catalogos');
   await page.getByRole('button', { name: 'Platillos', exact: true }).click();
 
-  const fila = page.locator('tr').filter({ hasText: PLATILLO });
-  await expect(fila).toBeVisible({ timeout: 15_000 });
+  // En teléfono el catálogo se muestra en tarjetas, no en tabla: la fila existe en el DOM pero
+  // está oculta desde que las columnas dejaron de caber. Se busca la tarjeta.
+  const tarjeta = () =>
+    page
+      .locator('div.rounded-lg')
+      .filter({ hasText: PLATILLO })
+      .filter({ has: page.getByRole('button', { name: 'Editar' }) })
+      .last();
 
-  const precioOriginal = (await fila.innerText()).match(/\$(\d+\.\d{2})/)?.[1];
+  await expect(tarjeta()).toBeVisible({ timeout: 15_000 });
+
+  const precioOriginal = (await tarjeta().innerText()).match(/\$(\d+\.\d{2})/)?.[1];
   expect(precioOriginal, `no encontré el precio de ${PLATILLO}`).toBeTruthy();
 
   const nuevo = (Number(precioOriginal) + 3).toFixed(2);
 
-  // El primer botón de la fila es editar; abre el formulario con los datos cargados.
-  await fila.getByRole('button').first().click();
+  await tarjeta().getByRole('button', { name: 'Editar' }).click();
   const campoPrecio = page.getByPlaceholder(/precio/i).first();
   await expect(campoPrecio).toBeVisible({ timeout: 10_000 });
   await campoPrecio.fill(nuevo);
@@ -54,18 +61,13 @@ test('cambiar el precio de un platillo lo guarda', async ({ page }) => {
   // Recarga: es lo que separa «se guardó» de «la pantalla lo muestra».
   await page.reload();
   await page.getByRole('button', { name: 'Platillos', exact: true }).click();
-  await expect(page.locator('tr').filter({ hasText: PLATILLO })).toContainText(`$${nuevo}`, {
-    timeout: 15_000,
-  });
+  await expect(tarjeta()).toContainText(`$${nuevo}`, { timeout: 15_000 });
 
   // Se devuelve a su precio, para que la prueba pueda correrse otra vez igual.
-  await page.locator('tr').filter({ hasText: PLATILLO }).getByRole('button').first().click();
+  await tarjeta().getByRole('button', { name: 'Editar' }).click();
   await page.getByPlaceholder(/precio/i).first().fill(precioOriginal!);
   await page.getByRole('button', { name: /guardar/i }).click();
-  await expect(page.locator('tr').filter({ hasText: PLATILLO })).toContainText(
-    `$${Number(precioOriginal).toFixed(2)}`,
-    { timeout: 15_000 },
-  );
+  await expect(tarjeta()).toContainText(`$${Number(precioOriginal).toFixed(2)}`, { timeout: 15_000 });
 });
 
 test('cambiar la paleta del negocio la guarda', async ({ page }) => {

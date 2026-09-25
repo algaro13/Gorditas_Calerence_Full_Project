@@ -870,6 +870,49 @@ const Catalogos: React.FC = () => {
     return labels[field] || field;
   };
 
+  /**
+   * Los campos del listado, definidos UNA vez para la tabla y para las tarjetas.
+   *
+   * Esta pantalla sirve a once catálogos y las columnas cambian según cuál: el precio solo
+   * aparece en productos, platillos y extras, y las mesas no se editan. Las condiciones viven
+   * aquí, así que ambas presentaciones las respetan sin poder separarse.
+   */
+  const tienePrecio = ['producto', 'platillo', 'extra'].includes(selectedModel.id);
+
+  const campoEstado = (item: any) =>
+    selectedModel.hasActivo ? (
+      <span
+        className={`px-sp-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
+          item.activo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}
+      >
+        {item.activo ? 'Activo' : 'Inactivo'}
+      </span>
+    ) : (
+      <span className="px-sp-2 py-1 text-meta font-medium rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">
+        N/A
+      </span>
+    );
+
+  const campoPrecio = (item: any) => (
+    <span className="font-medium text-green-600 text-cuerpo whitespace-nowrap">
+      ${(item.precio || item.costo || 0).toFixed(2)}
+    </span>
+  );
+
+  const acciones = (item: any) => (
+    <>
+      {selectedModel.id !== 'mesa' && (
+        <button onClick={() => handleEdit(item)} className="btn text-blue-600 hover:bg-blue-50 flex-shrink-0" aria-label="Editar">
+          <Edit3 className="w-4 h-4" />
+        </button>
+      )}
+      <button onClick={() => handleDelete(item)} className="btn text-red-600 hover:bg-red-50 flex-shrink-0" aria-label="Eliminar">
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </>
+  );
+
   return (
       <div className="max-w-7xl mx-auto space-y-6 px-1 py-2 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -977,82 +1020,71 @@ const Catalogos: React.FC = () => {
               </div>
             ) : (
               // ...existing code for other models...
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Nombre</th>
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Estado</th>
-                      {(selectedModel.id === 'producto' || selectedModel.id === 'platillo' || selectedModel.id === 'extra') && (
-                        <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Precio</th>
-                      )}
-                      <th className="text-left py-2 px-1 sm:py-3 sm:px-4 font-medium text-gray-900 text-cuerpo">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredItems.map((item) => (
-                      <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-2 px-1 sm:py-3 sm:px-4">
-                          <div className="min-w-0">
-                            <p className="font-medium text-gray-900 text-cuerpo truncate break-words hyphens-auto">{item.nombre}</p>
-                            {item.descripcion && (
-                              <p className="text-meta text-gray-600 line-clamp-2 break-words hyphens-auto">{item.descripcion}</p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="py-2 px-1 sm:py-3 sm:px-4">
-                          {selectedModel.hasActivo ? (
-                            <span
-                              className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
-                                item.activo
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}
-                            >
-                              {item.activo ? 'Activo' : 'Inactivo'}
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 text-meta font-medium rounded-full bg-gray-100 text-gray-800 whitespace-nowrap">
-                              N/A
-                            </span>
+              <>
+                {/* Tarjetas en teléfono: de «Nombre · Estado · Acciones», la columna de acciones
+                    caía fuera del borde derecho, así que editar o borrar exigía descubrir que la
+                    tabla se arrastra de lado. */}
+                <div className="sm:hidden space-y-sp-2">
+                  {filteredItems.map((item) => (
+                    <div key={item._id} className="border border-gray-200 rounded-lg p-sp-3 space-y-sp-2">
+                      <div className="flex items-start justify-between gap-sp-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-cuerpo break-words">{item.nombre}</p>
+                          {item.descripcion && (
+                            <p className="text-meta text-gray-600 break-words">{item.descripcion}</p>
                           )}
-                        </td>
-                        {(selectedModel.id === 'producto' || selectedModel.id === 'platillo' || selectedModel.id === 'extra') && (
-                          <td className="py-2 px-1 sm:py-3 sm:px-4">
-                            <span className="font-medium text-green-600 text-cuerpo whitespace-nowrap">
-                              ${((item as any).precio || (item as any).costo || 0).toFixed(2)}
-                            </span>
-                          </td>
+                        </div>
+                        {campoEstado(item)}
+                      </div>
+
+                      {tienePrecio && campoPrecio(item)}
+
+                      <div className="flex justify-end gap-sp-1">{acciones(item)}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tabla desde tablet, donde las columnas caben y comparar filas sirve. */}
+                <div className="hidden sm:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 text-cuerpo">Nombre</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 text-cuerpo">Estado</th>
+                        {tienePrecio && (
+                          <th className="text-left py-3 px-4 font-medium text-gray-900 text-cuerpo">Precio</th>
                         )}
-                        <td className="py-2 px-1 sm:py-3 sm:px-4">
-                          <div className="flex space-x-1">
-                            {selectedModel.id !== 'mesa' && (
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="btn text-blue-600 hover:bg-blue-50 flex-shrink-0"
-                              >
-                                <Edit3 className="w-3 h-3 sm:w-4 sm:h-4" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(item)}
-                              className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
-                            >
-                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
-                            </button>
-                          </div>
-                        </td>
+                        <th className="text-left py-3 px-4 font-medium text-gray-900 text-cuerpo">Acciones</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-                
+                    </thead>
+                    <tbody>
+                      {filteredItems.map((item) => (
+                        <tr key={item._id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-900 text-cuerpo break-words">{item.nombre}</p>
+                              {item.descripcion && (
+                                <p className="text-meta text-gray-600 line-clamp-2 break-words">{item.descripcion}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">{campoEstado(item)}</td>
+                          {tienePrecio && <td className="py-3 px-4">{campoPrecio(item)}</td>}
+                          <td className="py-3 px-4">
+                            <div className="flex gap-sp-1">{acciones(item)}</div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
                 {filteredItems.length === 0 && (
                   <div className="text-center py-8">
                     <p className="text-gray-500">No se encontraron items</p>
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>
