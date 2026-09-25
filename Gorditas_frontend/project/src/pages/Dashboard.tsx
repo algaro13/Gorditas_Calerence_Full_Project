@@ -32,9 +32,9 @@ const SubscriptionBanner: React.FC = () => {
       <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <CheckCircle className="w-5 h-5 text-green-600" />
-          <span className="text-sm text-green-800 font-medium">Plan {planName} activo</span>
+          <span className="text-cuerpo text-green-800 font-medium">Plan {planName} activo</span>
         </div>
-        <Link to="/planes" className="text-sm text-green-700 hover:text-green-900 font-medium">Gestionar →</Link>
+        <Link to="/planes" className="text-cuerpo text-green-700 hover:text-green-900 font-medium">Gestionar →</Link>
       </div>
     );
   }
@@ -46,11 +46,11 @@ const SubscriptionBanner: React.FC = () => {
       <div className={`${urgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg px-4 py-3 flex items-center justify-between`}>
         <div className="flex items-center gap-2">
           <Clock className={`w-5 h-5 ${urgent ? 'text-red-600' : 'text-blue-600'}`} />
-          <span className={`text-sm font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
+          <span className={`text-cuerpo font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
             Prueba gratuita — {daysLeft} {daysLeft === 1 ? 'día' : 'días'} restantes
           </span>
         </div>
-        <Link to="/planes" className={`text-sm font-medium ${urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900'}`}>
+        <Link to="/planes" className={`text-cuerpo font-medium ${urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900'}`}>
           Elegir plan →
         </Link>
       </div>
@@ -62,9 +62,9 @@ const SubscriptionBanner: React.FC = () => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
-          <span className="text-sm text-blue-800 font-medium">Prueba gratuita activa — 14 días</span>
+          <span className="text-cuerpo text-blue-800 font-medium">Prueba gratuita activa — 14 días</span>
         </div>
-        <Link to="/planes" className="text-sm text-blue-700 hover:text-blue-900 font-medium">Ver planes →</Link>
+        <Link to="/planes" className="text-cuerpo text-blue-700 hover:text-blue-900 font-medium">Ver planes →</Link>
       </div>
     );
   }
@@ -361,7 +361,7 @@ const Dashboard: React.FC = () => {
               <button
                 onClick={() => updateOrderStatus(orden._id, 'Recepcion')}
                 disabled={isUpdating}
-                className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-green-100 text-green-600 rounded text-[10px] sm:text-xs hover:bg-green-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+                className="btn space-x-1 bg-green-100 text-green-600 sm:text-meta hover:bg-green-200 whitespace-nowrap"
                 title="Marcar como verificada y completa"
               >
                 {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
@@ -379,7 +379,7 @@ const Dashboard: React.FC = () => {
             <button
               onClick={() => updateOrderStatus(orden._id, 'Preparacion')}
               disabled={isUpdating}
-              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-yellow-100 text-yellow-600 rounded text-[10px] sm:text-xs hover:bg-yellow-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="btn space-x-1 bg-yellow-100 text-yellow-600 sm:text-meta hover:bg-yellow-200 whitespace-nowrap"
               title="Iniciar preparación"
             >
               {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ChefHat className="w-3 h-3" />}
@@ -396,7 +396,7 @@ const Dashboard: React.FC = () => {
             <button
               onClick={() => updateOrderStatus(orden._id, 'Surtida')}
               disabled={isUpdating}
-              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-purple-100 text-purple-600 rounded text-[10px] sm:text-xs hover:bg-purple-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="btn space-x-1 bg-purple-100 text-purple-600 sm:text-meta hover:bg-purple-200 whitespace-nowrap"
               title="Marcar como surtida"
             >
               {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Package className="w-3 h-3" />}
@@ -419,7 +419,7 @@ const Dashboard: React.FC = () => {
                 }
               }}
               disabled={isUpdating}
-              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-green-100 text-green-600 rounded text-[10px] sm:text-xs hover:bg-green-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="btn space-x-1 bg-green-100 text-green-600 sm:text-meta hover:bg-green-200 whitespace-nowrap"
               title="Cobrar orden"
             >
               {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <DollarSign className="w-3 h-3" />}
@@ -436,7 +436,7 @@ const Dashboard: React.FC = () => {
             <button
               onClick={() => updateOrderStatus(orden._id, 'Pagada')}
               disabled={isUpdating}
-              className="flex items-center space-x-1 px-1.5 sm:px-2 py-1 bg-green-100 text-green-600 rounded text-[10px] sm:text-xs hover:bg-green-200 transition-colors disabled:opacity-50 whitespace-nowrap"
+              className="btn space-x-1 bg-green-100 text-green-600 sm:text-meta hover:bg-green-200 whitespace-nowrap"
               title="Cobrar orden"
             >
               {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <DollarSign className="w-3 h-3" />}
@@ -464,7 +464,7 @@ const Dashboard: React.FC = () => {
       <button
         onClick={() => updateOrderStatus(orden._id, nextStatus)}
         disabled={isUpdating}
-        className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors text-[10px] sm:text-sm disabled:opacity-50 whitespace-nowrap"
+        className="btn gap-1 bg-orange-100 text-orange-600 hover:bg-orange-200 sm:text-cuerpo whitespace-nowrap"
       >
         {isUpdating ? (
           <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
@@ -496,7 +496,7 @@ const Dashboard: React.FC = () => {
       
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-pantalla font-bold text-gray-900">
             Bienvenido, {user?.nombre}
           </h1>
           <p className="text-gray-600 mt-1">
@@ -509,13 +509,13 @@ const Dashboard: React.FC = () => {
               <div className="bg-indigo-100 rounded-lg px-3 py-2 shadow-sm border border-indigo-200">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs font-medium text-indigo-700">
+                  <span className="text-meta font-medium text-indigo-700">
                     Datos actualizados
                   </span>
                 </div>
               </div>
             )}
-            <div className="text-xs text-gray-500">
+            <div className="text-meta text-gray-500">
               {lastUpdateTime.toLocaleTimeString('es-ES')}
             </div>
           </div>
@@ -527,8 +527,8 @@ const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Órdenes Hoy</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.ordenesHoy}</p>
+              <p className="text-cuerpo text-gray-600">Órdenes Hoy</p>
+              <p className="text-pantalla font-bold text-gray-900">{stats.ordenesHoy}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <ShoppingCart className="w-6 h-6 text-blue-600" />
@@ -541,8 +541,8 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Ventas Hoy</p>
-                <p className="text-3xl font-bold text-gray-900">
+                <p className="text-cuerpo text-gray-600">Ventas Hoy</p>
+                <p className="text-pantalla font-bold text-gray-900">
                   ${stats.ventasHoy.toFixed(2)}
                 </p>
               </div>
@@ -556,8 +556,8 @@ const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Órdenes Pendientes</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.ordenesPendientes}</p>
+              <p className="text-cuerpo text-gray-600">Órdenes Pendientes</p>
+              <p className="text-pantalla font-bold text-gray-900">{stats.ordenesPendientes}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <Clock className="w-6 h-6 text-yellow-600" />
@@ -570,11 +570,11 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Stock Bajo</p>
-                <p className={`text-3xl font-bold ${stats.productosLowStock > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                <p className="text-cuerpo text-gray-600">Stock Bajo</p>
+                <p className={`text-pantalla font-bold ${stats.productosLowStock > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                   {stats.productosLowStock}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-meta text-gray-500 mt-1">
                   {stats.productosLowStock === 0 ? 'Todo en orden' : `cuentas con ${stats.productosLowStock} producto(s) con${stats.productosLowStock !== 1 ? 's' : ''} menos de 10 items`}
                 </p>
               </div>
@@ -605,12 +605,12 @@ const Dashboard: React.FC = () => {
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button
               onClick={() => setSelectedOrden(null)}
-              className="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-2xl"
+              className="absolute top-2 right-3 text-gray-400 hover:text-gray-600 text-pantalla"
               title="Cerrar"
             >
               ×
             </button>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Detalle de Orden</h2>
+            <h2 className="text-titulo font-bold text-gray-900 mb-2">Detalle de Orden</h2>
             <div className="mb-2">
               <span className="font-medium">Folio:</span> {selectedOrden.folio}<br />
               <span className="font-medium">Mesa:</span> {selectedOrden.mesa}<br />
@@ -628,11 +628,11 @@ const Dashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
               <RefreshCw className="w-5 h-5 text-orange-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Gestión de Flujo de Órdenes</h2>
+              <h2 className="text-titulo font-semibold text-gray-900">Gestión de Flujo de Órdenes</h2>
             </div>
             <button
               onClick={loadDashboardData}
-              className="px-3 py-1 bg-orange-100 text-orange-600 rounded-lg hover:bg-orange-200 transition-colors text-sm"
+              className="btn bg-orange-100 text-orange-600 hover:bg-orange-200"
             >
               Actualizar
             </button>
@@ -644,9 +644,9 @@ const Dashboard: React.FC = () => {
               <div key={status} className="text-center">
                 <div className={`inline-flex items-center space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg ${getStatusColor(status)} min-w-0`}>
                   {getStatusIcon(status)}
-                  <span className="text-xs sm:text-sm font-medium">{count}</span>
+                  <span className="text-meta font-medium">{count}</span>
                 </div>
-                <p className="text-[10px] sm:text-xs text-gray-600 mt-1 truncate px-1">{status}</p>
+                <p className="text-meta sm:text-meta text-gray-600 mt-1 truncate px-1">{status}</p>
               </div>
             ))}
           </div>
@@ -671,20 +671,20 @@ const Dashboard: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           {/* Nombre del cliente grande */}
-                          <p className="font-bold text-lg sm:text-xl text-gray-900 truncate">{orden.cliente}</p>
-                          <p className="text-xs sm:text-sm text-gray-600 truncate">{orden.mesa}</p>
+                          <p className="font-bold text-titulo text-gray-900 truncate">{orden.cliente}</p>
+                          <p className="text-meta text-gray-600 truncate">{orden.mesa}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 flex-shrink-0">
-                        <span className={`px-2 py-0.5 text-[10px] sm:text-xs font-medium rounded-full ${getStatusColor(orden.estatus)} whitespace-nowrap`}>
+                        <span className={`px-2 py-0.5 text-meta sm:text-meta font-medium rounded-full ${getStatusColor(orden.estatus)} whitespace-nowrap`}>
                           {orden.estatus}
                         </span>
-                        <span className="text-[10px] sm:text-xs text-gray-500 whitespace-nowrap">
+                        <span className="text-meta sm:text-meta text-gray-500 whitespace-nowrap">
                           {orden.tiempoTranscurrido}
                         </span>
                         {/* Order modification indicator */}
                         {orden.estatus === 'Pendiente' && (
-                          <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs bg-orange-100 text-orange-600 rounded whitespace-nowrap">
+                          <span className="px-1.5 sm:px-2 py-0.5 text-meta sm:text-meta bg-orange-100 text-orange-600 rounded whitespace-nowrap">
                             Val.
                           </span>
                         )}
@@ -692,7 +692,7 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2 flex-shrink-0">
-                      <span className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                      <span className="text-cuerpo font-medium text-gray-900 whitespace-nowrap">
                         ${orden.total.toFixed(2)}
                       </span>
                       {/* Workflow Action Buttons */}
@@ -718,7 +718,7 @@ const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-2 mb-6">
             <ChefHat className="w-5 h-5 text-orange-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Órdenes Pendientes</h2>
+            <h2 className="text-titulo font-semibold text-gray-900">Órdenes Pendientes</h2>
           </div>
           
           <div className="space-y-4">
@@ -732,12 +732,12 @@ const Dashboard: React.FC = () => {
                 >
                   <div>
                     {/* Cliente primero, luego total, luego mesa */}
-                    <p className="font-bold text-gray-900 text-base">{orden.nombreCliente || 'Sin nombre'}</p>
-                    <p className="text-sm text-gray-600">Total: ${orden.total.toFixed(2)}</p>
-                    <p className="text-xs text-blue-600 font-medium">Tipo: {orden.nombreMesa}</p>
+                    <p className="font-bold text-gray-900 text-cuerpo">{orden.nombreCliente || 'Sin nombre'}</p>
+                    <p className="text-cuerpo text-gray-600">Total: ${orden.total.toFixed(2)}</p>
+                    <p className="text-meta text-blue-600 font-medium">Tipo: {orden.nombreMesa}</p>
                   </div>
                   <span
-                    className={`px-3 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                    className={`px-3 py-1 text-meta font-medium rounded-full ${getStatusColor(
                       orden.estatus
                     )}`}
                   >
@@ -753,25 +753,25 @@ const Dashboard: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center space-x-2 mb-6">
             <TrendingUp className="w-5 h-5 text-orange-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Acciones Rápidas</h2>
+            <h2 className="text-titulo font-semibold text-gray-900">Acciones Rápidas</h2>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
               <Link to="/nueva-orden" className="flex flex-col items-center p-4 border-2 border-dashed border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors">
               <ShoppingCart className="w-8 h-8 text-orange-600 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Nueva Orden</span>
+              <span className="text-cuerpo font-medium text-gray-700">Nueva Orden</span>
               </Link>
             
               <Link to="/inventario" className="flex flex-col items-center p-4 border-2 border-dashed border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors">
               <Package className="w-8 h-8 text-orange-600 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Inventario</span>
+              <span className="text-cuerpo font-medium text-gray-700">Inventario</span>
               </Link>
             
             {/* Catálogos - Solo para Admin, Mesero y Despachador */}
             {user?.nombreTipoUsuario !== 'Encargado' && (
               <Link to="/catalogos" className="flex flex-col items-center p-4 border-2 border-dashed border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors">
               <Users className="w-8 h-8 text-orange-600 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Catálogos</span>
+              <span className="text-cuerpo font-medium text-gray-700">Catálogos</span>
               </Link>
             )}
             
@@ -779,7 +779,7 @@ const Dashboard: React.FC = () => {
             {user?.nombreTipoUsuario === 'Admin' && (
               <Link to="/reportes" className="flex flex-col items-center p-4 border-2 border-dashed border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors">
               <TrendingUp className="w-8 h-8 text-orange-600 mb-2" />
-              <span className="text-sm font-medium text-gray-700">Reportes</span>
+              <span className="text-cuerpo font-medium text-gray-700">Reportes</span>
               </Link>
             )}
           </div>
