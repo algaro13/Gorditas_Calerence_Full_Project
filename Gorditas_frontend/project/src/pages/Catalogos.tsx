@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Aviso } from '../components/Aviso';
 import { 
   Settings, 
   Plus, 
@@ -888,17 +889,9 @@ const Catalogos: React.FC = () => {
           )}
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-cuerpo break-words">
-            {error}
-          </div>
-        )}
+        <Aviso error={error} exito={success} />
 
-        {success && (
-          <div className="bg-green-50 border border-green-200 text-green-600 px-1 py-2 sm:px-4 sm:py-3 rounded-lg text-cuerpo break-words">
-            {success}
-          </div>
-        )}
+        
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-2 sm:gap-6">
           {/* Model Selection */}

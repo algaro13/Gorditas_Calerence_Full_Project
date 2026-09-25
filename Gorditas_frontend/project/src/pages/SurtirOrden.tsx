@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Aviso } from '../components/Aviso';
 import { 
   ChefHat, 
   Clock, 
@@ -460,17 +461,9 @@ const SurtirOrden: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      <Aviso error={error} exito={success} />
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
+      
 
       {mesasAgrupadas.length === 0 ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">

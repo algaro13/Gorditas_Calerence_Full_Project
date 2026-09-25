@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Aviso } from '../components/Aviso';
 import { 
   Receipt, 
   Printer, 
@@ -527,17 +528,9 @@ const Cobrar: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-2 sm:px-3 py-2 rounded-lg">
-          <span className="break-words">{error}</span>
-        </div>
-      )}
+      <Aviso error={error} exito={success} />
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-2 sm:px-3 py-2 rounded-lg">
-          <span className="break-words">{success}</span>
-        </div>
-      )}
+      
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 sm:p-4 lg:p-6">
         <h2 className="text-titulo font-semibold text-gray-900 mb-2 sm:mb-4 break-words">Órdenes para Cobrar</h2>

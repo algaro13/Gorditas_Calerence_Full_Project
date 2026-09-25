@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Aviso } from '../components/Aviso';
 import {
   Plus,
   Minus,
@@ -901,11 +902,7 @@ const NuevaOrden: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-2 sm:px-4 py-2 sm:py-3 rounded-lg mb-3 sm:mb-6 text-meta mx-2 sm:mx-0.5">
-          <span className="block truncate">{error}</span>
-        </div>
-      )}
+      <Aviso error={error} />
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 py-3 sm:p-4 lg:p-6">
         {/* Step 1: Select Table */}

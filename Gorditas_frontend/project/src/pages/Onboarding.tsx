@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Aviso } from '../components/Aviso';
 import { Link } from 'react-router-dom';
 import { UserPlus, Store, Image, Palette, Grid3X3, BookOpen, Check, ArrowRight, ArrowLeft, Plus, X, Upload, Mail, ExternalLink } from 'lucide-react';
 import { palettes } from '../config/palettes';
@@ -239,7 +240,7 @@ const Onboarding: React.FC = () => {
           ))}
         </div>
 
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg mb-4 text-cuerpo break-words">{error}</div>}
+        <Aviso error={error} />
 
         {/* Paso 1: cuenta */}
         {step === 1 && (

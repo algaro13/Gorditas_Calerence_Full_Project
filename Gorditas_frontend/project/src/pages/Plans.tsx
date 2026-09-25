@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Aviso } from '../components/Aviso';
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -88,7 +89,7 @@ const Plans: React.FC = () => {
             )}
           </div>
           {!isAdmin && <p className="text-cuerpo text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
-          {error && <p className="text-cuerpo text-red-600 mt-3">{error}</p>}
+          <Aviso error={error} />
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Aviso } from '../components/Aviso';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -680,11 +681,7 @@ const Reportes: React.FC = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      <Aviso error={error} />
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">

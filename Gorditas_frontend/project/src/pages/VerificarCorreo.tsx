@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Aviso } from '../components/Aviso';
 import { Navigate } from 'react-router-dom';
 import { Mail, LogOut, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -50,7 +51,7 @@ const VerificarCorreo: React.FC = () => {
         </p>
 
         {aviso && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-cuerpo mb-4">{aviso}</div>}
-        {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-lg text-cuerpo mb-4">{error}</div>}
+        <Aviso error={error} />
 
         <div className="flex flex-col gap-3">
           <button

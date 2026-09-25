@@ -1,6 +1,7 @@
   // Estado y función para eliminar orden
 
 import React, { useState, useEffect, useRef } from 'react';
+import { Aviso } from '../components/Aviso';
 import { 
   Edit3, 
   Plus, 
@@ -938,17 +939,9 @@ const EditarOrden: React.FC = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-          {error}
-        </div>
-      )}
+      <Aviso error={error} exito={success} />
 
-      {success && (
-        <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
-          {success}
-        </div>
-      )}
+      
 
       <div className="grid gap-3 sm:gap-6 grid-cols-1 xl:grid-cols-2">
         {/* Orders List */}
