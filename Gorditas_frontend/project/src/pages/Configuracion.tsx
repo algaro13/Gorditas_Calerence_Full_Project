@@ -68,17 +68,17 @@ const Configuracion: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Settings className="w-6 h-6 text-gray-700" />
-        <h1 className="text-2xl font-bold text-gray-900">Configuración del negocio</h1>
+        <h1 className="text-pantalla font-bold text-gray-900">Configuración del negocio</h1>
       </div>
 
       {tenant && (
-        <p className="text-sm text-gray-500">
+        <p className="text-cuerpo text-gray-500">
           {tenant.nombre} · <span className="font-mono">{tenant.url}</span>
         </p>
       )}
 
       {!canEdit && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg text-cuerpo">
           Solo un administrador puede modificar la configuración.
         </div>
       )}
@@ -88,11 +88,11 @@ const Configuracion: React.FC = () => {
           <Check className="w-5 h-5" /> {success}
         </div>
       )}
-      {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-cuerpo">{error}</div>}
 
       {/* Business Image */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">Imagen del negocio</h2>
+        <h2 className="text-titulo font-semibold mb-4">Imagen del negocio</h2>
         <div className="flex items-center gap-6">
           {imagePreview ? (
             <img src={imagePreview} alt="Logo" className="w-24 h-24 rounded-lg object-cover border" />
@@ -102,18 +102,18 @@ const Configuracion: React.FC = () => {
             </div>
           )}
           <div>
-            <label className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium ${canEdit ? 'cursor-pointer hover:bg-gray-200' : 'opacity-50'}`}>
+            <label className={`inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg text-cuerpo font-medium ${canEdit ? 'cursor-pointer hover:bg-gray-200' : 'opacity-50'}`}>
               <Upload className="w-4 h-4" /> Cambiar imagen
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImageChange} className="hidden" disabled={!canEdit} />
             </label>
-            <p className="text-xs text-gray-500 mt-2">JPG, PNG o WebP. Máximo 2MB.</p>
+            <p className="text-meta text-gray-500 mt-2">JPG, PNG o WebP. Máximo 2MB.</p>
           </div>
         </div>
       </div>
 
       {/* Color Palette */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-lg font-semibold mb-4">Paleta de colores</h2>
+        <h2 className="text-titulo font-semibold mb-4">Paleta de colores</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {palettes.map((p) => (
             <button
@@ -128,7 +128,7 @@ const Configuracion: React.FC = () => {
                 <div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.primary }} />
                 <div className="w-6 h-6 rounded-full" style={{ backgroundColor: p.sidebarBg }} />
               </div>
-              <span className="text-sm font-medium">{p.name}</span>
+              <span className="text-cuerpo font-medium">{p.name}</span>
               {selectedPalette === p.id && <Check className="w-4 h-4 ml-auto" />}
             </button>
           ))}
@@ -140,7 +140,7 @@ const Configuracion: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={saving || !canEdit}
-          className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 font-medium"
+          className="btn gap-2 bg-gray-900 text-white hover:bg-gray-800"
         >
           <Save className="w-4 h-4" />
           {saving ? 'Guardando...' : 'Guardar cambios'}
