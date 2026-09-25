@@ -265,7 +265,20 @@ const Cobrar: React.FC = () => {
     }
   };
 
+  /**
+   * Cobrar es la acción menos reversible del sistema: deshacerla no es un botón, hay que
+   * cambiar el estado a mano y explicárselo al cliente. Por eso se confirma.
+   *
+   * El importe va en la pregunta a propósito. Un «¿seguro?» sin datos se contesta que sí por
+   * reflejo; «¿Cobrar $340.00 de la Mesa 4?» obliga a mirar, que es de lo que se trata.
+   */
+  const confirmarCobro = (que: string, monto: number) =>
+    window.confirm(`¿Cobrar $${monto.toFixed(2)} de ${que}? No se puede deshacer.`);
+
   const handleCobrarTodaLaMesa = async (mesa: MesaAgrupada) => {
+    // Si ya está pagada, este botón dice «Entregar» y no hay nada irreversible que confirmar.
+    if (!todasLasOrdenesDeMesaPagadas(mesa) && !confirmarCobro(mesa.nombreMesa, mesa.totalMonto)) return;
+
     setProcessing(true);
     try {
       // Cobrar todas las órdenes de la mesa en paralelo
@@ -295,6 +308,14 @@ const Cobrar: React.FC = () => {
 
   // El parámetro skipProcessing evita que se sobreescriba el estado global cuando se cobra en lote
   const handleFinalizarOrden = async (orden: OrdenCompleta, skipProcessing = false) => {
+    // `skipProcessing` marca la llamada en lote desde «Cobrar toda la mesa», que ya preguntó
+    // una vez por el total. Preguntar otra vez por cada orden convertiría el aviso en ruido,
+    // y un aviso que se contesta en piloto automático no protege de nada.
+    if (!skipProcessing && !esOrdenPagada(orden.nombreCliente)) {
+      const que = orden.nombreCliente?.trim() || orden.nombreMesa || 'esta orden';
+      if (!confirmarCobro(que, Number(orden.total) || 0)) return;
+    }
+
     if (!skipProcessing) setProcessing(true);
     try {
       const response = await apiService.updateOrdenStatus(orden._id?.toString() || '', 'Pagada');
