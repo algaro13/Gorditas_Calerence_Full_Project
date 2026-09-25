@@ -661,19 +661,19 @@ const Despachar: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-24 w-24 border-b-4 border-orange-600 mb-6"></div>
-            <span className="text-white text-lg font-bold">Entregando todas las órdenes de la mesa...</span>
+            <span className="text-white text-titulo font-bold">Entregando todas las órdenes de la mesa...</span>
           </div>
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-6">
         <div className="mb-4 sm:mb-0">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Despachar Órdenes</h1>
+          <h1 className="text-pantalla font-bold text-gray-900">Despachar Órdenes</h1>
           <p className="text-gray-600 mt-1">Gestiona la entrega de órdenes surtidas y productos de órdenes en recepción</p>
         </div>
         <div className="bg-white rounded-lg px-3 sm:px-4 py-2 shadow-sm border border-gray-200">
           <div className="flex items-center space-x-2">
             <Truck className="w-4 sm:w-5 h-4 sm:h-5 text-orange-600" />
-            <span className="text-xs sm:text-sm font-medium text-gray-700">
+            <span className="text-meta font-medium text-gray-700">
               {ordenes.length} órdenes para despacho
             </span>
           </div>
@@ -697,7 +697,7 @@ const Despachar: React.FC = () => {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
           <div className="flex items-center space-x-2 mb-3 sm:mb-6">
             <Package className="w-5 h-5 text-orange-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Mesas para Despacho</h2>
+            <h2 className="text-titulo font-semibold text-gray-900">Mesas para Despacho</h2>
           </div>
 
           <div className="space-y-4">
@@ -723,24 +723,24 @@ const Despachar: React.FC = () => {
                           <h3 className="font-medium text-gray-900 truncate whitespace-nowrap overflow-hidden min-w-[60px] text-left">
                             {mesa.nombreMesa || `Mesa ${mesa.idMesa}`}
                           </h3>
-                          <p className="text-sm text-gray-600 truncate">
+                          <p className="text-cuerpo text-gray-600 truncate">
                             {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'} surtida{mesa.totalOrdenes === 1 ? '' : 's'}
                           </p>
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                         <div className="text-left sm:text-right">
-                          <p className="text-sm font-medium text-green-600">
+                          <p className="text-cuerpo font-medium text-green-600">
                             ${mesa.totalMonto.toFixed(2)}
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {mesa.ordenes.some(o => o.estatus === 'Recepcion') && (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                              <span className="px-2 py-1 text-meta font-medium rounded-full bg-blue-100 text-blue-800">
                                 En Recepción
                               </span>
                             )}
                             {mesa.ordenes.some(o => o.estatus === 'Surtida') && (
-                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              <span className="px-2 py-1 text-meta font-medium rounded-full bg-green-100 text-green-800">
                                 Surtida
                               </span>
                             )}
@@ -754,7 +754,7 @@ const Despachar: React.FC = () => {
                                 e.stopPropagation();
                                 handleMarkAllMesaAsDelivered(mesa);
                               }}
-                              className="px-3 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors flex items-center flex-shrink-0"
+                              className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
                               title="Entregar todas las órdenes de esta mesa"
                             >
                               <CheckCircle className="w-4 h-4 mr-1" />
@@ -798,13 +798,13 @@ const Despachar: React.FC = () => {
                                         Orden #{orden.folio || orden._id?.slice(-6)}
                                       </h5>
                                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-1">
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-cuerpo text-gray-600">
                                           {new Date(orden.fechaHora ?? orden.fecha ?? '').toLocaleTimeString('es-ES', {
                                             hour: '2-digit',
                                             minute: '2-digit'
                                           })}
                                         </p>
-                                        <span className={`px-2 py-1 text-xs font-medium rounded-full self-start ${
+                                        <span className={`px-2 py-1 text-meta font-medium rounded-full self-start ${
                                           orden.estatus === 'Recepcion' 
                                             ? 'bg-blue-100 text-blue-800' 
                                             : 'bg-green-100 text-green-800'
@@ -813,14 +813,14 @@ const Despachar: React.FC = () => {
                                         </span>
                                       </div>
                                       {orden.notas && (
-                                        <div className="mt-1 p-2 bg-blue-50 rounded text-xs text-blue-700 max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-line' }}>
+                                        <div className="mt-1 p-2 bg-blue-50 rounded text-meta text-blue-700 max-w-full" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-line' }}>
                                           <strong>Notas:</strong> <span className="break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-line' }}>{orden.notas}</span>
                                         </div>
                                       )}
                                     </div>
                                     <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                       <div className="text-left sm:text-right">
-                                        <p className="text-sm font-medium text-green-600">
+                                        <p className="text-cuerpo font-medium text-green-600">
                                           ${orden.total.toFixed(2)}
                                         </p>
                                       </div>
@@ -836,7 +836,7 @@ const Despachar: React.FC = () => {
                                                 }
                                               }}
                                               disabled={buttonInfo.disabled}
-                                              className={`px-2 py-1 text-white text-xs rounded transition-colors flex items-center flex-shrink-0 ${buttonInfo.className}`}
+                                              className={`px-2 py-1 text-white text-meta rounded transition-colors flex items-center flex-shrink-0 ${buttonInfo.className}`}
                                             >
                                               <CheckCircle className="w-3 h-3 mr-1" />
                                               <span className="truncate">{buttonInfo.text}</span>
@@ -864,14 +864,14 @@ const Despachar: React.FC = () => {
         <div ref={orderDetailsRef} className="bg-white rounded-xl shadow-sm border border-gray-200 p-2 sm:p-6">
           <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:mb-6">
             <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+              <h2 className="text-titulo font-semibold text-gray-900 break-words">
                 {selectedOrden ? (
                   <>
                     <span className="block sm:inline">
                       Detalles -  {selectedOrden.nombreMesa || getMesaInfo(selectedOrden.mesa)?.nombre || getMesaInfo(selectedOrden.mesa)?.numero || selectedOrden.mesa}
                     </span>
                     {selectedOrden.nombreCliente && (
-                      <span className="block sm:inline text-sm sm:text-base text-gray-600 mt-1 sm:mt-0"> 
+                      <span className="block sm:inline text-cuerpo text-gray-600 mt-1 sm:mt-0"> 
                         <span className="hidden sm:inline"> • </span>{selectedOrden.nombreCliente}
                       </span>
                     )}
@@ -887,7 +887,7 @@ const Despachar: React.FC = () => {
                 <button
                   onClick={handleCompleteDispatch}
                   disabled={dispatching}
-                  className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-green-600 text-white text-sm sm:text-base rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center flex-shrink-0"
+                  className="btn w-full sm:w-auto bg-green-600 text-white hover:bg-green-700 flex-shrink-0"
                 >
                   {dispatching ? (
                     <>
@@ -915,8 +915,8 @@ const Despachar: React.FC = () => {
             <div className="space-y-6">
               {/* Order Summary */}
               <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Resumen de la Orden</h3>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 text-xs sm:text-sm">
+                <h3 className="font-medium text-gray-900 mb-2 text-cuerpo">Resumen de la Orden</h3>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4 text-meta">
                   <div className="flex justify-between sm:block">
                     <span className="text-gray-600">Mesa:</span>
                     <span className="ml-2 font-medium break-words">{getMesaInfo(selectedOrden.mesa)?.numero}</span>
@@ -944,7 +944,7 @@ const Despachar: React.FC = () => {
               {/* Products */}
               {selectedOrden.productos && selectedOrden.productos.length > 0 ? (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Productos</h3>
+                  <h3 className="font-medium text-gray-900 mb-3 text-cuerpo">Productos</h3>
                   <div className="space-y-2">
                     {selectedOrden.productos.map((producto, index) => (
                       <div
@@ -954,22 +954,22 @@ const Despachar: React.FC = () => {
                         }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base break-words">{producto.producto || producto.nombreProducto || `Producto ${index + 1}`}</p>
-                          <p className="text-xs sm:text-sm text-gray-600">Cantidad: {producto.cantidad}</p>
+                          <p className="font-medium text-gray-900 text-cuerpo break-words">{producto.producto || producto.nombreProducto || `Producto ${index + 1}`}</p>
+                          <p className="text-meta text-gray-600">Cantidad: {producto.cantidad}</p>
                         </div>
                         <div className="flex items-center justify-between gap-2 sm:justify-end">
-                          <span className="text-sm font-medium text-green-600 flex-shrink-0">
+                          <span className="text-cuerpo font-medium text-green-600 flex-shrink-0">
                             ${producto.subtotal?.toFixed(2) ?? producto.importe?.toFixed(2) ?? '0.00'}
                           </span>
                           {producto.entregado ? (
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                              <span className="text-xs text-green-600 font-medium sm:hidden">Entregado</span>
+                              <span className="text-meta text-green-600 font-medium sm:hidden">Entregado</span>
                             </div>
                           ) : (
                             <button
                               onClick={() => handleMarkAsDelivered(producto._id!, 'producto')}
-                              className="px-2 sm:px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors flex-shrink-0"
+                              className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
                             >
                               Entregar
                             </button>
@@ -981,15 +981,15 @@ const Despachar: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Productos</h3>
-                  <div className="text-xs sm:text-sm text-gray-500">No hay productos en esta orden.</div>
+                  <h3 className="font-medium text-gray-900 mb-3 text-cuerpo">Productos</h3>
+                  <div className="text-meta text-gray-500">No hay productos en esta orden.</div>
                 </div>
               )}
 
               {/* Dishes */}
               {selectedOrden.platillos && selectedOrden.platillos.length > 0 ? (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Platillos</h3>
+                  <h3 className="font-medium text-gray-900 mb-3 text-cuerpo">Platillos</h3>
                   <div className="space-y-2">
                     {selectedOrden.platillos.map((platillo, index) => {
                       // Permitir entregar si listo=true y entregado=false
@@ -1008,36 +1008,36 @@ const Despachar: React.FC = () => {
                         <div key={index} className="space-y-2">
                           <div className={`flex flex-col gap-2 p-2 sm:p-3 rounded-lg sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${platilloBg}`}>
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium text-gray-900 text-sm sm:text-base break-words">{platillo.platillo || platillo.nombrePlatillo || `Platillo ${index + 1}`}</p>
+                              <p className="font-medium text-gray-900 text-cuerpo break-words">{platillo.platillo || platillo.nombrePlatillo || `Platillo ${index + 1}`}</p>
                               {platillo.notas && (
-                                <p className="text-xs text-blue-600 italic mt-1 break-words">
+                                <p className="text-meta text-blue-600 italic mt-1 break-words">
                                   Notas: {platillo.notas}
                                 </p>
                               )}
-                              <p className="text-xs sm:text-sm text-gray-600 break-words">Guiso: {platillo.guiso || platillo.nombreGuiso}</p>
-                              <p className="text-xs sm:text-sm text-gray-600">Cantidad: {platillo.cantidad}</p>
+                              <p className="text-meta text-gray-600 break-words">Guiso: {platillo.guiso || platillo.nombreGuiso}</p>
+                              <p className="text-meta text-gray-600">Cantidad: {platillo.cantidad}</p>
                               {selectedOrden.estatus === 'Recepcion' && !platillo.listo && !platillo.entregado && (
-                                <p className="text-xs text-yellow-700 font-medium">Preparando...</p>
+                                <p className="text-meta text-yellow-700 font-medium">Preparando...</p>
                               )}
                             </div>
                             <div className="flex items-center justify-between gap-2 sm:justify-end">
-                              <span className="text-sm font-medium text-gray-900 flex-shrink-0">
+                              <span className="text-cuerpo font-medium text-gray-900 flex-shrink-0">
                                 ${platillo.subtotal !== undefined ? platillo.subtotal.toFixed(2) : '0.00'}
                               </span>
                               {platillo.entregado ? (
                                 <div className="flex items-center gap-1 flex-shrink-0">
                                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                                  <span className="text-xs text-green-600 font-medium sm:hidden">Entregado</span>
+                                  <span className="text-meta text-green-600 font-medium sm:hidden">Entregado</span>
                                 </div>
                               ) : puedeEntregar ? (
                                 <button
                                   onClick={() => handleMarkAsDelivered(platillo._id!, 'platillo')}
-                                  className="px-2 sm:px-3 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition-colors flex-shrink-0"
+                                  className="btn bg-orange-600 text-white hover:bg-orange-700 flex-shrink-0"
                                 >
                                   Entregar
                                 </button>
                               ) : (
-                                <div className="px-2 sm:px-3 py-1 bg-yellow-100 text-yellow-800 text-xs rounded font-medium flex-shrink-0">
+                                <div className="px-2 sm:px-3 py-1 bg-yellow-100 text-yellow-800 text-meta rounded font-medium flex-shrink-0">
                                   <span className="hidden sm:inline">Preparando</span>
                                   <span className="sm:hidden">Prep.</span>
                                 </div>
@@ -1050,7 +1050,7 @@ const Despachar: React.FC = () => {
                               {platillo.extras.map((extra: any) => (
                                 <div
                                   key={extra._id}
-                                  className={`flex flex-col gap-1 p-1.5 rounded text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-2 ${platilloBg}`}
+                                  className={`flex flex-col gap-1 p-1.5 rounded text-meta sm:flex-row sm:items-center sm:justify-between sm:gap-2 ${platilloBg}`}
                                 >
                                   <div className="flex items-center space-x-1 min-w-0 flex-1">
                                     <span className="text-purple-900 font-medium break-words">
@@ -1058,13 +1058,13 @@ const Despachar: React.FC = () => {
                                     </span>
                                   </div>
                                   <div className="flex items-center justify-between gap-1 flex-shrink-0 sm:justify-end">
-                                    <span className="text-purple-900 font-medium text-xs">
+                                    <span className="text-purple-900 font-medium text-meta">
                                       ${(extra.importe ?? 0).toFixed(2)}
                                     </span>
                                     {puedeEntregar ? (
                                       <button
                                         onClick={() => handleMarkAsDelivered(extra._id, 'extra')}
-                                        className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
+                                        className="btn bg-purple-100 text-purple-700 hover:bg-purple-200"
                                       >
                                         Entregar
                                       </button>
@@ -1081,8 +1081,8 @@ const Despachar: React.FC = () => {
                 </div>
               ) : (
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-3 text-sm sm:text-base">Platillos</h3>
-                  <div className="text-xs sm:text-sm text-gray-500">No hay platillos en esta orden.</div>
+                  <h3 className="font-medium text-gray-900 mb-3 text-cuerpo">Platillos</h3>
+                  <div className="text-meta text-gray-500">No hay platillos en esta orden.</div>
                 </div>
               )}
 
@@ -1094,9 +1094,9 @@ const Despachar: React.FC = () => {
               }`}>
                 <div className="flex items-center space-x-2 mb-2">
                   <Clock className="w-4 sm:w-5 h-4 sm:h-5 text-blue-600" />
-                  <h3 className="font-medium text-blue-900 text-sm sm:text-base">Estado de Entrega</h3>
+                  <h3 className="font-medium text-blue-900 text-cuerpo">Estado de Entrega</h3>
                 </div>
-                <p className="text-xs sm:text-sm text-blue-700 break-words">
+                <p className="text-meta text-blue-700 break-words">
                   {selectedOrden.estatus === 'Recepcion' 
                     ? 'Esta orden está en recepción. Puedes entregar productos, pero los platillos y sus extras están en preparación.'
                     : isOrderReadyForDispatch(selectedOrden)
