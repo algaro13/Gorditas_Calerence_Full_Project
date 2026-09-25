@@ -22,8 +22,8 @@ const SinRestaurante: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         <Store className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Este acceso no tiene restaurante</h1>
-        <p className="text-sm text-gray-600 mb-6">
+        <h1 className="text-titulo font-bold text-gray-900 mb-2">Este acceso no tiene restaurante</h1>
+        <p className="text-cuerpo text-gray-600 mb-6">
           Tu cuenta es válida, pero no está asociada a ningún restaurante registrado o no tiene un rol asignado.
           Pide al administrador que te invite, o registra tu propio negocio.
         </p>
@@ -31,7 +31,7 @@ const SinRestaurante: React.FC = () => {
           <a href={`${appUrl()}/onboarding`} className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
             Registrar mi restaurante
           </a>
-          <button onClick={() => void logout()} className="flex items-center justify-center gap-2 px-6 py-2 text-gray-600 hover:text-red-600">
+          <button onClick={() => void logout()} className="btn gap-2 text-gray-600 hover:text-red-600">
             <LogOut className="w-4 h-4" /> Cerrar sesión
           </button>
         </div>
