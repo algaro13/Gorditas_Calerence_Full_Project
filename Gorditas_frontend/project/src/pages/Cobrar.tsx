@@ -501,27 +501,27 @@ const Cobrar: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-24 w-24 border-b-4 border-orange-600 mb-6"></div>
-            <span className="text-white text-lg font-bold">Procesando cobro...</span>
+            <span className="text-white text-titulo font-bold">Procesando cobro...</span>
           </div>
         </div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">Cobrar</h1>
-          <p className="text-gray-600 mt-1 text-sm sm:text-base break-words">Procesa el pago y finaliza las órdenes</p>
+          <h1 className="text-pantalla font-bold text-gray-900 break-words">Cobrar</h1>
+          <p className="text-gray-600 mt-1 text-cuerpo break-words">Procesa el pago y finaliza las órdenes</p>
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           {hasNewOrders && (
             <div className="bg-yellow-100 rounded-lg px-2 py-1 sm:px-3 sm:py-2 shadow-sm border border-yellow-200">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse flex-shrink-0"></div>
-                <span className="text-xs font-medium text-yellow-700 truncate">
+                <span className="text-meta font-medium text-yellow-700 truncate">
                   Nuevas órdenes para cobrar
                 </span>
               </div>
             </div>
           )}
-          <div className="text-xs text-gray-500 text-right sm:text-left truncate">
+          <div className="text-meta text-gray-500 text-right sm:text-left truncate">
            {lastUpdateTime.toLocaleTimeString('es-ES')}
           </div>
         </div>
@@ -540,7 +540,7 @@ const Cobrar: React.FC = () => {
       )}
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-1 sm:p-4 lg:p-6">
-        <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-4 break-words">Órdenes para Cobrar</h2>
+        <h2 className="text-titulo font-semibold text-gray-900 mb-2 sm:mb-4 break-words">Órdenes para Cobrar</h2>
         {mesasAgrupadas.length === 0 ? (
           <div className="text-center py-12">
             <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-4" />
@@ -561,16 +561,16 @@ const Cobrar: React.FC = () => {
                         <Users className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 break-words hyphens-auto">
+                        <h3 className="text-cuerpo lg:text-titulo font-semibold text-gray-900 break-words hyphens-auto">
                           {mesa.nombreMesa}
                         </h3>
-                        <p className="text-xs sm:text-sm text-gray-600 break-words">
+                        <p className="text-meta text-gray-600 break-words">
                           {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'}
                         </p>
                         {/* Lista de clientes de las órdenes en la mesa */}
                         {Object.keys(mesa.clientes).length > 0 && (
                           <div
-                            className="mt-1 text-xs sm:text-sm text-gray-700 flex gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                            className="mt-1 text-meta text-gray-700 flex gap-1 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                             style={{ WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}
                           >
                             {Object.keys(mesa.clientes).map((cliente, idx) => (
@@ -588,10 +588,10 @@ const Cobrar: React.FC = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <div className="text-left sm:text-right">
-                        <p className="text-sm sm:text-base lg:text-lg font-semibold text-green-600 break-words">
+                        <p className="text-cuerpo lg:text-titulo font-semibold text-green-600 break-words">
                           ${mesa.totalMonto.toFixed(2)}
                         </p>
-                        <p className="text-xs sm:text-sm text-gray-600 break-words">Total mesa</p>
+                        <p className="text-meta text-gray-600 break-words">Total mesa</p>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end">
                         {expandedMesas.has(mesa.idMesa) ? (
@@ -609,14 +609,14 @@ const Cobrar: React.FC = () => {
                       <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                         <button
                           onClick={() => handleGenerateMesaTicket(mesa)}
-                          className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-xs sm:text-sm min-w-0"
+                          className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700"
                         >
                           <Receipt className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">PDF</span>
                         </button>
                         <button
                           onClick={() => handlePrintMesaTicket(mesa)}
-                          className="flex-1 bg-gray-600 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center text-xs sm:text-sm min-w-0"
+                          className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700"
                         >
                           <Printer className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                           <span className="truncate">Imprimir</span>
@@ -627,7 +627,7 @@ const Cobrar: React.FC = () => {
                         <button
                           onClick={() => handleCobrarTodaLaMesa(mesa)}
                           disabled={processing}
-                          className="w-full bg-green-600 text-white py-1.5 sm:py-2 px-2 sm:px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-xs sm:text-sm min-w-0"
+                          className="btn w-full bg-green-600 text-white hover:bg-green-700"
                         >
                           <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
                           <span className="truncate">
@@ -650,13 +650,13 @@ const Cobrar: React.FC = () => {
                       {mesa.ordenes.map((orden) => (
                         <div key={orden._id?.toString()} className="bg-white border border-gray-200 rounded-lg p-1.5 flex flex-col h-full shadow-sm">
                           {/* Nombre del cliente */}
-                          <div className="text-xs font-semibold text-gray-700 mb-1 truncate">
+                          <div className="text-meta font-semibold text-gray-700 mb-1 truncate">
                             {orden.nombreCliente || 'Sin nombre'}
                           </div>
                           {/* Número de orden y hora */}
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-medium text-gray-900 text-sm">#{orden._id?.toString().slice(-6)}</span>
-                            <span className="text-xs text-gray-500 flex items-center">
+                            <span className="font-medium text-gray-900 text-cuerpo">#{orden._id?.toString().slice(-6)}</span>
+                            <span className="text-meta text-gray-500 flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
                               {orden.fecha ? new Date(orden.fecha).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : ''}
                             </span>
@@ -665,16 +665,16 @@ const Cobrar: React.FC = () => {
                           {orden.notas && (
                             <div className="flex items-start space-x-1 mb-1">
                               <StickyNote className="w-3 h-3 text-yellow-600 mt-0.5 flex-shrink-0" />
-                              <p className="text-xs text-gray-700 italic break-words">{orden.notas}</p>
+                              <p className="text-meta text-gray-700 italic break-words">{orden.notas}</p>
                             </div>
                           )}
                           {/* Productos */}
                           {orden.productos && orden.productos.length > 0 && (
                             <div className="mb-1">
-                              <p className="text-xs font-medium text-gray-700 mb-0.5">Productos:</p>
+                              <p className="text-meta font-medium text-gray-700 mb-0.5">Productos:</p>
                               <ul className="space-y-0.5">
                                 {orden.productos.map((producto, idx) => (
-                                  <li key={idx} className="flex justify-between items-center text-xs">
+                                  <li key={idx} className="flex justify-between items-center text-meta">
                                     <span className="text-gray-600 truncate">{producto.cantidad}x {producto.nombreProducto || producto.nombre || 'Producto'}</span>
                                     <span className="font-medium text-gray-900">${(producto.importe || 0).toFixed(2)}</span>
                                   </li>
@@ -685,11 +685,11 @@ const Cobrar: React.FC = () => {
                           {/* Platillos */}
                           {orden.platillos && orden.platillos.length > 0 && (
                             <div className="mb-1">
-                              <p className="text-xs font-medium text-gray-700 mb-0.5">Platillos:</p>
+                              <p className="text-meta font-medium text-gray-700 mb-0.5">Platillos:</p>
                               <ul className="space-y-0.5">
                                 {orden.platillos.map((platillo, idx) => (
                                   <li key={idx} className="flex flex-col">
-                                    <div className="flex justify-between items-center text-xs">
+                                    <div className="flex justify-between items-center text-meta">
                                       <span className="text-gray-600 truncate">{platillo.cantidad}x {platillo.nombrePlatillo} ({platillo.nombreGuiso})</span>
                                       <span className="font-medium text-gray-900">${(platillo.importe || 0).toFixed(2)}</span>
                                     </div>
@@ -697,7 +697,7 @@ const Cobrar: React.FC = () => {
                                     {platillo.extras && platillo.extras.length > 0 && (
                                       <ul className="ml-2 space-y-0.5">
                                         {platillo.extras.map((extra: any, extraIdx: number) => (
-                                          <li key={extraIdx} className="flex justify-between items-center text-xs">
+                                          <li key={extraIdx} className="flex justify-between items-center text-meta">
                                             <span className="text-purple-600 italic truncate">+ {extra.cantidad}x {extra.nombreExtra}</span>
                                             {/* No mostrar precio del extra */}
                                           </li>
@@ -706,7 +706,7 @@ const Cobrar: React.FC = () => {
                                     )}
                                     {/* Notas del platillo */}
                                     {platillo.notas && (
-                                      <div className="ml-2 text-xs text-blue-600 italic">Nota: {platillo.notas}</div>
+                                      <div className="ml-2 text-meta text-blue-600 italic">Nota: {platillo.notas}</div>
                                     )}
                                   </li>
                                 ))}
@@ -715,22 +715,22 @@ const Cobrar: React.FC = () => {
                           )}
                           {/* Total y estatus */}
                           <div className="flex items-center justify-between mt-auto pt-2 border-t border-gray-100">
-                            <span className="text-sm font-bold text-green-600">${orden.total?.toFixed(2)}</span>
-                            <span className={`inline-block px-1 py-0.5 text-xs font-medium rounded-full ${orden.estatus === 'Entregada' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{orden.estatus}</span>
+                            <span className="text-cuerpo font-bold text-green-600">${orden.total?.toFixed(2)}</span>
+                            <span className={`inline-block px-1 py-0.5 text-meta font-medium rounded-full ${orden.estatus === 'Entregada' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>{orden.estatus}</span>
                           </div>
                           {/* Acciones */}
                           <div className="flex flex-col gap-1 mt-2">
                             <div className="flex gap-1">
-                              <button onClick={() => handleGenerateTicket(orden)} className="flex-1 px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 flex items-center justify-center min-w-0">
+                              <button onClick={() => handleGenerateTicket(orden)} className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700">
                                 <Receipt className="w-3 h-3 mr-0.5 flex-shrink-0" />
                                 <span className="truncate">PDF</span>
                               </button>
-                              <button onClick={() => handlePrintTicket(orden)} className="flex-1 px-1.5 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 flex items-center justify-center min-w-0">
+                              <button onClick={() => handlePrintTicket(orden)} className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700">
                                 <Printer className="w-3 h-3 mr-0.5 flex-shrink-0" />
                                 <span className="truncate">Impr.</span>
                               </button>
                             </div>
-                            <button onClick={() => handleFinalizarOrden(orden)} disabled={processing} className="w-full px-1.5 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                            <button onClick={() => handleFinalizarOrden(orden)} disabled={processing} className="btn w-full bg-green-600 text-white hover:bg-green-700">
                               <CheckCircle className="w-3 h-3 mr-1 flex-shrink-0" />
                               <span className="truncate">
                                 {esOrdenPagada(orden.nombreCliente) ? 'Entregar' : 'Cobrar'}
@@ -743,21 +743,21 @@ const Cobrar: React.FC = () => {
                     {/* Opción para cobrar toda la mesa */}
                     <div className="mt-3 pt-3 border-t border-gray-200 bg-green-50 rounded-lg p-1.5 sm:p-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1.5 sm:mb-3">
-                        <span className="text-sm sm:text-lg font-semibold text-gray-900">Total de la mesa:</span>
-                        <span className="text-lg sm:text-xl font-bold text-green-600">${mesa.totalMonto.toFixed(2)}</span>
+                        <span className="text-titulo font-semibold text-gray-900">Total de la mesa:</span>
+                        <span className="text-titulo font-bold text-green-600">${mesa.totalMonto.toFixed(2)}</span>
                       </div>
                       <div className="space-y-1.5 sm:space-y-2">
                         <div className="flex flex-col sm:flex-row gap-1.5 sm:gap-2">
                           <button
                             onClick={() => handleGenerateMesaTicket(mesa)}
-                            className="flex-1 bg-blue-600 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center text-xs sm:text-sm min-w-0"
+                            className="btn flex-1 bg-blue-600 text-white hover:bg-blue-700"
                           >
                             <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                             <span className="truncate">PDF Mesa</span>
                           </button>
                           <button
                             onClick={() => handlePrintMesaTicket(mesa)}
-                            className="flex-1 bg-gray-600 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center text-xs sm:text-sm min-w-0"
+                            className="btn flex-1 bg-gray-600 text-white hover:bg-gray-700"
                           >
                             <Printer className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
                             <span className="truncate">Imprimir</span>
@@ -768,7 +768,7 @@ const Cobrar: React.FC = () => {
                           <button
                             onClick={() => handleCobrarTodaLaMesa(mesa)}
                             disabled={processing}
-                            className="w-full bg-green-600 text-white py-2 sm:py-3 px-2 sm:px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm sm:text-lg font-medium min-w-0"
+                            className="btn w-full bg-green-600 text-white hover:bg-green-700"
                           >
                             <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 flex-shrink-0" />
                             <span className="truncate">
