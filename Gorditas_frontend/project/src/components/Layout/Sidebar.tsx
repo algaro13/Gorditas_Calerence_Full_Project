@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                     to={item.path}
                     onClick={handleMenuClick}
                     className={({ isActive }) =>
-                      `flex items-center space-x-3 px-2 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      `flex items-center space-x-3 px-2 py-3 rounded-lg text-cuerpo font-medium transition-colors ${
                         isActive
                           ? 'text-white'
                           : 'text-gray-300 hover:bg-gray-800 hover:text-white'
