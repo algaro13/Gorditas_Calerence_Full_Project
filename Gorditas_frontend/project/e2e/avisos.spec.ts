@@ -49,3 +49,42 @@ test('un error provocado desde abajo se ve sin desplazar la pantalla', async ({ 
   }, 'button');
   expect(solapa, 'el aviso tapa un control').toBe(false);
 });
+
+/**
+ * Que ningún control se salga de su contenedor.
+ *
+ * La regla de «nada más allá del ancho de la ventana» no basta: al pasar el inventario a
+ * tarjetas, el botón «+» del stock se salía 57 px de su tarjeta y quedaba cortado contra el
+ * borde — pero como terminaba justo en el ancho de la ventana, ninguna comprobación lo veía.
+ */
+test('ningún control se sale de su tarjeta en el inventario', async ({ page }) => {
+  await page.goto('/recibir-productos');
+  await page.waitForLoadState('networkidle');
+
+  // Se abre la edición, que es donde aparecen los controles anchos.
+  const editar = page.getByRole('button', { name: 'Editar' }).first();
+  await expect(editar).toBeVisible({ timeout: 15_000 });
+  await editar.click();
+
+  const { fugados, revisados } = await page.evaluate(() => {
+    const salida: string[] = [];
+    let n = 0;
+    document.querySelectorAll('button, input, select').forEach((e) => {
+      const caja = e.closest('.rounded-lg, .rounded-xl') as HTMLElement | null;
+      if (!caja || caja === e) return;
+      const a = e.getBoundingClientRect();
+      const c = caja.getBoundingClientRect();
+      if (a.width === 0 || c.width === 0) return;
+      n += 1;
+      if (a.right > c.right + 1 || a.left < c.left - 1) {
+        salida.push(`${e.getAttribute('aria-label') ?? e.tagName} se sale ${Math.round(a.right - c.right)}px`);
+      }
+    });
+    return { fugados: salida, revisados: n };
+  });
+
+  // Sin esto la prueba pasaria aunque no hubiera examinado nada: si el selector del contenedor
+  // dejara de encajar, el resultado seria una lista vacia y un falso verde.
+  expect(revisados, 'no se examino ningun control').toBeGreaterThan(5);
+  expect(fugados, 'controles fuera de su contenedor').toEqual([]);
+});

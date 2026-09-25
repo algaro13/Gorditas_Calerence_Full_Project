@@ -231,6 +231,121 @@ const RecibirProductos: React.FC = () => {
     );
   }
 
+  /**
+   * Cada campo se define UNA vez y lo usan las dos presentaciones: la tabla en pantalla ancha y
+   * las tarjetas en teléfono. Duplicar el JSX de cinco campos en dos modos serían diez trozos
+   * que divergen al primer cambio — alguien arregla el costo en la tabla y no en la tarjeta, y
+   * el fallo solo se ve en teléfono, que es justo donde nadie mira.
+   */
+  const campoStock = (producto: ProductoInventario) =>
+    producto.editando ? (
+      <div className="flex items-center gap-sp-1">
+        <button
+          onClick={() => handleQuitarCantidad(producto, 1)}
+          className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
+          disabled={saving}
+          aria-label="Quitar uno"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <input
+          type="number"
+          value={producto.cantidadNueva || producto.cantidad}
+          onChange={(e) => {
+            setProductos(productos.map((p) =>
+              p._id === producto._id ? { ...p, cantidadNueva: parseInt(e.target.value) || 0 } : p,
+            ));
+          }}
+          className="campo w-20 text-center"
+          min="0"
+          aria-label="Cantidad"
+        />
+        <button
+          onClick={() => handleAgregarCantidad(producto, 1)}
+          className="btn text-green-600 hover:bg-green-50 flex-shrink-0"
+          disabled={saving}
+          aria-label="Agregar uno"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    ) : (
+      <span className={`font-medium text-cuerpo ${producto.cantidad < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+        {producto.cantidad}
+      </span>
+    );
+
+  const campoCosto = (producto: ProductoInventario) =>
+    producto.editando ? (
+      <input
+        type="number"
+        value={producto.costoNuevo || producto.costo}
+        onChange={(e) => {
+          setProductos(productos.map((p) =>
+            p._id === producto._id ? { ...p, costoNuevo: parseFloat(e.target.value) || 0 } : p,
+          ));
+        }}
+        className="campo w-24"
+        min="0"
+        step="0.01"
+        aria-label="Costo"
+      />
+    ) : (
+      <span className="font-medium text-green-600 text-cuerpo whitespace-nowrap">
+        ${producto.costo.toFixed(2)}
+      </span>
+    );
+
+  const campoEstado = (producto: ProductoInventario) =>
+    producto.editando ? (
+      <select
+        value={
+          producto.activoNuevo !== undefined
+            ? producto.activoNuevo ? 'true' : 'false'
+            : producto.activo !== false ? 'true' : 'false'
+        }
+        onChange={(e) => {
+          setProductos(productos.map((p) =>
+            p._id === producto._id ? { ...p, activoNuevo: e.target.value === 'true' } : p,
+          ));
+        }}
+        className="campo w-28"
+        aria-label="Estado"
+      >
+        <option value="true">Activo</option>
+        <option value="false">Inactivo</option>
+      </select>
+    ) : (
+      <span
+        className={`px-sp-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
+          producto.activo !== false ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}
+      >
+        {producto.activo !== false ? 'Activo' : 'Inactivo'}
+      </span>
+    );
+
+  const acciones = (producto: ProductoInventario) =>
+    producto.editando ? (
+      <>
+        <button onClick={() => handleSave(producto)} disabled={saving} className="btn text-green-600 hover:bg-green-50 flex-shrink-0" aria-label="Guardar">
+          <Save className="w-4 h-4" />
+        </button>
+        <button onClick={() => handleCancel(producto)} disabled={saving} className="btn text-gray-600 hover:bg-gray-50 flex-shrink-0" aria-label="Cancelar">
+          <X className="w-4 h-4" />
+        </button>
+      </>
+    ) : (
+      <>
+        <button onClick={() => handleEdit(producto)} className="btn text-blue-600 hover:bg-blue-50 flex-shrink-0" aria-label="Editar">
+          <Edit3 className="w-4 h-4" />
+        </button>
+        <button onClick={() => handleDelete(producto)} className="btn text-red-600 hover:bg-red-50 flex-shrink-0" aria-label="Eliminar">
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </>
+    );
+
   return (
     <div className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -291,7 +406,50 @@ const RecibirProductos: React.FC = () => {
           <h2 className="text-titulo font-semibold text-gray-900 truncate">Inventario de Productos</h2>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Tarjetas en teléfono. De las cinco columnas de la tabla solo se veían dos a 375px:
+            «Costo», «Estado» y —lo peor— «Acciones» caían fuera del borde derecho, sin ninguna
+            señal de que hubiera más a la derecha. Aquí cada producto se lee solo y sus acciones
+            están dentro de su propia tarjeta. */}
+        <div className="sm:hidden space-y-sp-2">
+          {filteredProductos.map((producto) => (
+            <div key={producto._id} className="border border-gray-200 rounded-lg p-sp-3 space-y-sp-2">
+              <div className="flex items-start justify-between gap-sp-2">
+                <h3 className="font-medium text-gray-900 text-cuerpo break-words flex-1">{producto.nombre}</h3>
+                {!producto.editando && campoEstado(producto)}
+              </div>
+
+              {/* Al editar, la etiqueta va ENCIMA del control y no al lado: con ambos en la
+                  misma fila el control de stock —dos botones de 44px más el campo— no cabía en
+                  el ancho de la tarjeta y el «+» se salía 57px por el borde, cortado. */}
+              {producto.editando ? (
+                <div className="space-y-sp-2">
+                  <div>
+                    <span className="block text-meta text-gray-600 mb-1">Stock</span>
+                    {campoStock(producto)}
+                  </div>
+                  <div>
+                    <span className="block text-meta text-gray-600 mb-1">Costo</span>
+                    {campoCosto(producto)}
+                  </div>
+                  <div>
+                    <span className="block text-meta text-gray-600 mb-1">Estado</span>
+                    {campoEstado(producto)}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-meta text-gray-600">
+                  {producto.cantidad} en stock · ${producto.costo.toFixed(2)}
+                </p>
+              )}
+
+              <div className="flex justify-end gap-sp-1">{acciones(producto)}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabla a partir de tablet, donde comparar filas sí tiene sentido y las cinco columnas
+            caben sin que ninguna se caiga. */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
@@ -308,147 +466,24 @@ const RecibirProductos: React.FC = () => {
                   <td className="py-3 px-2 sm:px-4">
                     <div className="font-medium text-gray-900 text-cuerpo truncate">{producto.nombre}</div>
                   </td>
+                  <td className="py-3 px-2 sm:px-4">{campoStock(producto)}</td>
+                  <td className="py-3 px-2 sm:px-4">{campoCosto(producto)}</td>
+                  <td className="py-3 px-2 sm:px-4">{campoEstado(producto)}</td>
                   <td className="py-3 px-2 sm:px-4">
-                    {producto.editando ? (
-                      <div className="flex items-center space-x-1 sm:space-x-2">
-                        <button
-                          onClick={() => handleQuitarCantidad(producto, 1)}
-                          className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
-                          disabled={saving}
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-                        <input
-                          type="number"
-                          value={producto.cantidadNueva || producto.cantidad}
-                          onChange={(e) => {
-                            const updatedProductos = productos.map(p => 
-                              p._id === producto._id 
-                                ? { ...p, cantidadNueva: parseInt(e.target.value) || 0 }
-                                : p
-                            );
-                            setProductos(updatedProductos);
-                          }}
-                          className="campo w-16 sm:w-20 rounded text-center"
-                          min="0"
-                        />
-                        <button
-                          onClick={() => handleAgregarCantidad(producto, 1)}
-                          className="btn text-green-600 hover:bg-green-50 flex-shrink-0"
-                          disabled={saving}
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <span className={`font-medium text-cuerpo ${
-                        producto.cantidad < 10 ? 'text-red-600' : 'text-gray-900'
-                      }`}>
-                        {producto.cantidad}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4">
-                    {producto.editando ? (
-                      <input
-                        type="number"
-                        value={producto.costoNuevo || producto.costo}
-                        onChange={(e) => {
-                          const updatedProductos = productos.map(p => 
-                            p._id === producto._id 
-                              ? { ...p, costoNuevo: parseFloat(e.target.value) || 0 }
-                              : p
-                          );
-                          setProductos(updatedProductos);
-                        }}
-                        className="campo w-20 sm:w-24 rounded"
-                        min="0"
-                        step="0.01"
-                      />
-                    ) : (
-                      <span className="font-medium text-green-600 text-cuerpo whitespace-nowrap">
-                        ${producto.costo.toFixed(2)}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4">
-                    {producto.editando ? (
-                      <select
-                        value={producto.activoNuevo !== undefined ? (producto.activoNuevo ? 'true' : 'false') : (producto.activo !== false ? 'true' : 'false')}
-                        onChange={(e) => {
-                          const updatedProductos = productos.map(p => 
-                            p._id === producto._id 
-                              ? { ...p, activoNuevo: e.target.value === 'true' }
-                              : p
-                          );
-                          setProductos(updatedProductos);
-                        }}
-                        className="campo rounded"
-                      >
-                        <option value="true">Activo</option>
-                        <option value="false">Inactivo</option>
-                      </select>
-                    ) : (
-                      <span
-                        className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
-                          producto.activo !== false
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {producto.activo !== false ? 'Activo' : 'Inactivo'}
-                      </span>
-                    )}
-                  </td>
-                  <td className="py-3 px-2 sm:px-4">
-                    <div className="flex space-x-1 sm:space-x-2">
-                      {producto.editando ? (
-                        <>
-                          <button
-                            onClick={() => handleSave(producto)}
-                            disabled={saving}
-                            className="btn text-green-600 hover:bg-green-50 flex-shrink-0"
-                          >
-                            <Save className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleCancel(producto)}
-                            disabled={saving}
-                            className="btn text-gray-600 hover:bg-gray-50 flex-shrink-0"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={() => handleEdit(producto)}
-                            className="btn text-blue-600 hover:bg-blue-50 flex-shrink-0"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(producto)}
-                            className="btn text-red-600 hover:bg-red-50 flex-shrink-0"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    <div className="flex gap-sp-1">{acciones(producto)}</div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          
-          {filteredProductos.length === 0 && (
-            <div className="text-center py-8">
-              <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-500">No se encontraron productos</p>
-            </div>
-          )}
         </div>
+
+        {filteredProductos.length === 0 && (
+          <div className="text-center py-8">
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500">No se encontraron productos</p>
+          </div>
+        )}
       </div>
 
       {/* Modal para crear producto */}
