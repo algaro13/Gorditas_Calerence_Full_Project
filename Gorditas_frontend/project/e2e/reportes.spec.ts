@@ -104,22 +104,89 @@ test('el monto de caja se edita desde la tarjeta y cuadra con el total', async (
   // tabla lleva los mismos nombres; un `.first()` a ciegas acertaría hoy por el orden del DOM y
   // dejaría de acertar el día que cambie.
   const visible = (nombre: string) =>
-    page.getByRole('button', { name: nombre }).locator('visible=true');
+    page.getByRole('button', { name: nombre }).locator('visible=true').first();
 
+  // El primero: el periodo abarca varios dias y cada uno trae su tarjeta con su propia caja.
   const editar = visible('Editar monto de caja');
   await expect(editar).toBeVisible({ timeout: 15_000 });
   await editar.click();
 
-  const campo = page.getByLabel('Monto de caja').locator('visible=true');
-  await campo.fill('150');
+  const campo = page.getByLabel('Monto de caja').locator('visible=true').first();
+
+  // Una cifra que no pueda confundirse con ningun total de la pantalla: asi la comprobacion
+  // dice algo aunque las ventas del dia cambien de una corrida a otra.
+  await campo.fill('137.13');
   await visible('Confirmar monto').click();
 
-  // El total de arriba tiene que moverse con él: son el mismo dato.
-  await expect(page.getByText('$150.00').first()).toBeVisible({ timeout: 10_000 });
+  // El total de arriba tiene que moverse con el: son el mismo dato.
+  await expect(page.getByText('$137.13').first()).toBeVisible({ timeout: 10_000 });
 
-  // Se deja como estaba, que la prueba corre contra datos compartidos.
+  // Se deja como estaba, que la prueba corre contra datos compartidos. Y se comprueba que la
+  // devolucion ocurrio: sin esto, la siguiente corrida arrastraria la cifra de esta.
   await editar.click();
   await campo.fill('0');
   await visible('Confirmar monto').click();
-  await expect(page.getByText('Hoy: $0.00')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText('$137.13')).toHaveCount(0, { timeout: 10_000 });
+});
+
+/**
+ * Que el detalle de una orden muestre lo que se vendió en ella.
+ *
+ * Durante meses dijo «No hay platillos.» en todas. El vínculo entre la orden y sus platillos se
+ * adivinaba comparando los siete primeros caracteres de dos identificadores —algo que funcionaba
+ * con ObjectId de Mongo y con UUID no acierta nunca—, así que el reporte afirmaba que en ninguna
+ * orden se había vendido nada. La tabla lo escondía; las tarjetas lo pusieron por escrito.
+ *
+ * Contar líneas no bastaría: lo que se rompió fue el vínculo. Por eso se comprueba que los
+ * importes del detalle sumen el total de su orden.
+ */
+test('el detalle de una orden muestra sus platillos y cuadra con su total', async ({ page }) => {
+  await page.goto('/reportes');
+  await page.waitForLoadState('networkidle');
+  await periodoAmplio(page);
+
+  await page.getByRole('button', { name: /ver órdenes/i }).first().click();
+
+  const detalles = page.getByRole('button', { name: /ver detalles/i });
+  const cuantas = Math.min(await detalles.count(), 5);
+  expect(cuantas, 'no había ninguna orden que mirar').toBeGreaterThan(0);
+
+  const cuadran: string[] = [];
+
+  for (let i = 0; i < cuantas; i++) {
+    await detalles.nth(i).click();
+
+    // Si no hay ninguna linea de total, el detalle esta vacio: es el fallo, no un fallo de la
+    // prueba. Se mide con `count` en vez de leer directamente, porque leer un elemento que no
+    // existe agota el tiempo de espera y entonces el informe diria «timeout» en lugar de decir
+    // que ninguna orden mostro lo que se vendio en ella.
+    const totales = page.locator('div').filter({ hasText: /Total platillos|Total productos/ });
+    const texto = (await totales.count()) > 0 ? await totales.last().innerText() : '';
+
+    // El total de la orden, tal como lo muestra su propia tarjeta.
+    const tarjeta = await page.getByRole('button', { name: /ocultar/i }).first()
+      .locator('xpath=ancestor::div[contains(@class,"rounded-xl")][1]')
+      .innerText();
+
+    const importes = (etiqueta: RegExp) => {
+      const m = texto.match(etiqueta);
+      return m ? parseFloat(m[1]) : 0;
+    };
+    const platillos = importes(/Total platillos[^$]*\$([\d.]+)/);
+    const productos = importes(/Total productos[^$]*\$([\d.]+)/);
+    const total = parseFloat(tarjeta.match(/Total\s*\$([\d.]+)/)?.[1] ?? '0');
+
+    if (platillos + productos > 0) {
+      cuadran.push(`${(platillos + productos).toFixed(2)} vs ${total.toFixed(2)}`);
+      expect(
+        Math.abs(platillos + productos - total),
+        `los importes del detalle no suman el total de la orden: ${platillos} + ${productos} ≠ ${total}`
+      ).toBeLessThan(0.01);
+    }
+
+    await page.getByRole('button', { name: /ocultar/i }).first().click();
+  }
+
+  // Sin esto la prueba pasaría con todas las órdenes vacías, que es exactamente el fallo.
+  expect(cuadran.length, 'ninguna orden mostró lo que se vendió en ella').toBeGreaterThan(0);
 });

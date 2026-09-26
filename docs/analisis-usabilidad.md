@@ -157,10 +157,10 @@ Por daño, no por facilidad:
    detalle de una orden desaparecieron: eran listas de concepto, cantidad e importe metidas
    dentro de una celda de otra tabla. Quedan cinco tablas, todas a partir de tablet.
 
-   De paso salió un fallo que la tabla escondía: **el detalle de una orden está vacío para
-   todas**. El enlace entre la orden y sus platillos compara los siete primeros caracteres de
-   dos identificadores —heurística de cuando eran ObjectId de Mongo— y con UUID no acierta
-   nunca. Es de backend y va por separado.
+   De paso salió un fallo que la tabla escondía: **el detalle de una orden estaba vacío para
+   todas**. El enlace entre la orden y sus platillos comparaba los siete primeros caracteres de
+   dos identificadores —heurística de cuando eran ObjectId de Mongo— y con UUID no acertaba
+   nunca. *Arreglado*: el backend conserva el `idOrden` al aplanar la respuesta.
 
 ## Cómo sabremos si funcionó
 

@@ -10,6 +10,8 @@ describe('Módulo reportes', () => {
   let tenant: TestTenant;
   let cat: Awaited<ReturnType<typeof seedCatalogo>>;
   let encargado: string;
+  /** La orden que lleva el platillo, para comprobar que el platillo sabe volver a ella. */
+  let ordenConPlatillo: string;
   let mesero: string;
   const api = () => request(t.app);
   const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -32,6 +34,7 @@ describe('Módulo reportes', () => {
       for (const [o, cant] of [[o1, 2], [o2, 1], [o3, 3]] as const) {
         await db.ordenDetalleProducto.create({ data: { idOrden: o.id, idProducto: cat.producto.id, nombreProducto: 'Agua', costoProducto: 15, cantidad: cant, importe: 15 * cant } });
       }
+      ordenConPlatillo = o1.id;
       const sub = await db.suborden.create({ data: { idOrden: o1.id, nombre: 'S' } });
       const p = await db.ordenDetallePlatillo.create({
         data: { idSuborden: sub.id, idPlatillo: cat.platillo.id, nombrePlatillo: 'Gordita sencilla', idGuiso: cat.guiso.id, nombreGuiso: 'Chicharrón', costoPlatillo: 25, cantidad: 2, importe: 50 },
@@ -58,6 +61,13 @@ describe('Módulo reportes', () => {
     expect(d.productos).toHaveLength(2);
     expect(d.platillos).toHaveLength(1);
     expect(d.extras).toHaveLength(1);
+
+    // Contar platillos no basta: lo que se rompio durante meses fue el vinculo, no la cantidad.
+    // Un platillo se guarda contra su suborden, y al aplanar la respuesta esa suborden
+    // desaparece; sin `idOrden` nadie puede decir en que orden se vendio, y el reporte mostraba
+    // todas las ordenes como si no se hubiera vendido nada.
+    expect(d.platillos[0].idOrden).toBe(ordenConPlatillo);
+    expect(d.productos.every((p: { idOrden?: string }) => typeof p.idOrden === 'string')).toBe(true);
     expect(d.pagination).toEqual({ total: 2 });
     expect(d.resumen).toEqual({ totalVentas: 150, cantidadOrdenes: 2, promedioVenta: 75 });
     expect(d.ventasPorDia).toEqual([

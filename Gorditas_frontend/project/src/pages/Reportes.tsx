@@ -699,12 +699,14 @@ const Reportes: React.FC = () => {
       grupo.ordenes.some((o: any) => o._id === p.idOrden)
     );
 
+    // Por `idOrden`, que el backend ya manda con cada platillo.
+    //
+    // Antes se comparaban los siete primeros caracteres del id de la orden con los del id de la
+    // suborden. Eso funcionaba con ObjectId de Mongo, que comparten prefijo por haberse
+    // generado con el mismo reloj; con UUID no acierta nunca, y el reporte llevaba meses
+    // diciendo que en ninguna orden se habia vendido nada.
     const platillosGrupo = platillos.filter((pl) =>
-      grupo.ordenes.some((o: any) => {
-        if (!pl.idSuborden || !o._id) return false;
-        if (pl.idOrden === o._id) return true;
-        return o._id.slice(0, 7) === pl.idSuborden.slice(0, 7);
-      })
+      grupo.ordenes.some((o: any) => pl.idOrden && pl.idOrden === o._id)
     );
 
     const platillosConExtras = platillosGrupo.map((platillo) => ({
@@ -730,11 +732,7 @@ const Reportes: React.FC = () => {
           (sum: number, p: any) => sum + p.cantidad,
           0
         );
-        const platillosOrden = platillosGrupo.filter((pl: any) => {
-          if (!pl.idSuborden || !o._id) return false;
-          if (pl.idOrden === o._id) return true;
-          return o._id.slice(0, 7) === pl.idSuborden.slice(0, 7);
-        });
+        const platillosOrden = platillosGrupo.filter((pl: any) => pl.idOrden === o._id);
         resumenPorCliente[nombreCliente].platillos += platillosOrden.reduce(
           (sum: number, p: any) => sum + p.cantidad,
           0
@@ -742,23 +740,6 @@ const Reportes: React.FC = () => {
         resumenPorCliente[nombreCliente].total += o.total;
       });
     }
-
-    // Los extras que no cuelgan de ningun platillo de este grupo pero si de sus ordenes.
-    const extrasIndependientes = extras.filter((extra) => {
-      const pertenece = platillosConExtras.some((pl) =>
-        pl.extras?.some((e: any) => e._id === extra._id)
-      );
-      return (
-        !pertenece &&
-        grupo.ordenes.some(
-          (o: any) =>
-            extra.idOrden === o._id ||
-            (o._id &&
-              extra.idOrdenDetallePlatillo &&
-              extra.idOrdenDetallePlatillo.slice(0, 7) === o._id.slice(0, 7))
-        )
-      );
-    });
 
     return {
       grupo,
@@ -769,7 +750,6 @@ const Reportes: React.FC = () => {
       totalProductos,
       totalPlatillos,
       resumenPorCliente,
-      extrasIndependientes,
       importePlatillos: platillosConExtras.reduce((sum, pl) => {
         const extrasTotal =
           pl.extras?.reduce((e: number, x: any) => e + (x.importe || 0), 0) || 0;
@@ -888,18 +868,6 @@ const Reportes: React.FC = () => {
         )}
       </div>
 
-      {g.extrasIndependientes.length > 0 && (
-        <div>
-          <h4 className="font-semibold mb-1">Extras adicionales</h4>
-          <div className="divide-y divide-gray-200 text-purple-700">
-            {g.extrasIndependientes.map((extra) => (
-              <React.Fragment key={extra._id}>
-                {linea(extra.nombreExtra, extra.cantidad, `$${extra.importe?.toFixed(2) || '0.00'}`)}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 

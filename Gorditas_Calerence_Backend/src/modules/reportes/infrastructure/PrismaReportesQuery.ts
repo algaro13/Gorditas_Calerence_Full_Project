@@ -35,7 +35,10 @@ export class PrismaReportesQuery implements ReportesQuery {
     ]);
 
     const productos = ordenes.flatMap((o) => o.productos);
-    const platillos = ordenes.flatMap((o) => o.subordenes.flatMap((s) => s.platillos));
+    // Un platillo se guarda contra su suborden, y la suborden es quien sabe de que orden es.
+    // Al aplanar, esa suborden desaparece: si no se lleva el `idOrden` consigo, el vinculo se
+    // pierde y quien lea la respuesta no puede saber en que orden se vendio el platillo.
+    const platillos = ordenes.flatMap((o) => o.subordenes.flatMap((s) => s.platillos.map((p) => ({ ...p, idOrden: o.id }))));
     const extras = platillos.flatMap((p) => p.extras);
     const cabeceras = ordenes.map(({ productos: _p, subordenes: _s, ...o }) => o);
 
