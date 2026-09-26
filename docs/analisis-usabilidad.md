@@ -153,6 +153,14 @@ Por daño, no por facilidad:
    puso encima del botón «Guardar» de los diálogos, 24 de sus 44 px. El aviso pregunta ahora
    quién está encima de la barra antes de esquivarla.
 6. **Reportes.** Ocho tablas, mucho trabajo, y es la pantalla que menos se toca en servicio.
+   *Hecho.* Las cinco listas de registros pasaron a tarjetas y las tres tablas anidadas del
+   detalle de una orden desaparecieron: eran listas de concepto, cantidad e importe metidas
+   dentro de una celda de otra tabla. Quedan cinco tablas, todas a partir de tablet.
+
+   De paso salió un fallo que la tabla escondía: **el detalle de una orden está vacío para
+   todas**. El enlace entre la orden y sus platillos compara los siete primeros caracteres de
+   dos identificadores —heurística de cuando eran ObjectId de Mongo— y con UUID no acierta
+   nunca. Es de backend y va por separado.
 
 ## Cómo sabremos si funcionó
 

@@ -12,7 +12,9 @@ import {
   Plus,
   X,
   Save,
-  Trash2
+  Trash2,
+  Check,
+  Edit2
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import ExcelJS from 'exceljs';
@@ -67,6 +69,29 @@ interface Gasto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/**
+ * Una cifra con su nombre.
+ *
+ * En una tabla el nombre lo pone la cabecera de la columna; en una tarjeta no hay cabecera, así
+ * que cada número tiene que traer escrito qué es. Sin esto una tarjeta de inventario serían
+ * cuatro cantidades sueltas.
+ */
+const Dato: React.FC<{ etiqueta: string; children: React.ReactNode; className?: string }> = ({
+  etiqueta,
+  children,
+  className = '',
+}) => (
+  <div className={`min-w-0 ${className}`}>
+    <dt className="text-meta text-gray-500">{etiqueta}</dt>
+    <dd className="text-cuerpo font-medium text-gray-900">{children}</dd>
+  </div>
+);
+
+/** La tarjeta de un registro: su identidad arriba y sus datos debajo. */
+const Tarjeta: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="rounded-xl border border-gray-200 bg-white p-sp-3 space-y-sp-2">{children}</div>
+);
 
 const Reportes: React.FC = () => {
   const [activeTab, setActiveTab] = useState('ventas');
@@ -654,6 +679,317 @@ const Reportes: React.FC = () => {
     setOrdenExpandida(null);
   };
 
+  /**
+   * Los campos que comparten la tabla y la tarjeta se definen aqui, una sola vez.
+   *
+   * Es la misma decision que en Recibir Productos: si cada presentacion escribe su propio JSX,
+   * alguien corrige el estado del stock en la tabla y no en la tarjeta, y el fallo solo se ve
+   * en telefono, que es justo donde nadie mira.
+   */
+  /**
+   * Todo lo que hay que calcular de un grupo de ordenes, una sola vez.
+   *
+   * Antes esto vivia dentro del `map` del `<tbody>`: cuarenta lineas de calculo incrustadas en
+   * el JSX de la tabla. Mientras hubo una sola presentacion daba igual; con dos, o se saca
+   * aqui o se copia, y una copia de un calculo de totales es una copia que acabara dando otro
+   * numero.
+   */
+  const prepararGrupo = (grupo: any, idx: number) => {
+    const productosGrupo = productos.filter((p) =>
+      grupo.ordenes.some((o: any) => o._id === p.idOrden)
+    );
+
+    const platillosGrupo = platillos.filter((pl) =>
+      grupo.ordenes.some((o: any) => {
+        if (!pl.idSuborden || !o._id) return false;
+        if (pl.idOrden === o._id) return true;
+        return o._id.slice(0, 7) === pl.idSuborden.slice(0, 7);
+      })
+    );
+
+    const platillosConExtras = platillosGrupo.map((platillo) => ({
+      ...platillo,
+      extras: extras.filter((extra) => extra.idOrdenDetallePlatillo === platillo._id),
+    }));
+
+    const totalProductos = productosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
+    const totalPlatillos = platillosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
+
+    const resumenPorCliente: {
+      [cliente: string]: { platillos: number; productos: number; total: number };
+    } = {};
+
+    if (grupo.esGrupo) {
+      grupo.ordenes.forEach((o: any) => {
+        const nombreCliente = o.nombreCliente || 'Sin nombre';
+        if (!resumenPorCliente[nombreCliente]) {
+          resumenPorCliente[nombreCliente] = { platillos: 0, productos: 0, total: 0 };
+        }
+        const productosOrden = productosGrupo.filter((p: any) => p.idOrden === o._id);
+        resumenPorCliente[nombreCliente].productos += productosOrden.reduce(
+          (sum: number, p: any) => sum + p.cantidad,
+          0
+        );
+        const platillosOrden = platillosGrupo.filter((pl: any) => {
+          if (!pl.idSuborden || !o._id) return false;
+          if (pl.idOrden === o._id) return true;
+          return o._id.slice(0, 7) === pl.idSuborden.slice(0, 7);
+        });
+        resumenPorCliente[nombreCliente].platillos += platillosOrden.reduce(
+          (sum: number, p: any) => sum + p.cantidad,
+          0
+        );
+        resumenPorCliente[nombreCliente].total += o.total;
+      });
+    }
+
+    // Los extras que no cuelgan de ningun platillo de este grupo pero si de sus ordenes.
+    const extrasIndependientes = extras.filter((extra) => {
+      const pertenece = platillosConExtras.some((pl) =>
+        pl.extras?.some((e: any) => e._id === extra._id)
+      );
+      return (
+        !pertenece &&
+        grupo.ordenes.some(
+          (o: any) =>
+            extra.idOrden === o._id ||
+            (o._id &&
+              extra.idOrdenDetallePlatillo &&
+              extra.idOrdenDetallePlatillo.slice(0, 7) === o._id.slice(0, 7))
+        )
+      );
+    });
+
+    return {
+      grupo,
+      id: `grupo-${idx}`,
+      orden: grupo.primeraOrden,
+      productosGrupo,
+      platillosConExtras,
+      totalProductos,
+      totalPlatillos,
+      resumenPorCliente,
+      extrasIndependientes,
+      importePlatillos: platillosConExtras.reduce((sum, pl) => {
+        const extrasTotal =
+          pl.extras?.reduce((e: number, x: any) => e + (x.importe || 0), 0) || 0;
+        return sum + (pl.importe || 0) + extrasTotal;
+      }, 0),
+      importeProductos: productosGrupo.reduce((sum: number, p: any) => sum + p.importe, 0),
+    };
+  };
+
+  /** Un concepto con su cantidad y su importe, alineados a la derecha. */
+  const linea = (
+    concepto: React.ReactNode,
+    cantidad: React.ReactNode,
+    importe: string,
+    clase = ''
+  ) => (
+    <div className={`flex items-baseline gap-sp-1 py-1 ${clase}`}>
+      <span className="flex-1 min-w-0 break-words">{concepto}</span>
+      <span className="w-8 text-right tabular-nums">{cantidad}</span>
+      <span className="w-20 text-right tabular-nums">{importe}</span>
+    </div>
+  );
+
+  /**
+   * El detalle de un grupo: sus productos, sus platillos con extras, y los extras sueltos.
+   *
+   * Eran tres tablas anidadas dentro de una celda de otra tabla, cada una con su propio
+   * arrastre lateral. Son listas de concepto, cantidad e importe; nunca necesitaron columnas.
+   */
+  const detalleDelGrupo = (g: ReturnType<typeof prepararGrupo>) => (
+    <div className="bg-gray-50 p-sp-2 rounded-lg space-y-sp-2 text-meta">
+      {g.grupo.esGrupo && (
+        <div className="p-sp-2 bg-blue-50 rounded border border-blue-200">
+          <h4 className="font-semibold text-cuerpo text-blue-800 mb-2">
+            Órdenes agrupadas ({g.grupo.ordenes.length})
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {g.grupo.ordenes.map((o: any) => (
+              <div key={o._id} className="bg-white p-2 rounded border border-blue-200">
+                <div>
+                  <strong>Folio:</strong> {o.folio}
+                </div>
+                <div>
+                  <strong>Cliente:</strong> {o.nombreCliente || 'Sin nombre'}
+                </div>
+                <div>
+                  <strong>Total:</strong> ${o.total.toFixed(2)}
+                </div>
+                <div>
+                  <strong>Hora:</strong>{' '}
+                  {new Date(o.fechaHora).toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <h4 className="font-semibold mb-1">Productos</h4>
+        {g.productosGrupo.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {g.productosGrupo.map((prod: any) =>
+              <React.Fragment key={prod._id}>
+                {linea(prod.nombreProducto, prod.cantidad, `$${prod.importe.toFixed(2)}`)}
+              </React.Fragment>
+            )}
+            {linea(
+              'Total productos',
+              g.totalProductos,
+              `$${g.importeProductos.toFixed(2)}`,
+              'font-semibold border-t border-gray-300'
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-500">No hay productos.</p>
+        )}
+      </div>
+
+      <div>
+        <h4 className="font-semibold mb-1">Platillos</h4>
+        {g.platillosConExtras.length > 0 ? (
+          <div className="divide-y divide-gray-200">
+            {g.platillosConExtras.map((pl) => (
+              <div key={pl._id} className="py-1">
+                {linea(
+                  <>
+                    {pl.nombrePlatillo}
+                    {pl.nombreGuiso && <span className="text-gray-500"> · {pl.nombreGuiso}</span>}
+                  </>,
+                  pl.cantidad,
+                  `$${pl.importe.toFixed(2)}`
+                )}
+                {pl.notas && (
+                  <p className="pl-sp-2 text-blue-700 italic">Nota: {pl.notas}</p>
+                )}
+                {pl.extras?.map((extra: any) => (
+                  <div key={extra._id} className="pl-sp-2 text-purple-700">
+                    {linea(`+ ${extra.nombreExtra}`, extra.cantidad, `$${extra.importe?.toFixed(2) || '0.00'}`)}
+                  </div>
+                ))}
+              </div>
+            ))}
+            {linea(
+              'Total platillos',
+              g.totalPlatillos,
+              `$${g.importePlatillos.toFixed(2)}`,
+              'font-semibold border-t border-gray-300'
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-500">No hay platillos.</p>
+        )}
+      </div>
+
+      {g.extrasIndependientes.length > 0 && (
+        <div>
+          <h4 className="font-semibold mb-1">Extras adicionales</h4>
+          <div className="divide-y divide-gray-200 text-purple-700">
+            {g.extrasIndependientes.map((extra) => (
+              <React.Fragment key={extra._id}>
+                {linea(extra.nombreExtra, extra.cantidad, `$${extra.importe?.toFixed(2) || '0.00'}`)}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  /** El recuento de una orden en palabras: «2 platillos · 1 producto». */
+  const recuento = (platillosN: number, productosN: number) => {
+    const partes: string[] = [];
+    if (platillosN > 0) partes.push(`${platillosN} platillo${platillosN !== 1 ? 's' : ''}`);
+    if (productosN > 0) partes.push(`${productosN} producto${productosN !== 1 ? 's' : ''}`);
+    return partes.length > 0 ? partes.join(' · ') : 'Sin items';
+  };
+
+  /** La fecha del backend llega ya en UTC como aaaa-mm-dd; solo se le da la vuelta. */
+  const formatearFecha = (fecha: string) => {
+    const [anio, mes, dia] = fecha.split('-');
+    return `${dia}/${mes}/${anio}`;
+  };
+
+  /**
+   * El monto de caja del dia: se lee, y se edita en el sitio.
+   *
+   * Lo comparten la tarjeta y la tabla porque es el unico dato editable del reporte; tenerlo
+   * escrito dos veces significaria que un arreglo al guardar solo llega a una de las dos.
+   */
+  const campoCaja = (reporte: any) =>
+    editandoCaja === reporte.fecha ? (
+      <div className="flex items-center gap-sp-1">
+        <input
+          type="number"
+          value={montoTemporal}
+          onChange={(e) => setMontoTemporal(parseFloat(e.target.value) || 0)}
+          className="campo w-24"
+          placeholder="0.00"
+          step="0.01"
+          min="0"
+          aria-label="Monto de caja"
+        />
+        <button
+          onClick={confirmarEdicionCaja}
+          disabled={guardandoCaja === reporte.fecha}
+          className="btn btn-avanzar"
+          aria-label="Confirmar monto"
+        >
+          {guardandoCaja === reporte.fecha ? '...' : <Check className="w-4 h-4" />}
+        </button>
+        <button onClick={cancelarEdicionCaja} className="btn btn-neutro" aria-label="Cancelar">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    ) : (
+      <div className="flex items-center gap-sp-1">
+        <span className="text-cuerpo text-blue-600 font-medium">
+          ${(montoCajaPorFecha[reporte.fecha] || 0).toFixed(2)}
+        </span>
+        <button
+          onClick={() => iniciarEdicionCaja(reporte.fecha)}
+          className="btn btn-neutro"
+          aria-label="Editar monto de caja"
+        >
+          <Edit2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+
+  const estadoInventario = (item: any) => (
+    <span
+      className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
+        item.stockMinimo ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+      }`}
+    >
+      {item.stockMinimo ? 'Stock Bajo' : 'Normal'}
+    </span>
+  );
+
+  const botonBorrarGasto = (gasto: any) => (
+    <button
+      onClick={() => handleDeleteGasto(gasto._id, gasto.nombre)}
+      disabled={deletingGasto === gasto._id}
+      className="btn btn-destructivo"
+    >
+      {deletingGasto === gasto._id ? (
+        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+      ) : (
+        <>
+          <Trash2 className="w-4 h-4 mr-1" />
+          Eliminar
+        </>
+      )}
+    </button>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -666,17 +1002,15 @@ const Reportes: React.FC = () => {
             onClick={loadReports}
             className="btn flex-1 sm:flex-none btn-neutro"
           >
-            <RefreshCw className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Actualizar</span>
-            <span className="sm:hidden">Act.</span>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualizar
           </button>
           <button
             onClick={handleExportReport}
             className="btn flex-1 sm:flex-none btn-neutro"
           >
-            <Download className="w-4 h-4 mr-1 sm:mr-2" />
-            <span className="hidden sm:inline">Exportar</span>
-            <span className="sm:hidden">Exp.</span>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar
           </button>
         </div>
       </div>
@@ -685,23 +1019,24 @@ const Reportes: React.FC = () => {
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="border-b border-gray-200 overflow-x-auto">
-          <nav className="flex min-w-max space-x-2 sm:space-x-8 p-2 sm:px-6">
+        {/* Dos filas en telefono en vez de una tira que se arrastra: las cuatro pestanas
+            median 454 px en 375, asi que «Gastos» quedaba fuera y nada lo anunciaba. */}
+        <div className="border-b border-gray-200">
+          <nav className="grid grid-cols-2 gap-1 p-2 sm:flex sm:gap-0 sm:space-x-8 sm:px-6">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-1 sm:space-x-2 py-2 sm:py-4 px-3 sm:px-4 border-b-2 font-medium text-meta transition-colors whitespace-nowrap ${
+                  className={`flex items-center justify-center sm:justify-start gap-1 sm:gap-2 py-2 sm:py-4 px-2 sm:px-4 border-b-2 font-medium text-meta transition-colors text-center sm:whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-orange-500 text-orange-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{tab.name}</span>
-                  <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
+                  <Icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{tab.name}</span>
                 </button>
               );
             })}
@@ -852,10 +1187,47 @@ const Reportes: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Sales Summary Table */}
-                  <div className="overflow-x-auto -mx-6 sm:mx-0">
-                    <div className="inline-block min-w-full align-middle">
-                      <h3 className="text-titulo font-semibold text-gray-900 mb-4">Resumen por Día</h3>
+                  <div>
+                    <h3 className="text-titulo font-semibold text-gray-900 mb-4">Resumen por Día</h3>
+
+                    {/* Tarjetas en telefono. La tabla medía 485 px en una pantalla de 375: la
+                        columna «Acciones» —o sea «Ver órdenes»— quedaba fuera, y nada indicaba
+                        que hubiera algo a la derecha. */}
+                    <div className="sm:hidden space-y-sp-2">
+                      {reporteVentas.map((reporte, index) => (
+                        <Tarjeta key={index}>
+                          <h4 className="text-cuerpo font-semibold text-gray-900">
+                            {formatearFecha(reporte.fecha)}
+                          </h4>
+                          <dl className="grid grid-cols-2 gap-sp-2">
+                            <Dato etiqueta="Ventas">
+                              <span className="text-green-600">${reporte.ventasTotales.toFixed(2)}</span>
+                            </Dato>
+                            <Dato etiqueta="Órdenes">{reporte.ordenes}</Dato>
+                          </dl>
+                          {/* La caja se edita aquí mismo, como en la tabla: es el unico dato de
+                              este reporte que se escribe, y mandarlo a otra pantalla seria
+                              cambiar un problema de ancho por uno de pasos. */}
+                          <div>
+                            <p className="text-meta text-gray-500">Caja</p>
+                            {campoCaja(reporte)}
+                          </div>
+                          <button
+                            className="btn btn-neutro w-full"
+                            onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
+                          >
+                            Ver órdenes
+                          </button>
+                        </Tarjeta>
+                      ))}
+                      {reporteVentas.length === 0 && (
+                        <p className="py-8 text-center text-gray-500 text-cuerpo">
+                          No hay ventas en este período
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="hidden sm:block overflow-x-auto">
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead>
                           <tr className="text-meta">
@@ -870,64 +1242,19 @@ const Reportes: React.FC = () => {
                           {reporteVentas.map((reporte, index) => (
                             <tr key={index} className="text-meta">
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">
-                                {(() => {
-                                  // Usar directamente la fecha del backend (ya procesada en UTC)
-                                  // Esta fecha viene de ventasPorDia._id que usa $dateToString sin timezone (UTC)
-                                  const [año, mes, dia] = reporte.fecha.split('-');
-                                  const fechaFormateada = `${dia}/${mes}/${año}`;
-                                  return fechaFormateada;
-                                })()}
+                                {formatearFecha(reporte.fecha)}
                               </td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4 text-green-600 font-medium whitespace-nowrap">
                                 ${reporte.ventasTotales.toFixed(2)}
                               </td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">
-                                {editandoCaja === reporte.fecha ? (
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="number"
-                                      value={montoTemporal}
-                                      onChange={(e) => setMontoTemporal(parseFloat(e.target.value) || 0)}
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded text-meta"
-                                      placeholder="0.00"
-                                      step="0.01"
-                                      min="0"
-                                    />
-                                    <button
-                                      onClick={confirmarEdicionCaja}
-                                      disabled={guardandoCaja === reporte.fecha}
-                                      className="btn btn-neutro"
-                                    >
-                                      {guardandoCaja === reporte.fecha ? '...' : '✓'}
-                                    </button>
-                                    <button
-                                      onClick={cancelarEdicionCaja}
-                                      className="btn btn-destructivo"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-blue-600 font-medium">
-                                      ${(montoCajaPorFecha[reporte.fecha] || 0).toFixed(2)}
-                                    </span>
-                                    <button
-                                      onClick={() => iniciarEdicionCaja(reporte.fecha)}
-                                      className="btn btn-neutro"
-                                    >
-                                      ✏️
-                                    </button>
-                                  </div>
-                                )}
+                                {campoCaja(reporte)}
                               </td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">{reporte.ordenes}</td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4">
                                 <button
                                   className="btn btn-neutro"
-                                  onClick={() => {
-                                    mostrarOrdenesDeDia(reporte.fecha);
-                                  }}
+                                  onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
                                 >
                                   Ver órdenes
                                 </button>
@@ -938,16 +1265,101 @@ const Reportes: React.FC = () => {
                       </table>
                     </div>
                   </div>
-                  {/* Tabla de órdenes del día */}
+                  {/* Órdenes del día */}
                   {diaSeleccionado && (
                     <div className="mt-6">
-                      <h3 className="font-bold text-titulo mb-2">
-                        Órdenes del día {diaSeleccionado}
-                        <button className="ml-4 text-cuerpo text-gray-500" onClick={() => setDiaSeleccionado(null)}>
+                      <div className="flex items-center justify-between gap-sp-1 mb-sp-2">
+                        <h3 className="font-bold text-titulo">
+                          Órdenes del {formatearFecha(diaSeleccionado)}
+                        </h3>
+                        <button className="btn btn-neutro" onClick={() => setDiaSeleccionado(null)}>
                           Cerrar
                         </button>
-                      </h3>
-                      <div className="overflow-x-auto w-full">
+                      </div>
+
+                      {/* Tarjetas en telefono. La tabla eran siete columnas en 577 px sobre una
+                          pantalla de 375: se salia mas que el ancho entero, y dentro de una de
+                          sus celdas vivian otras tres tablas con su propio arrastre. */}
+                      <div className="sm:hidden space-y-sp-2">
+                        {agruparOrdenesPorMesa(ordenesDia).map((grupo, idx) => {
+                          const g = prepararGrupo(grupo, idx);
+                          const abierto = g.id === ordenExpandida;
+                          return (
+                            <div
+                              key={g.id}
+                              className={`rounded-xl border p-sp-3 space-y-sp-2 ${
+                                grupo.esGrupo ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-sp-1">
+                                <div className="min-w-0">
+                                  <h4 className="text-cuerpo font-semibold text-gray-900 break-words">
+                                    {grupo.mesa}
+                                  </h4>
+                                  <p className="text-meta text-gray-600 break-words">
+                                    {grupo.esGrupo
+                                      ? `${grupo.ordenes.length} órdenes · ${grupo.ordenes
+                                          .map((o: any) => o.folio)
+                                          .join(', ')}`
+                                      : `Folio ${g.orden.folio} · ${g.orden.nombreCliente || 'Sin nombre'}`}
+                                  </p>
+                                </div>
+                                <span className="text-meta text-gray-500 whitespace-nowrap">
+                                  {new Date(g.orden.fechaHora).toLocaleTimeString('es-MX', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              </div>
+
+                              {/* En un grupo, cada cliente con lo suyo: es la razon de agrupar. */}
+                              {grupo.esGrupo ? (
+                                <div className="text-meta space-y-1">
+                                  {Object.entries(g.resumenPorCliente).map(([cliente, datos]) => (
+                                    <div key={cliente} className="flex justify-between gap-sp-1">
+                                      <span className="min-w-0 break-words">
+                                        <span className="font-medium text-gray-700">{cliente}</span>
+                                        <span className="text-gray-500">
+                                          {' '}
+                                          · {recuento(datos.platillos, datos.productos)}
+                                        </span>
+                                      </span>
+                                      <span className="tabular-nums whitespace-nowrap">
+                                        ${datos.total.toFixed(2)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-meta text-gray-600">
+                                  {recuento(g.totalPlatillos, g.totalProductos)}
+                                </p>
+                              )}
+
+                              <div className="flex items-end justify-between gap-sp-1 pt-sp-1 border-t border-gray-200">
+                                <Dato etiqueta="Total">
+                                  <span className="tabular-nums">${grupo.total.toFixed(2)}</span>
+                                </Dato>
+                                <button
+                                  className="btn btn-neutro"
+                                  onClick={() => setOrdenExpandida(abierto ? null : g.id)}
+                                >
+                                  {abierto ? 'Ocultar' : 'Ver detalles'}
+                                </button>
+                              </div>
+
+                              {abierto && detalleDelGrupo(g)}
+                            </div>
+                          );
+                        })}
+                        {ordenesDia.length === 0 && (
+                          <p className="py-8 text-center text-gray-500 text-cuerpo">
+                            No hay órdenes este día
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="hidden sm:block overflow-x-auto w-full">
                         <table className="min-w-full divide-y divide-gray-200 text-meta">
                           <thead>
                             <tr>
@@ -962,74 +1374,9 @@ const Reportes: React.FC = () => {
                           </thead>
                           <tbody>
                             {agruparOrdenesPorMesa(ordenesDia).map((grupo, idx) => {
-                              const orden = grupo.primeraOrden;
-                              
-                              // Obtener productos y platillos de TODAS las órdenes del grupo
-                              const productosGrupo = productos.filter(p => 
-                                grupo.ordenes.some((o: any) => o._id === p.idOrden)
-                              );
-                              
-                              const platillosGrupo = platillos.filter(pl => {
-                                return grupo.ordenes.some((o: any) => {
-                                  if (!pl.idSuborden || !o._id) return false;
-                                  if (pl.idOrden === o._id) return true;
-                                  const ordenPrefix = o._id.slice(0, 7);
-                                  const subOrdenPrefix = pl.idSuborden.slice(0, 7);
-                                  return ordenPrefix === subOrdenPrefix;
-                                });
-                              });
-
-                              // Crear un mapa de platillos con sus extras
-                              const platillosConExtras = platillosGrupo.map(platillo => {
-                                const extrasDelPlatillo = extras.filter(extra => 
-                                  extra.idOrdenDetallePlatillo === platillo._id
-                                );
-                                
-                                return {
-                                  ...platillo,
-                                  extras: extrasDelPlatillo
-                                };
-                              });
-                              
-                              // ID único para el grupo
-                              const grupoId = `grupo-${idx}`;
-                              
-                              // Calcular totales para el resumen
-                              const totalProductos = productosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
-                              const totalPlatillos = platillosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
-                              
-                              // Agrupar por cliente para mostrar resumen individual
-                              const resumenPorCliente: {[cliente: string]: {platillos: number, productos: number, total: number}} = {};
-                              
-                              if (grupo.esGrupo) {
-                                grupo.ordenes.forEach((o: any) => {
-                                  const nombreCliente = o.nombreCliente || 'Sin nombre';
-                                  
-                                  if (!resumenPorCliente[nombreCliente]) {
-                                    resumenPorCliente[nombreCliente] = {platillos: 0, productos: 0, total: 0};
-                                  }
-                                  
-                                  // Contar productos de esta orden
-                                  const productosOrden = productosGrupo.filter((p: any) => p.idOrden === o._id);
-                                  resumenPorCliente[nombreCliente].productos += productosOrden.reduce((sum: number, p: any) => sum + p.cantidad, 0);
-                                  
-                                  // Contar platillos de esta orden
-                                  const platillosOrden = platillosGrupo.filter((pl: any) => {
-                                    if (!pl.idSuborden || !o._id) return false;
-                                    if (pl.idOrden === o._id) return true;
-                                    const ordenPrefix = o._id.slice(0, 7);
-                                    const subOrdenPrefix = pl.idSuborden.slice(0, 7);
-                                    return ordenPrefix === subOrdenPrefix;
-                                  });
-                                  resumenPorCliente[nombreCliente].platillos += platillosOrden.reduce((sum: number, p: any) => sum + p.cantidad, 0);
-                                  
-                                  // Sumar total
-                                  resumenPorCliente[nombreCliente].total += o.total;
-                                });
-                              }
-                              
+                              const g = prepararGrupo(grupo, idx);
                               return (
-                                <React.Fragment key={grupoId}>
+                                <React.Fragment key={g.id}>
                                   <tr className={`${grupo.esGrupo ? 'bg-blue-50' : ''} border-b-4 border-gray-300`}>
                                     <td className="text-left px-2 py-2">
                                       {grupo.esGrupo ? (
@@ -1042,80 +1389,50 @@ const Reportes: React.FC = () => {
                                           </span>
                                         </div>
                                       ) : (
-                                        orden.folio
+                                        g.orden.folio
                                       )}
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       {grupo.esGrupo ? (
                                         <div className="flex flex-col text-meta">
-                                          {Object.keys(resumenPorCliente).map((cliente, idx) => (
-                                            <span key={idx} className="text-gray-700 font-medium">
+                                          {Object.keys(g.resumenPorCliente).map((cliente) => (
+                                            <span key={cliente} className="text-gray-700 font-medium">
                                               {cliente}
                                             </span>
                                           ))}
                                         </div>
                                       ) : (
-                                        orden.nombreCliente || 'Sin nombre'
+                                        g.orden.nombreCliente || 'Sin nombre'
                                       )}
                                     </td>
-                                    <td className="text-left px-2 py-2">
-                                      <div className="flex items-center">
-                                        {grupo.esGrupo && (
-                                          <span className="mr-2 text-blue-600" title="Órdenes agrupadas">
-                                            📊
-                                          </span>
-                                        )}
-                                        {grupo.mesa}
-                                      </div>
-                                    </td>
+                                    <td className="text-left px-2 py-2">{grupo.mesa}</td>
                                     <td className="text-left px-2 py-2">
                                       {grupo.esGrupo ? (
                                         <div className="flex flex-col text-meta space-y-1">
-                                          {Object.entries(resumenPorCliente).map(([, datos], idx) => (
-                                            <div key={idx} className="border-b border-gray-300 pb-1 last:border-b-0">
-                                              {datos.platillos > 0 && (
-                                                <div className="text-gray-700">
-                                                  🍽️ {datos.platillos} platillo{datos.platillos !== 1 ? 's' : ''}
-                                                </div>
-                                              )}
-                                              {datos.productos > 0 && (
-                                                <div className="text-gray-700">
-                                                  🥤 {datos.productos} producto{datos.productos !== 1 ? 's' : ''}
-                                                </div>
-                                              )}
+                                          {Object.entries(g.resumenPorCliente).map(([cliente, datos]) => (
+                                            <div key={cliente} className="text-gray-700">
+                                              {recuento(datos.platillos, datos.productos)}
                                             </div>
                                           ))}
-                                          <div className="font-semibold text-blue-700 pt-1 border-t-2 border-blue-300">
-                                            Total: {totalPlatillos > 0 && `🍽️${totalPlatillos}`} {totalProductos > 0 && `🥤${totalProductos}`}
+                                          <div className="font-semibold text-blue-700 pt-1 border-t border-blue-300">
+                                            {recuento(g.totalPlatillos, g.totalProductos)}
                                           </div>
                                         </div>
                                       ) : (
-                                        <div className="flex flex-col text-meta">
-                                          {totalPlatillos > 0 && (
-                                            <span className="text-gray-700">
-                                              🍽️ {totalPlatillos} platillo{totalPlatillos !== 1 ? 's' : ''}
-                                            </span>
-                                          )}
-                                          {totalProductos > 0 && (
-                                            <span className="text-gray-700">
-                                              🥤 {totalProductos} producto{totalProductos !== 1 ? 's' : ''}
-                                            </span>
-                                          )}
-                                          {totalPlatillos === 0 && totalProductos === 0 && (
-                                            <span className="text-gray-500">Sin items</span>
-                                          )}
-                                        </div>
+                                        <span className="text-gray-700">
+                                          {recuento(g.totalPlatillos, g.totalProductos)}
+                                        </span>
                                       )}
                                     </td>
-                                    <td className="text-right px-2 py-2">
+                                    <td className="text-right px-2 py-2 tabular-nums">
                                       {grupo.esGrupo ? (
                                         <div className="flex flex-col text-meta space-y-1">
-                                          {Object.entries(resumenPorCliente).map(([, datos], idx) => (
-                                            <div key={idx} className="text-gray-700 border-b border-gray-300 pb-1 last:border-b-0">
+                                          {Object.entries(g.resumenPorCliente).map(([cliente, datos]) => (
+                                            <div key={cliente} className="text-gray-700">
                                               ${datos.total.toFixed(2)}
                                             </div>
                                           ))}
-                                          <div className="font-bold text-blue-700 pt-1 border-t-2 border-blue-300">
+                                          <div className="font-bold text-blue-700 pt-1 border-t border-blue-300">
                                             ${grupo.total.toFixed(2)}
                                           </div>
                                         </div>
@@ -1126,227 +1443,31 @@ const Reportes: React.FC = () => {
                                     <td className="text-center px-2 py-2">
                                       {grupo.esGrupo ? (
                                         <div className="flex flex-col text-meta">
-                                          <span>{new Date(grupo.primeraOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}</span>
+                                          <span>
+                                            {new Date(grupo.primeraOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}
+                                          </span>
                                           <span className="text-gray-500">-</span>
-                                          <span>{new Date(grupo.ultimaOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}</span>
+                                          <span>
+                                            {new Date(grupo.ultimaOrden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}
+                                          </span>
                                         </div>
                                       ) : (
-                                        new Date(orden.fechaHora).toLocaleTimeString()
+                                        new Date(g.orden.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})
                                       )}
                                     </td>
                                     <td className="text-center px-2 py-2">
                                       <button
-                                        className="btn btn-primario"
-                                        onClick={() => setOrdenExpandida(grupoId === ordenExpandida ? null : grupoId)}
+                                        className="btn btn-neutro"
+                                        onClick={() => setOrdenExpandida(g.id === ordenExpandida ? null : g.id)}
                                       >
-                                        {grupoId === ordenExpandida ? 'Ocultar' : 'Ver Detalles'}
+                                        {g.id === ordenExpandida ? 'Ocultar' : 'Ver detalles'}
                                       </button>
                                     </td>
                                   </tr>
-                                  {grupoId === ordenExpandida && (
+                                  {g.id === ordenExpandida && (
                                     <tr className="border-b-4 border-gray-300">
-                                      <td colSpan={6} className="p-0">
-                                        <div className="bg-gray-50 p-2 sm:p-4 rounded-lg overflow-x-auto">
-                                          {grupo.esGrupo && (
-                                            <div className="mb-4 p-2 bg-blue-100 rounded border border-blue-300">
-                                              <h4 className="font-semibold text-cuerpo text-blue-800 mb-2">
-                                                Órdenes Agrupadas ({grupo.ordenes.length})
-                                              </h4>
-                                              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-meta">
-                                                {grupo.ordenes.map((o: any) => (
-                                                  <div key={o._id} className="bg-white p-2 rounded border border-blue-200">
-                                                    <div><strong>Folio:</strong> {o.folio}</div>
-                                                    <div><strong>Cliente:</strong> {o.nombreCliente || 'Sin nombre'}</div>
-                                                    <div><strong>Total:</strong> ${o.total.toFixed(2)}</div>
-                                                    <div><strong>Hora:</strong> {new Date(o.fechaHora).toLocaleTimeString('es-MX', {hour: '2-digit', minute: '2-digit'})}</div>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                            </div>
-                                          )}
-                                          <h4 className="font-semibold mb-2 text-meta">Productos</h4>
-                                          {productosGrupo.length > 0 ? (
-                                            <div className="overflow-x-auto">
-                                              <table className="min-w-full mb-2 text-meta">
-                                                <thead>
-                                                  <tr>
-                                                    <th className="text-left px-2 py-2 w-1/2 font-medium text-gray-900">Nombre</th>
-                                                    <th className="text-center px-2 py-2 w-1/4 font-medium text-gray-900">Cantidad</th>
-                                                    <th className="text-right px-2 py-2 w-1/4 font-medium text-gray-900">Importe</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  {productosGrupo.map((prod: any) => (
-                                                    <tr key={prod._id}>
-                                                      <td className="text-left px-2 py-2 w-1/2">{prod.nombreProducto}</td>
-                                                      <td className="text-center px-2 py-2 w-1/4">{prod.cantidad}</td>
-                                                      <td className="text-right px-2 py-2 w-1/4">${prod.importe.toFixed(2)}</td>
-                                                    </tr>
-                                                  ))}
-                                                  {productosGrupo.length > 0 && (
-                                                    <tr className="border-t border-gray-300 font-semibold bg-gray-50">
-                                                      <td className="text-left px-2 py-2 w-1/2">Total Productos</td>
-                                                      <td className="text-center px-2 py-2 w-1/4">
-                                                        {productosGrupo.reduce((sum: number, prod: any) => sum + prod.cantidad, 0)}
-                                                      </td>
-                                                      <td className="text-right px-2 py-2 w-1/4">
-                                                        ${productosGrupo.reduce((sum: number, prod: any) => sum + prod.importe, 0).toFixed(2)}
-                                                      </td>
-                                                    </tr>
-                                                  )}
-                                                </tbody>
-                                              </table>
-                                            </div>
-                                          ) : (
-                                            <p className="text-gray-500 text-meta">No hay productos.</p>
-                                          )}
-                                          <h4 className="font-semibold mb-2 text-meta">Platillos</h4>
-                                          {platillosConExtras.length > 0 ? (
-                                            <div className="overflow-x-auto">
-                                              <table className="min-w-full text-meta">
-                                                <thead>
-                                                  <tr>
-                                                    <th className="text-left px-2 py-2 w-2/5 font-medium text-gray-900">Nombre</th>
-                                                    <th className="text-left px-2 py-2 w-2/5 font-medium text-gray-900">Guiso</th>
-                                                    <th className="text-center px-2 py-2 w-1/10 font-medium text-gray-900">Cantidad</th>
-                                                    <th className="text-right px-2 py-2 w-1/10 font-medium text-gray-900">Importe</th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  {platillosConExtras.map(pl => (
-                                                    <React.Fragment key={pl._id}>
-                                                      <tr>
-                                                        <td className="text-left px-2 py-2 w-2/5">{pl.nombrePlatillo}</td>
-                                                        <td className="text-left px-2 py-2 w-2/5">{pl.nombreGuiso}</td>
-                                                        <td className="text-center px-2 py-2 w-1/10">{pl.cantidad}</td>
-                                                        <td className="text-right px-2 py-2 w-1/10">${pl.importe.toFixed(2)}</td>
-                                                      </tr>
-                                                      
-                                                      {/* Mostrar notas del platillo si existen */}
-                                                      {pl.notas && (
-                                                        <tr className="bg-blue-50">
-                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-blue-700 italic text-meta">
-                                                            Nota: {pl.notas}
-                                                          </td>
-                                                          <td className="text-left px-2 py-1 w-2/5 text-blue-600 italic text-meta">
-                                                            -
-                                                          </td>
-                                                          <td className="text-center px-2 py-1 w-1/10 text-blue-600 text-meta">
-                                                            -
-                                                          </td>
-                                                          <td className="text-right px-2 py-1 w-1/10 text-blue-600 text-meta">
-                                                            -
-                                                          </td>
-                                                        </tr>
-                                                      )}
-                                                      
-                                                      {/* Mostrar extras si existen */}
-                                                      {pl.extras && pl.extras.length > 0 ? pl.extras.map((extra: any) => (
-                                                        <tr key={extra._id} className="bg-purple-50">
-                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-purple-700 italic">
-                                                            + {extra.nombreExtra}
-                                                          </td>
-                                                          <td className="text-left px-2 py-1 w-2/5 text-purple-600 italic">
-                                                            Extra
-                                                          </td>
-                                                          <td className="text-center px-2 py-1 w-1/10 text-purple-700">
-                                                            {extra.cantidad}
-                                                          </td>
-                                                          <td className="text-right px-2 py-1 w-1/10 text-purple-700">
-                                                            ${extra.importe?.toFixed(2) || '0.00'}
-                                                          </td>
-                                                        </tr>
-                                                      )) : (
-                                                        <tr key={`${pl._id}-no-extras`} className="bg-gray-50">
-                                                          <td className="text-left px-2 py-1 w-2/5 pl-6 text-gray-500 italic text-meta">
-                                                            Sin extras
-                                                          </td>
-                                                          <td className="text-left px-2 py-1 w-2/5 text-gray-500 italic text-meta">
-                                                            -
-                                                          </td>
-                                                          <td className="text-center px-2 py-1 w-1/10 text-gray-500 text-meta">
-                                                            -
-                                                          </td>
-                                                          <td className="text-right px-2 py-1 w-1/10 text-gray-500 text-meta">
-                                                            $0.00
-                                                          </td>
-                                                        </tr>
-                                                      )}
-                                                    </React.Fragment>
-                                                  ))}
-                                                  {platillosConExtras.length > 0 && (
-                                                    <tr className="border-t border-gray-300 font-semibold bg-gray-50">
-                                                      <td className="text-left px-2 py-2 w-2/5" colSpan={2}>Total Platillos</td>
-                                                      <td className="text-center px-2 py-2 w-1/10">
-                                                        {platillosConExtras.reduce((sum, pl) => sum + pl.cantidad, 0)}
-                                                      </td>
-                                                      <td className="text-right px-2 py-2 w-1/10">
-                                                        ${platillosConExtras.reduce((sum, pl) => {
-                                                          const platilloTotal = pl.importe || 0;
-                                                          const extrasTotal = pl.extras?.reduce((extraSum: number, extra: any) => 
-                                                            extraSum + (extra.importe || 0), 0) || 0;
-                                                          return sum + platilloTotal + extrasTotal;
-                                                        }, 0).toFixed(2)}
-                                                      </td>
-                                                    </tr>
-                                                  )}
-                                                </tbody>
-                                              </table>
-                                            </div>
-                                          ) : (
-                                            <p className="text-gray-500 text-meta">No hay platillos.</p>
-                                          )}
-                                          
-                                          {/* Mostrar extras independientes si los hay */}
-                                          {(() => {
-                                            const extrasIndependientes = extras.filter(extra => {
-                                              // Verificar si el extra pertenece a esta orden pero no está vinculado a un platillo específico
-                                              const pertenece = platillosConExtras.some(pl => 
-                                                pl.extras?.some((e: any) => e._id === extra._id)
-                                              );
-                                              return !pertenece && grupo.ordenes.some((o: any) => (
-                                                extra.idOrden === o._id ||
-                                                (o._id && extra.idOrdenDetallePlatillo && 
-                                                 extra.idOrdenDetallePlatillo.slice(0, 7) === o._id.slice(0, 7))
-                                              ));
-                                            });
-                                            
-                                            if (extrasIndependientes.length > 0) {
-                                              return (
-                                                <>
-                                                  <h4 className="font-semibold mb-2 text-meta mt-4">Extras Adicionales</h4>
-                                                  <div className="overflow-x-auto">
-                                                    <table className="min-w-full text-meta">
-                                                      <thead>
-                                                        <tr>
-                                                          <th className="text-left px-2 py-2 w-1/2 font-medium text-gray-900">Extra</th>
-                                                          <th className="text-center px-2 py-2 w-1/4 font-medium text-gray-900">Cantidad</th>
-                                                          <th className="text-right px-2 py-2 w-1/4 font-medium text-gray-900">Importe</th>
-                                                        </tr>
-                                                      </thead>
-                                                      <tbody>
-                                                        {extrasIndependientes.map(extra => (
-                                                          <tr key={extra._id} className="bg-purple-50">
-                                                            <td className="text-left px-2 py-2 w-1/2 text-purple-700">
-                                                              {extra.nombreExtra}
-                                                            </td>
-                                                            <td className="text-center px-2 py-2 w-1/4 text-purple-700">
-                                                              {extra.cantidad}
-                                                            </td>
-                                                            <td className="text-right px-2 py-2 w-1/4 text-purple-700">
-                                                              ${extra.importe?.toFixed(2) || '0.00'}
-                                                            </td>
-                                                          </tr>
-                                                        ))}
-                                                      </tbody>
-                                                    </table>
-                                                  </div>
-                                                </>
-                                              );
-                                            }
-                                            return null;
-                                          })()}
-                                        </div>
+                                      <td colSpan={7} className="p-0">
+                                        {detalleDelGrupo(g)}
                                       </td>
                                     </tr>
                                   )}
@@ -1376,7 +1497,32 @@ const Reportes: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="overflow-x-auto">
+                  {/* Tarjetas en telefono. La tabla eran cinco columnas en 459 px: 84 px fuera
+                      de la pantalla, sin nada que avisara de que hubiera mas a la derecha. */}
+                  <div className="sm:hidden space-y-sp-2">
+                    {reporteInventario.map((item, index) => (
+                      <Tarjeta key={index}>
+                        <div className="flex items-start justify-between gap-sp-1">
+                          <h4 className="text-cuerpo font-semibold text-gray-900 break-words">
+                            {item.producto.nombre}
+                          </h4>
+                          {estadoInventario(item)}
+                        </div>
+                        <dl className="grid grid-cols-3 gap-sp-1">
+                          <Dato etiqueta="Cantidad">{item.producto.cantidad}</Dato>
+                          <Dato etiqueta="Costo">${item.producto.costo.toFixed(2)}</Dato>
+                          <Dato etiqueta="Valor">${item.valorTotal.toFixed(2)}</Dato>
+                        </dl>
+                      </Tarjeta>
+                    ))}
+                    {reporteInventario.length === 0 && (
+                      <p className="py-8 text-center text-gray-500 text-cuerpo">
+                        No hay productos en el inventario
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200">
@@ -1394,17 +1540,7 @@ const Reportes: React.FC = () => {
                             <td className="py-3 px-4">{item.producto.cantidad}</td>
                             <td className="py-3 px-4">${item.producto.costo.toFixed(2)}</td>
                             <td className="py-3 px-4 font-medium">${item.valorTotal.toFixed(2)}</td>
-                            <td className="py-3 px-4">
-                              <span
-                                className={`px-2 py-1 text-meta font-medium rounded-full ${
-                                  item.stockMinimo
-                                    ? 'bg-red-100 text-red-800'
-                                    : 'bg-green-100 text-green-800'
-                                }`}
-                              >
-                                {item.stockMinimo ? 'Stock Bajo' : 'Normal'}
-                              </span>
-                            </td>
+                            <td className="py-3 px-4">{estadoInventario(item)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1415,80 +1551,123 @@ const Reportes: React.FC = () => {
 
               {/* Products Sold Report */}
               {activeTab === 'productos' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Producto</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Cantidad Vendida</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Total Vendido</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productosVendidos.map((producto, index) => (
-                        <tr key={index} className="border-b border-gray-100">
-                          <td className="py-3 px-4 font-medium">{producto.nombre}</td>
-                          <td className="py-3 px-4">{producto.cantidadVendida}</td>
-                          <td className="py-3 px-4 text-green-600 font-medium">
-                            ${producto.totalVendido.toFixed(2)}
-                          </td>
+                <>
+                  <div className="sm:hidden space-y-sp-2">
+                    {productosVendidos.map((producto, index) => (
+                      <Tarjeta key={index}>
+                        <h4 className="text-cuerpo font-semibold text-gray-900 break-words">
+                          {producto.nombre}
+                        </h4>
+                        <dl className="grid grid-cols-2 gap-sp-1">
+                          <Dato etiqueta="Vendidas">{producto.cantidadVendida}</Dato>
+                          <Dato etiqueta="Total">
+                            <span className="text-green-600">${producto.totalVendido.toFixed(2)}</span>
+                          </Dato>
+                        </dl>
+                      </Tarjeta>
+                    ))}
+                    {productosVendidos.length === 0 && (
+                      <p className="py-8 text-center text-gray-500 text-cuerpo">
+                        No hay productos vendidos en este periodo
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Producto</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Cantidad Vendida</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Total Vendido</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {productosVendidos.map((producto, index) => (
+                          <tr key={index} className="border-b border-gray-100">
+                            <td className="py-3 px-4 font-medium">{producto.nombre}</td>
+                            <td className="py-3 px-4">{producto.cantidadVendida}</td>
+                            <td className="py-3 px-4 text-green-600 font-medium">
+                              ${producto.totalVendido.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
 
               {/* Expenses Report */}
               {activeTab === 'gastos' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Fecha</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Nombre</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Tipo</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Descripción</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Monto</th>
-                        <th className="text-left py-3 px-4 font-medium text-gray-900">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reporteGastos.map((gasto, index) => (
-                        <tr key={index} className="border-b border-gray-100">
-                          <td className="py-3 px-4">{new Date(gasto.fecha).toLocaleDateString()}</td>
-                          <td className="py-3 px-4 font-medium">{gasto.nombre}</td>
-                          <td className="py-3 px-4">{gasto.nombreTipoGasto}</td>
-                          <td className="py-3 px-4">{gasto.descripcion}</td>
-                          <td className="py-3 px-4 text-red-600 font-medium">
-                            ${gasto.gastoTotal?.toFixed(2) || '0.00'}
-                          </td>
-                          <td className="py-3 px-4">
-                            <button
-                              onClick={() => handleDeleteGasto(gasto._id, gasto.nombre)}
-                              disabled={deletingGasto === gasto._id}
-                              className="btn text-red-600 hover:text-red-800"
-                              title="Eliminar gasto"
-                            >
-                              {deletingGasto === gasto._id ? (
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
-                              ) : (
-                                <Trash2 className="w-4 h-4" />
-                              )}
-                            </button>
-                          </td>
+                <>
+                  {/* Seis columnas en 524 px: 246 px fuera, y la que se caia era «Acciones»,
+                      o sea el boton de borrar el gasto. */}
+                  <div className="sm:hidden space-y-sp-2">
+                    {reporteGastos.map((gasto, index) => (
+                      <Tarjeta key={index}>
+                        <div>
+                          <h4 className="text-cuerpo font-semibold text-gray-900 break-words">
+                            {gasto.nombre}
+                          </h4>
+                          <p className="text-meta text-gray-500">
+                            {gasto.nombreTipoGasto} · {new Date(gasto.fecha).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {gasto.descripcion && (
+                          <p className="text-cuerpo text-gray-700 break-words">{gasto.descripcion}</p>
+                        )}
+                        <div className="flex items-end justify-between gap-sp-1">
+                          <Dato etiqueta="Monto">
+                            <span className="text-red-600">${gasto.gastoTotal?.toFixed(2) || '0.00'}</span>
+                          </Dato>
+                          {botonBorrarGasto(gasto)}
+                        </div>
+                      </Tarjeta>
+                    ))}
+                    {reporteGastos.length === 0 && (
+                      <p className="py-8 text-center text-gray-500 text-cuerpo">
+                        No hay gastos registrados en este periodo
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Fecha</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Nombre</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Tipo</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Descripcion</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Monto</th>
+                          <th className="text-left py-3 px-4 font-medium text-gray-900">Acciones</th>
                         </tr>
-                      ))}
-                      {reporteGastos.length === 0 && (
-                        <tr>
-                          <td colSpan={6} className="py-8 text-center text-gray-500">
-                            No hay gastos registrados en este período
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {reporteGastos.map((gasto, index) => (
+                          <tr key={index} className="border-b border-gray-100">
+                            <td className="py-3 px-4">{new Date(gasto.fecha).toLocaleDateString()}</td>
+                            <td className="py-3 px-4 font-medium">{gasto.nombre}</td>
+                            <td className="py-3 px-4">{gasto.nombreTipoGasto}</td>
+                            <td className="py-3 px-4">{gasto.descripcion}</td>
+                            <td className="py-3 px-4 text-red-600 font-medium">
+                              ${gasto.gastoTotal?.toFixed(2) || '0.00'}
+                            </td>
+                            <td className="py-3 px-4">{botonBorrarGasto(gasto)}</td>
+                          </tr>
+                        ))}
+                        {reporteGastos.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="py-8 text-center text-gray-500">
+                              No hay gastos registrados en este periodo
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </>
           )}
