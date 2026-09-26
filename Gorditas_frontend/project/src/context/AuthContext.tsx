@@ -42,6 +42,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const oidc = useOidc();
   const [tenant, setTenant] = useState<TenantInfo | null>(null);
   const [tenantState, setTenantState] = useState<TenantState>('idle');
+  /**
+   * El mismo estado, legible despues de un `await`.
+   *
+   * `loadTenant` es dependencia del efecto que lo dispara, asi que no puede depender de
+   * `tenantState` sin volver a crearse en cada cambio y reentrar. El espejo permite preguntar
+   * «¿ya teniamos restaurante?» sin esa dependencia.
+   */
+  const estadoRef = useRef<TenantState>('idle');
+  const fijarEstado = useCallback((s: TenantState) => {
+    estadoRef.current = s;
+    setTenantState(s);
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [correoVerificado, setCorreoVerificado] = useState<boolean | null>(null);
   const [correoPendiente, setCorreoPendiente] = useState<string | null>(null);
@@ -79,37 +91,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [oidc.user, accessToken]);
 
   const loadTenant = useCallback(async () => {
-    setTenantState('loading');
+    // Anunciar `loading` hace que toda la aplicacion se cambie por la pantalla de carga: tanto
+    // `BasicProtectedRoute` como `AuthenticatedApp` devuelven el spinner cuando esta puesto. Eso
+    // esta bien mientras no sepamos de que restaurante se trata, y mal cuando ya lo sabemos y
+    // solo lo estamos releyendo: el arbol entero se desmonta y se lleva por delante el estado de
+    // la pantalla que pidio el refresco. Asi se perdia la confirmacion de Configuracion, que se
+    // fijaba justo despues de esta llamada y moria antes de pintarse.
+    const yaTeniamos = estadoRef.current === 'ready';
+    if (!yaTeniamos) fijarEstado('loading');
     const res = await apiService.getTenantMe();
     if (res.success && res.data) {
       setTenant(res.data.tenant);
       setCorreoVerificado(res.data.user?.emailVerificado ?? true);
       setCorreoPendiente(res.data.user?.email ?? null);
       setError(null);
-      setTenantState('ready');
+      fijarEstado('ready');
       applyPalette(getPalette(res.data.tenant.config?.paleta || 'orange'));
       return;
     }
     if (res.status === 404 && res.code === 'NO_TENANT') {
       setTenant(null);
-      setTenantState('missing');
+      fijarEstado('missing');
       return;
     }
     if (res.status === 401) {
       setTenant(null);
-      setTenantState('idle');
+      fijarEstado('idle');
       return;
     }
+    // Un tropiezo de red mientras se relee no es motivo para echar a nadie: el estado `error`
+    // deja `user` en nulo y de ahi se sale a la pantalla de entrar. Si ya teniamos los datos,
+    // se conservan y el operador sigue donde estaba.
     setError(res.error ?? 'No se pudo cargar el restaurante');
-    setTenantState('error');
-  }, []);
+    if (!yaTeniamos) fijarEstado('error');
+  }, [fijarEstado]);
 
   const sub = oidc.user?.profile.sub ?? null;
   useEffect(() => {
     if (oidc.isLoading) return;
     if (!sub || !accessToken) {
       setTenant(null);
-      setTenantState('idle');
+      fijarEstado('idle');
       return;
     }
     void loadTenant();
@@ -134,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = useCallback(async () => {
     setTenant(null);
-    setTenantState('idle');
+    fijarEstado('idle');
     try {
       await oidc.signoutRedirect();
     } catch {

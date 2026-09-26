@@ -94,3 +94,41 @@ test('cambiar la paleta del negocio la guarda', async ({ page }) => {
   await expect(page.getByRole('button', { name: /guardar cambios/i })).toBeVisible({ timeout: 15_000 });
   expect(await paletaSeleccionada(page)).toBe(original);
 });
+
+/**
+ * Que guardar diga que guardó.
+ *
+ * No decía nada: ni éxito ni error. El dato sí se guardaba —lo comprueba la prueba de arriba,
+ * recargando—, pero desde la pantalla parecía que el botón no hacía nada, que es exactamente el
+ * fallo que motivó el componente de avisos.
+ *
+ * El aviso no tenía la culpa. `handleSave` termina releyendo el restaurante, y releerlo ponía a
+ * la aplicación entera en «cargando», que se dibuja como una pantalla de carga a página
+ * completa. El árbol se desmontaba y el mensaje moría con la pantalla que iba a mostrarlo.
+ *
+ * Por eso la prueba afirma las dos cosas: que el mensaje aparece, y que el armazón no se fue en
+ * ningún momento. Sin la segunda, cualquiera podría «arreglarlo» guardando el aviso en otro
+ * sitio y dejar el remontaje en pie, que también se lleva el scroll, los diálogos abiertos y lo
+ * que estuvieras escribiendo.
+ */
+test('guardar la configuración lo confirma, sin remontar la pantalla', async ({ page }) => {
+  await page.goto('/configuracion');
+  const guardar = page.getByRole('button', { name: /guardar cambios/i });
+  await expect(guardar).toBeVisible({ timeout: 15_000 });
+
+  // Se marca el nodo del armazón. Si la aplicación se remonta, el nodo marcado deja de existir.
+  await page.evaluate(() => {
+    document.querySelector('main')?.setAttribute('data-testigo', 'si');
+  });
+
+  await guardar.click();
+
+  await expect(page.getByRole('status').or(page.getByRole('alert')).first()).toBeVisible({
+    timeout: 10_000,
+  });
+
+  const sobrevivio = await page.evaluate(
+    () => document.querySelector('main')?.getAttribute('data-testigo') === 'si'
+  );
+  expect(sobrevivio, 'la pantalla se remontó durante el guardado').toBe(true);
+});
