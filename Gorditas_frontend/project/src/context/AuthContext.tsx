@@ -18,6 +18,8 @@ interface AuthContextType {
   /** Entró, pero todavía no confirma su correo: no puede operar. */
   correoPorVerificar: boolean;
   correoPendiente: string | null;
+  /** La zona horaria del negocio; la usan las pantallas que necesitan saber qué día es hoy. */
+  zonaHoraria: string | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -57,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
   const [correoVerificado, setCorreoVerificado] = useState<boolean | null>(null);
   const [correoPendiente, setCorreoPendiente] = useState<string | null>(null);
+  const [zonaHoraria, setZonaHoraria] = useState<string | null>(null);
   const oidcRef = useRef(oidc);
   oidcRef.current = oidc;
 
@@ -104,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setTenant(res.data.tenant);
       setCorreoVerificado(res.data.user?.emailVerificado ?? true);
       setCorreoPendiente(res.data.user?.email ?? null);
+      setZonaHoraria(res.data.zonaHoraria ?? null);
       setError(null);
       fijarEstado('ready');
       applyPalette(getPalette(res.data.tenant.config?.paleta || 'orange'));
@@ -196,6 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tenantMissing: authenticated && (tenantState === 'missing' || (tenantState === 'ready' && user === null)),
     correoPorVerificar: authenticated && tenantState === 'ready' && correoVerificado === false,
     correoPendiente,
+    zonaHoraria,
     loading,
     error: oidc.error?.message ?? error,
     isAuthenticated: authenticated,

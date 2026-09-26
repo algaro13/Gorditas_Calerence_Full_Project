@@ -23,6 +23,13 @@ export interface TenantsRouterDeps {
   identity: IdentityProvider;
   actualizarConfig: ActualizarConfigTenant;
   subirLogo: SubirLogoTenant;
+  /**
+   * La zona horaria del negocio, la misma con la que los reportes cortan el dia.
+   *
+   * El SPA la necesita para saber que dia es «hoy». Calculandolo por su cuenta en UTC pedia el
+   * dia siguiente desde las 18:00 en Mexico, y el reporte de la cena salia en ceros.
+   */
+  timeZone: string;
 }
 
 const configSchema = Joi.object({
@@ -93,6 +100,7 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           roles: auth.roles,
           emailVerificado,
         },
+        zonaHoraria: deps.timeZone,
       });
     }),
   );

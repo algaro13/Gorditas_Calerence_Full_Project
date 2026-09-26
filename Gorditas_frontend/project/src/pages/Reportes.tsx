@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Aviso } from '../components/Aviso';
 import { 
   BarChart3, 
@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import ExcelJS from 'exceljs';
+import { useAuth } from '../context/AuthContext';
+import { diaEn } from '../utils/dia';
 
 interface VentaPorDia {
   _id: string;
@@ -94,9 +96,22 @@ const Tarjeta: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const Reportes: React.FC = () => {
+  const { zonaHoraria } = useAuth();
   const [activeTab, setActiveTab] = useState('ventas');
-  const [fechaInicio, setFechaInicio] = useState(new Date().toISOString().split('T')[0]);
-  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+  // El dia del negocio, no el de Greenwich. A las 18:04 en Mexico, `toISOString()` ya decia 26
+  // cuando eran las seis de la tarde del 25, y el reporte abria en un dia sin ventas.
+  const [fechaInicio, setFechaInicio] = useState(() => diaEn(zonaHoraria));
+  const [fechaFin, setFechaFin] = useState(() => diaEn(zonaHoraria));
+
+  // La zona llega con el restaurante, que puede tardar un instante mas que el primer pintado.
+  // Cuando llega, se corrige el dia por omision — pero solo si el usuario no ha elegido otro.
+  const rangoTocado = useRef(false);
+  useEffect(() => {
+    if (rangoTocado.current) return;
+    const hoy = diaEn(zonaHoraria);
+    setFechaInicio(hoy);
+    setFechaFin(hoy);
+  }, [zonaHoraria]);
   
   const [reporteVentas, setReporteVentas] = useState<ReporteVentas[]>([]);
   const [reporteInventario, setReporteInventario] = useState<ReporteInventario[]>([]);
@@ -183,14 +198,13 @@ const Reportes: React.FC = () => {
     }
   };
 
-  // Funciones para manejar la caja del día actual (recuadro superior)
-  const obtenerFechaActualUTC = (): string => {
-    const hoy = new Date();
-    return hoy.toISOString().split('T')[0]; // YYYY-MM-DD en UTC
-  };
+  // La fecha bajo la que se archiva el dinero de la caja. Calcularla en UTC no era un detalle de
+  // presentacion: despues de las 18:00 el dinero quedaba anotado en el dia siguiente, la fila del
+  // dia real se quedaba en cero y la cantidad reaparecia sola al dia siguiente.
+  const obtenerFechaActual = (): string => diaEn(zonaHoraria);
 
   const iniciarEdicionCajaDiaActual = () => {
-    const fechaActual = obtenerFechaActualUTC();
+    const fechaActual = obtenerFechaActual();
     setEditandoCajaDiaActual(true);
     setMontoAgregarCaja(0);
   };
@@ -201,7 +215,7 @@ const Reportes: React.FC = () => {
   };
 
   const confirmarAgregarCajaDiaActual = async () => {
-    const fechaActual = obtenerFechaActualUTC();
+    const fechaActual = obtenerFechaActual();
     const montoActual = montoCajaPorFecha[fechaActual] || 0;
     const nuevoMonto = montoActual + montoAgregarCaja;
     
@@ -485,7 +499,7 @@ const Reportes: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte_${activeTab}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    a.download = `reporte_${activeTab}_${diaEn(zonaHoraria)}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -510,7 +524,7 @@ const Reportes: React.FC = () => {
   };
 
   const getCajaDiaActual = () => {
-    const fechaActual = obtenerFechaActualUTC();
+    const fechaActual = obtenerFechaActual();
     return montoCajaPorFecha[fechaActual] || 0;
   };
 
@@ -1024,14 +1038,20 @@ const Reportes: React.FC = () => {
                   <input
                     type="date"
                     value={fechaInicio}
-                    onChange={(e) => setFechaInicio(e.target.value)}
+                    onChange={(e) => {
+                      rangoTocado.current = true;
+                      setFechaInicio(e.target.value);
+                    }}
                     className="campo sm:w-auto"
                   />
                   <span className="hidden sm:block text-gray-500">hasta</span>
                   <input
                     type="date"
                     value={fechaFin}
-                    onChange={(e) => setFechaFin(e.target.value)}
+                    onChange={(e) => {
+                      rangoTocado.current = true;
+                      setFechaFin(e.target.value);
+                    }}
                     className="campo sm:w-auto"
                   />
                 </div>

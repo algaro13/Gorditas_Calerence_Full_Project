@@ -75,6 +75,11 @@ describe('Autenticación con tokens de Zitadel (JWKS local)', () => {
     expect(res.body.data.tenant).toMatchObject({ id: tenant.id, slug: tenant.slug, planStatus: 'trial' });
     expect(res.body.data.user).toMatchObject({ id: 'u-admin', email: 'admin@test.local', role: 'Admin' });
     expect([...res.body.data.user.roles].sort()).toEqual(['Admin', 'Mesero']);
+
+    // La zona horaria del negocio, que el SPA necesita para saber que dia es «hoy». Sin ella la
+    // calculaba en UTC y desde las 18:00 en Mexico pedia el dia siguiente: el reporte de la cena
+    // salia en ceros y el dinero de la caja se archivaba bajo manana.
+    expect(res.body.data.zonaHoraria).toBe('America/Mexico_City');
   });
 
   it('organización sin tenant responde 404 NO_TENANT', async () => {

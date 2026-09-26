@@ -92,6 +92,7 @@ export function createApp(c: Container): Express {
       identity: c.identityProvider,
       actualizarConfig: new ActualizarConfigTenant(c.tenants, c.storage, invalidateTenant),
       subirLogo: new SubirLogoTenant(c.tenants, c.storage, invalidateTenant),
+      timeZone,
     }),
   );
 

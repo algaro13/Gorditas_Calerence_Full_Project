@@ -13,12 +13,14 @@ import { test, expect } from '@playwright/test';
 /**
  * El periodo, ensanchado a mano.
  *
- * El reporte arranca en «hoy» calculado en UTC, asi que a partir de las 18:00 en Mexico ya pide
- * el dia siguiente y sale vacio. La suite tardo lo justo para cruzar esa medianoche y estas
- * pruebas pasaron de verdes a rojas sin que nada cambiara en el codigo.
+ * Nacio por un fallo —el reporte abria en «hoy» calculado en UTC y desde las 18:00 en Mexico
+ * pedia el dia siguiente—, pero eso ya esta arreglado y lo comprueba la ultima prueba de este
+ * archivo.
  *
- * El fallo es de la pantalla, no de la prueba, y va por separado. Aqui solo se evita depender
- * del reloj: se pide una semana, que contiene al dia que tenga datos caiga donde caiga.
+ * Se conserva por otra razon: estas pruebas necesitan un dia con ventas, y el dia de hoy puede
+ * no tener ninguna segun cuando se corran. Se pide una semana, que contiene al dia que tenga
+ * datos caiga donde caiga. Quitarlo las dejaria dependiendo de que otra prueba de la suite haya
+ * creado una orden antes, que es una atadura invisible entre archivos.
  */
 async function periodoAmplio(page: import('@playwright/test').Page) {
   const dia = (desplazamiento: number) => {
@@ -189,4 +191,39 @@ test('el detalle de una orden muestra sus platillos y cuadra con su total', asyn
 
   // Sin esto la prueba pasaría con todas las órdenes vacías, que es exactamente el fallo.
   expect(cuadran.length, 'ninguna orden mostró lo que se vendió en ella').toBeGreaterThan(0);
+});
+
+/**
+ * Que el reporte abra en el dia del restaurante.
+ *
+ * Abria en el de Greenwich: `new Date().toISOString()` da la fecha en UTC, y en Mexico son seis
+ * horas de mas. A las 18:04 del 25 la pantalla ya pedia el 26, asi que el reporte salia en ceros
+ * durante toda la cena — la franja en la que mas se consulta.
+ *
+ * Se fija el reloj a proposito. Sin fijarlo, la afirmacion solo diria algo entre las 18:00 y la
+ * medianoche; el resto del dia pasaria igual con el fallo dentro, que es como sobrevivio tanto
+ * tiempo.
+ */
+test('el reporte abre en el dia del negocio, no en el de Greenwich', async ({ page }) => {
+  // Un instante que cae en dias distintos segun donde se mire: pasada la medianoche en Greenwich
+  // y todavia la tarde anterior en Ciudad de Mexico.
+  const instante = new Date();
+  instante.setUTCHours(24, 30, 0, 0);
+  const enMexico = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Mexico_City',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(instante);
+  expect(enMexico, 'el instante elegido no distingue las dos zonas').not.toBe(
+    instante.toISOString().slice(0, 10)
+  );
+
+  await page.clock.setFixedTime(instante);
+  await page.goto('/reportes');
+  await page.waitForLoadState('networkidle');
+
+  const fechas = page.locator('input[type="date"]');
+  await expect(fechas.nth(0)).toHaveValue(enMexico, { timeout: 15_000 });
+  await expect(fechas.nth(1)).toHaveValue(enMexico);
 });

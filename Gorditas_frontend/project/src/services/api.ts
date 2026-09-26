@@ -17,6 +17,8 @@ export interface OnboardingPayload {
 export interface TenantMeResponse {
   tenant: TenantInfo;
   user: { id: string; email: string | null; nombre: string | null; role: UserRole | null; roles: UserRole[]; emailVerificado?: boolean };
+  /** La zona horaria del negocio, la misma con la que el backend corta el día en los reportes. */
+  zonaHoraria?: string;
 }
 
 /**
