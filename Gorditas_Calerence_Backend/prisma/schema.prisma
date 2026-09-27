@@ -93,6 +93,7 @@ model Tenant {
   mesas                 Mesa[]
   tiposGasto            TipoGasto[]
   gastos                Gasto[]
+  cajaDiaria            CajaDiaria[]
   ordenes               Orden[]
   subordenes            Suborden[]
   detallesPlatillo      OrdenDetallePlatillo[]
@@ -364,6 +365,26 @@ model Gasto {
   @@index([tenantId, fecha(sort: Desc)])
   @@index([tenantId, idTipoGasto])
   @@map("gastos")
+}
+
+/// El dinero en caja de un día, que el reporte suma a las ventas para la utilidad.
+///
+/// Vivía en el `localStorage` del navegador: no se compartía entre dispositivos, no entraba en
+/// el respaldo, se borraba al limpiar el navegador y dos restaurantes abiertos en el mismo
+/// navegador compartían la misma llave.
+model CajaDiaria {
+  id        Int      @id @default(autoincrement())
+  tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  /// El día del negocio, sin hora: así no hay zona horaria que interpretar.
+  fecha     DateTime @db.Date
+  monto     Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, fecha])
+  @@map("caja_diaria")
 }
 
 // ---------- Órdenes ----------

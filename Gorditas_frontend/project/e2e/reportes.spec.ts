@@ -123,9 +123,25 @@ test('el monto de caja se edita desde la tarjeta y cuadra con el total', async (
   // El total de arriba tiene que moverse con el: son el mismo dato.
   await expect(page.getByText('$137.13').first()).toBeVisible({ timeout: 10_000 });
 
+  // Y que no viva en el navegador. Estaba en `localStorage`: no se compartia entre dispositivos,
+  // no entraba en el respaldo y dos restaurantes abiertos en el mismo navegador compartian la
+  // misma llave. Se borran esas llaves y se recarga: si la cifra sigue ahi, viene del servidor.
+  //
+  // Se borran solo las de la caja, no todo el almacenamiento: en localhost el restaurante se
+  // resuelve con `devTenantSlug`, que tambien vive ahi, y un `clear()` dejaba la aplicacion en
+  // la pantalla de entrar.
+  await page.evaluate(() => {
+    localStorage.removeItem('montoCajaPorFecha');
+    localStorage.removeItem('montoCajaPorFecha.importado');
+  });
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await periodoAmplio(page);
+  await expect(page.getByText('$137.13').first()).toBeVisible({ timeout: 15_000 });
+
   // Se deja como estaba, que la prueba corre contra datos compartidos. Y se comprueba que la
   // devolucion ocurrio: sin esto, la siguiente corrida arrastraria la cifra de esta.
-  await editar.click();
+  await visible('Editar monto de caja').click();
   await campo.fill('0');
   await visible('Confirmar monto').click();
   await expect(page.getByText('$137.13')).toHaveCount(0, { timeout: 10_000 });
@@ -207,8 +223,14 @@ test('el detalle de una orden muestra sus platillos y cuadra con su total', asyn
 test('el reporte abre en el dia del negocio, no en el de Greenwich', async ({ page }) => {
   // Un instante que cae en dias distintos segun donde se mire: pasada la medianoche en Greenwich
   // y todavia la tarde anterior en Ciudad de Mexico.
+  //
+  // Se elige siempre hacia atras. Hacia adelante el salto puede pasar de la caducidad del token
+  // que la sesion dejo guardado, y entonces la aplicacion se va a la pantalla de entrar y la
+  // prueba falla por algo que no tiene nada que ver. Ese fallo aparecia solo a ciertas horas del
+  // dia, que es la peor clase de prueba: la que se rompe sola de madrugada.
   const instante = new Date();
-  instante.setUTCHours(24, 30, 0, 0);
+  instante.setUTCHours(0, 30, 0, 0);
+  if (instante > new Date()) instante.setUTCDate(instante.getUTCDate() - 1);
   const enMexico = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Mexico_City',
     year: 'numeric',
@@ -226,4 +248,76 @@ test('el reporte abre en el dia del negocio, no en el de Greenwich', async ({ pa
   const fechas = page.locator('input[type="date"]');
   await expect(fechas.nth(0)).toHaveValue(enMexico, { timeout: 15_000 });
   await expect(fechas.nth(1)).toHaveValue(enMexico);
+});
+/**
+ * Que lo anotado en el navegador no se pierda al mudar la caja al servidor.
+ *
+ * Quien tuviera cantidades apuntadas las tenía en `localStorage`. Si el cambio se hubiera
+ * desplegado sin más, habrían desaparecido del reporte sin aviso — y son dinero.
+ *
+ * Se suben una sola vez, y solo los días que el servidor no conoce: si ya hay un monto arriba,
+ * manda ese, porque pudo fijarlo otra persona desde otro dispositivo.
+ */
+test('lo que había anotado en el navegador se sube una vez', async ({ page }) => {
+  // Un día de 1999, distinto en cada corrida, y una cifra reconocible: así no pisa datos de otras
+  // pruebas ni del restaurante.
+  //
+  // Distinto en cada corrida a propósito. Al terminar, la prueba devuelve el día a cero, y un día
+  // que el servidor ya conoce —aunque valga cero— no se vuelve a subir, que es lo correcto: un
+  // cero puesto a mano desde otro dispositivo debe ganarle a lo que quedara en este navegador.
+  // Con un día fijo, la segunda corrida no ejercitaría la subida y la prueba pasaría sin probar.
+  const base = new Date(Date.UTC(1999, 0, 1));
+  base.setUTCDate(base.getUTCDate() + (Date.now() % 360));
+  const dia = base.toISOString().slice(0, 10);
+  const monto = 314.15;
+
+  await page.goto('/reportes');
+  await page.waitForLoadState('networkidle');
+  await page.evaluate(
+    ([d, m]) => localStorage.setItem('montoCajaPorFecha', JSON.stringify({ [d as string]: m })),
+    [dia, monto] as const
+  );
+
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+
+  // La llave original no se destruye: se conserva bajo otro nombre por si hiciera falta mirarla.
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem('montoCajaPorFecha')), { timeout: 15_000 })
+    .toBe(null);
+  expect(
+    await page.evaluate(() => localStorage.getItem('montoCajaPorFecha.importado'))
+  ).toContain(dia);
+
+  // Y ahora esta en el servidor, que es lo que importa: desde ahi lo ve cualquier dispositivo.
+  //
+  // Se comprueba preguntandole al servidor y no mirando la pantalla, porque el resumen solo
+  // lista los dias con ventas: un dia con caja y sin ventas —como este de 2019— no tiene tarjeta
+  // donde aparecer. Eso es un hueco de la pantalla, no de lo que esta prueba afirma.
+  const caja = async (metodo: 'GET' | 'PUT', d: string, monto?: number) =>
+    page.evaluate(
+      async ([m, dia, valor]) => {
+        // El token lo guarda react-oidc-context en `localStorage`, bajo una llave que lleva el
+        // emisor y el cliente.
+        const llave = Object.keys(localStorage).find((k) => k.startsWith('oidc.user'));
+        const token = llave ? JSON.parse(localStorage.getItem(llave)!).access_token : null;
+        const base = 'http://localhost:5000/api/reportes/caja';
+        const url = m === 'GET' ? `${base}?fechaInicio=${dia}&fechaFin=${dia}` : `${base}/${dia}`;
+        const res = await fetch(url, {
+          method: m as string,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: m === 'PUT' ? JSON.stringify({ monto: valor }) : undefined,
+        });
+        return { estado: res.status, cuerpo: await res.json() };
+      },
+      [metodo, d, monto ?? 0] as const
+    );
+
+  const enServidor = await caja('GET', dia);
+  expect(enServidor.cuerpo.data.caja, 'lo anotado en el navegador no llego al servidor').toEqual([
+    { fecha: dia, monto },
+  ]);
+
+  // Se deja como estaba.
+  expect((await caja('PUT', dia, 0)).estado).toBe(200);
 });

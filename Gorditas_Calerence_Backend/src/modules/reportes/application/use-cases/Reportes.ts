@@ -1,7 +1,7 @@
 import type { Clock } from '../../../../shared/application/ports/Clock';
 import type { UnitOfWork } from '../../../../shared/application/ports/UnitOfWork';
 import { NotFoundError, ValidationError } from '../../../../shared/domain/DomainError';
-import type { GastoRow, GastosReporte, Rango, ReportesQuery, VentasReporte } from '../ports/ReportesQuery';
+import type { CajaRow, GastoRow, GastosReporte, Rango, ReportesQuery, VentasReporte } from '../ports/ReportesQuery';
 
 const LONG_TX = { timeoutMs: 30_000 };
 
@@ -78,6 +78,27 @@ export class EliminarGasto {
     return this.uow.run(async () => {
       if (!(await this.q.eliminarGasto(id))) throw new NotFoundError('Gasto no encontrado', 'GASTO_NOT_FOUND');
     });
+  }
+}
+
+export class ReporteCaja {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly q: ReportesQuery,
+  ) {}
+  execute(rango: Rango | null): Promise<CajaRow[]> {
+    return this.uow.run(() => this.q.caja(rango));
+  }
+}
+
+export class FijarCaja {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly q: ReportesQuery,
+  ) {}
+  execute(fecha: string, monto: number): Promise<CajaRow> {
+    if (monto < 0) throw new ValidationError('El monto no puede ser negativo', 'MONTO_INVALIDO');
+    return this.uow.run(() => this.q.fijarCaja(fecha, monto));
   }
 }
 

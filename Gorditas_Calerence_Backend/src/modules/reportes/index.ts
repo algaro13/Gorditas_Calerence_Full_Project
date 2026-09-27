@@ -1,7 +1,7 @@
 import type { Router } from 'express';
 import type { Clock } from '../../shared/application/ports/Clock';
 import type { UnitOfWork } from '../../shared/application/ports/UnitOfWork';
-import { CrearGasto, EliminarGasto, ProductosMasVendidos, ReporteGastos, ReporteInventario, ReporteVentas } from './application/use-cases/Reportes';
+import { CrearGasto, EliminarGasto, FijarCaja, ProductosMasVendidos, ReporteCaja, ReporteGastos, ReporteInventario, ReporteVentas } from './application/use-cases/Reportes';
 import { createReportesRouter } from './http/reportes.router';
 import { PrismaReportesQuery } from './infrastructure/PrismaReportesQuery';
 
@@ -16,6 +16,8 @@ export function createReportesModule(deps: { uow: UnitOfWork; clock: Clock; time
         crearGasto: new CrearGasto(deps.uow, q, deps.clock),
         eliminarGasto: new EliminarGasto(deps.uow, q),
         masVendidos: new ProductosMasVendidos(deps.uow, q),
+        caja: new ReporteCaja(deps.uow, q),
+        fijarCaja: new FijarCaja(deps.uow, q),
       },
       { timeZone: deps.timeZone },
     ),

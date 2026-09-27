@@ -85,6 +85,13 @@ class ApiService {
   getTenantMe() {
     return this.request<TenantMeResponse>('/tenants/me');
   }
+  getCaja(fechaInicio?: string, fechaFin?: string) {
+    const q = fechaInicio && fechaFin ? `?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}` : '';
+    return this.request<{ caja: Array<{ fecha: string; monto: number }> }>(`/reportes/caja${q}`);
+  }
+  fijarCaja(fecha: string, monto: number) {
+    return this.request<{ fecha: string; monto: number }>(`/reportes/caja/${fecha}`, this.json('PUT', { monto }));
+  }
   updateTenantConfig(config: Partial<TenantConfig>) {
     return this.request<{ config: TenantConfig }>('/tenants/me/config', this.json('PUT', config));
   }

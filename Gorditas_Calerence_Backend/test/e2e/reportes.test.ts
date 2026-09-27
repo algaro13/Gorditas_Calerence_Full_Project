@@ -89,6 +89,47 @@ describe('Módulo reportes', () => {
     expect(res.body.data.alertas.stockBajo.map((p: { nombre: string }) => p.nombre)).toEqual(['Última cerveza']);
   });
 
+  it('caja: se fija por dia, se lee por periodo y no la ve otro restaurante', async () => {
+    // Vacia al principio: si esta prueba encontrara algo, estaria leyendo lo de otro.
+    const inicial = await api().get('/api/reportes/caja').set(auth(encargado));
+    expect(inicial.status).toBe(200);
+    expect(inicial.body.data.caja).toEqual([]);
+
+    expect((await api().put('/api/reportes/caja/2026-09-05').set(auth(encargado)).send({ monto: 150.5 })).status).toBe(200);
+    // Fijar dos veces el mismo dia lo reemplaza, no lo duplica.
+    const segunda = await api().put('/api/reportes/caja/2026-09-05').set(auth(encargado)).send({ monto: 200 });
+    expect(segunda.body.data).toEqual({ fecha: '2026-09-05', monto: 200 });
+    await api().put('/api/reportes/caja/2026-09-06').set(auth(encargado)).send({ monto: 75 });
+
+    const todas = await api().get('/api/reportes/caja').set(auth(encargado));
+    expect(todas.body.data.caja).toEqual([
+      { fecha: '2026-09-05', monto: 200 },
+      { fecha: '2026-09-06', monto: 75 },
+    ]);
+
+    // El dia es el que se pidio: una columna DATE no se convierte a ninguna zona. Si alguien la
+    // interpretara en Mexico, este filtro devolveria el dia anterior.
+    const soloUno = await api().get('/api/reportes/caja?fechaInicio=2026-09-06&fechaFin=2026-09-06').set(auth(encargado));
+    expect(soloUno.body.data.caja).toEqual([{ fecha: '2026-09-06', monto: 75 }]);
+
+    expect((await api().put('/api/reportes/caja/2026-09-06').set(auth(encargado)).send({ monto: -1 })).status).toBe(400);
+    expect((await api().put('/api/reportes/caja/06-09-2026').set(auth(encargado)).send({ monto: 10 })).status).toBe(400);
+
+    // Un mesero lee reportes tan poco como los escribe.
+    expect((await api().put('/api/reportes/caja/2026-09-06').set(auth(mesero)).send({ monto: 10 })).status).toBe(403);
+
+    // Y el aislamiento, que es la razon de sacarla del navegador: alli dos restaurantes en el
+    // mismo navegador compartian una sola llave de `localStorage`.
+    const otro = await createTestTenant(t.container.prisma);
+    try {
+      const ajeno = await tokenFor(t.keys, { userId: 'enc2', orgId: otro.orgId, roles: ['Encargado'] });
+      const suya = await api().get('/api/reportes/caja').set(auth(ajeno));
+      expect(suya.body.data.caja, 'un restaurante vio la caja de otro').toEqual([]);
+    } finally {
+      await deleteTestTenant(t.container.prisma, otro.id);
+    }
+  });
+
   it('gastos: crear, listar con agregados y eliminar', async () => {
     const bad = await api().post('/api/reportes/gastos').set(auth(encargado)).send({ nombre: 'x', idTipoGasto: 9999, gastoTotal: 10 });
     expect(bad.status).toBe(400);

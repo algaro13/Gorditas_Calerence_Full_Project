@@ -2,7 +2,17 @@ import { Prisma } from '@prisma/client';
 import { toMoney } from '../../../shared/domain/Money';
 import { currentDb } from '../../../shared/infrastructure/prisma/unit-of-work';
 import { toApi } from '../../../shared/utils/serialize';
-import type { GastoRow, GastosReporte, Rango, ReportesQuery, VendidoRow, VentasReporte } from '../application/ports/ReportesQuery';
+import type { CajaRow, GastoRow, GastosReporte, Rango, ReportesQuery, VendidoRow, VentasReporte } from '../application/ports/ReportesQuery';
+
+/**
+ * Una columna DATE de Postgres llega como un `Date` a medianoche UTC; su clave de dia es
+ * exactamente su parte de fecha en UTC, sin convertir a ninguna zona. Convertirla seria el
+ * error clasico: en Mexico la restaria seis horas y devolveria el dia anterior.
+ */
+const claveDeDia = (d: Date): string => d.toISOString().slice(0, 10);
+
+/** El dia, a medianoche UTC, que es como se guarda una columna DATE. */
+const soloFecha = (d: Date): Date => new Date(`${claveDeDia(d)}T00:00:00Z`);
 
 /** Consultas de reportes. El corte de día se calcula en la zona horaria del negocio. */
 export class PrismaReportesQuery implements ReportesQuery {
@@ -53,6 +63,35 @@ export class PrismaReportesQuery implements ReportesQuery {
       ventasPorTipo: porTipo,
       ordenesPagadas,
     };
+  }
+
+  /**
+   * El dinero en caja de cada dia del periodo.
+   *
+   * La columna es DATE, asi que no hay zona que interpretar: el dia ya viene resuelto por quien
+   * lo escribio. Por eso el filtro compara texto `YYYY-MM-DD` y no instantes, que es lo que hace
+   * `dayRange` para las tablas con hora.
+   */
+  async caja(rango: Rango | null): Promise<CajaRow[]> {
+    const where = rango
+      ? { fecha: { gte: soloFecha(rango.from), lt: soloFecha(rango.to) } }
+      : {};
+    const rows = await currentDb().cajaDiaria.findMany({ where, orderBy: { fecha: 'asc' } });
+    return rows.map((r) => ({ fecha: claveDeDia(r.fecha), monto: toMoney(r.monto) }));
+  }
+
+  async fijarCaja(fecha: string, monto: number): Promise<CajaRow> {
+    const dia = new Date(`${fecha}T00:00:00Z`);
+    const db = currentDb();
+    // Se busca y luego se escribe, en vez de `upsert`, porque la llave unica incluye el
+    // `tenant_id` y la aplicacion no lo conoce: lo pone la base con `current_tenant_id()`, que
+    // es el mismo valor con el que la politica filtra. Esta lectura ya viene aislada, y todo
+    // ocurre dentro de la transaccion de la unidad de trabajo.
+    const existente = await db.cajaDiaria.findFirst({ where: { fecha: dia } });
+    const row = existente
+      ? await db.cajaDiaria.update({ where: { id: existente.id }, data: { monto } })
+      : await db.cajaDiaria.create({ data: { fecha: dia, monto } });
+    return { fecha: claveDeDia(row.fecha), monto: toMoney(row.monto) };
   }
 
   async inventario(): Promise<unknown[]> {

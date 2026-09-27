@@ -151,19 +151,65 @@ const Reportes: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Cargar datos de caja desde localStorage
-  const cargarMontoCaja = () => {
-    const cajaDatos = localStorage.getItem('montoCajaPorFecha');
-    if (cajaDatos) {
-      setMontoCajaPorFecha(JSON.parse(cajaDatos));
+  /**
+   * La caja del restaurante, no la del navegador.
+   *
+   * Vivia en `localStorage`, y de ahi salia «Total Caja» y la utilidad del dia. Eso significaba
+   * que una cifra presentada como dato del negocio no se compartia entre dispositivos, no
+   * entraba en el respaldo, se borraba al limpiar el navegador, y —lo peor— dos restaurantes
+   * abiertos en el mismo navegador compartian la misma llave.
+   */
+  const cargarMontoCaja = async () => {
+    const res = await apiService.getCaja();
+    if (!res.success || !res.data) return;
+    const montos: { [fecha: string]: number } = {};
+    for (const fila of res.data.caja) montos[fila.fecha] = fila.monto;
+    setMontoCajaPorFecha(montos);
+    await subirCajaDelNavegador(montos);
+  };
+
+  /** La llave donde vivia antes; se conserva para no destruir nada al migrar. */
+  const LLAVE_LOCAL = 'montoCajaPorFecha';
+
+  /**
+   * Lo que alguien tuviera anotado en su navegador se sube una sola vez.
+   *
+   * Solo los dias que el servidor no conoce: si ya hay un monto arriba, manda ese, porque pudo
+   * fijarlo otra persona desde otro dispositivo. El original no se borra, se guarda bajo otra
+   * llave por si hiciera falta mirarlo.
+   */
+  const subirCajaDelNavegador = async (yaEnServidor: { [fecha: string]: number }) => {
+    let local: { [fecha: string]: number };
+    try {
+      const crudo = localStorage.getItem(LLAVE_LOCAL);
+      if (!crudo) return;
+      local = JSON.parse(crudo);
+    } catch {
+      return;
+    }
+
+    const pendientes = Object.entries(local).filter(
+      ([fecha, monto]) => typeof monto === 'number' && monto > 0 && yaEnServidor[fecha] === undefined,
+    );
+    for (const [fecha, monto] of pendientes) {
+      const res = await apiService.fijarCaja(fecha, monto);
+      if (!res.success) return; // Si algo falla, se deja el original y se reintenta la proxima.
+    }
+
+    localStorage.setItem(`${LLAVE_LOCAL}.importado`, JSON.stringify(local));
+    localStorage.removeItem(LLAVE_LOCAL);
+    if (pendientes.length > 0) {
+      setMontoCajaPorFecha({ ...yaEnServidor, ...Object.fromEntries(pendientes) });
     }
   };
 
-  // Guardar monto de caja en localStorage
-  const guardarMontoCaja = (fecha: string, monto: number) => {
-    const nuevosMontos = { ...montoCajaPorFecha, [fecha]: monto };
-    setMontoCajaPorFecha(nuevosMontos);
-    localStorage.setItem('montoCajaPorFecha', JSON.stringify(nuevosMontos));
+  const guardarMontoCaja = async (fecha: string, monto: number) => {
+    const res = await apiService.fijarCaja(fecha, monto);
+    if (!res.success) {
+      setError(res.error || 'No se pudo guardar el monto de caja');
+      return;
+    }
+    setMontoCajaPorFecha((previo) => ({ ...previo, [fecha]: monto }));
   };
 
   // Función para calcular utilidad con caja
@@ -187,7 +233,7 @@ const Reportes: React.FC = () => {
     if (editandoCaja) {
       setGuardandoCaja(editandoCaja);
       try {
-        guardarMontoCaja(editandoCaja, montoTemporal);
+        await guardarMontoCaja(editandoCaja, montoTemporal);
         setEditandoCaja(null);
         setMontoTemporal(0);
       } catch (error) {
@@ -220,13 +266,13 @@ const Reportes: React.FC = () => {
     const nuevoMonto = montoActual + montoAgregarCaja;
     
     
-    guardarMontoCaja(fechaActual, nuevoMonto);
+    await guardarMontoCaja(fechaActual, nuevoMonto);
     setEditandoCajaDiaActual(false);
     setMontoAgregarCaja(0);
   };
 
   useEffect(() => {
-    cargarMontoCaja();
+    void cargarMontoCaja();
   }, []);
 
   useEffect(() => {

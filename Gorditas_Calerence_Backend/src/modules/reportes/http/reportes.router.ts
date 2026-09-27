@@ -6,7 +6,7 @@ import { sendCreated, sendError, sendOk } from '../../../shared/http/express/res
 import { toApi } from '../../../shared/utils/serialize';
 import { validateBody, validateQuery } from '../../../shared/http/express/validate';
 import { dayRange } from '../../../shared/utils/dates';
-import type { CrearGasto, EliminarGasto, ProductosMasVendidos, ReporteGastos, ReporteInventario, ReporteVentas } from '../application/use-cases/Reportes';
+import type { CrearGasto, EliminarGasto, FijarCaja, ProductosMasVendidos, ReporteCaja, ReporteGastos, ReporteInventario, ReporteVentas } from '../application/use-cases/Reportes';
 import type { Rango } from '../application/ports/ReportesQuery';
 
 export interface ReportesUseCases {
@@ -16,6 +16,8 @@ export interface ReportesUseCases {
   crearGasto: CrearGasto;
   eliminarGasto: EliminarGasto;
   masVendidos: ProductosMasVendidos;
+  caja: ReporteCaja;
+  fijarCaja: FijarCaja;
 }
 
 const dateKey = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/);
@@ -55,6 +57,27 @@ export function createReportesRouter(uc: ReportesUseCases, opts: { timeZone: str
         ventasPorTipo: r.ventasPorTipo,
         ordenesPagadas: r.ordenesPagadas,
       });
+    }),
+  );
+
+  // El dinero en caja de cada dia. Vivia en el `localStorage` del navegador, donde no se
+  // compartia entre dispositivos, no entraba en el respaldo y dos restaurantes abiertos en el
+  // mismo navegador compartian la misma llave.
+  router.get(
+    '/caja',
+    validateQuery(Joi.object(rangoQuery)),
+    asyncHandler(async (_req, res) => {
+      sendOk(res, { caja: await uc.caja.execute(rangoDe(res.locals.query)) });
+    }),
+  );
+
+  router.put(
+    '/caja/:fecha',
+    validateBody(Joi.object({ monto: Joi.number().min(0).required() }), { stripUnknown: true }),
+    asyncHandler(async (req, res) => {
+      const { error } = dateKey.required().validate(req.params.fecha);
+      if (error) return sendError(res, 400, 'Fecha inválida', 'FECHA_INVALIDA');
+      sendOk(res, await uc.fijarCaja.execute(req.params.fecha, req.body.monto));
     }),
   );
 

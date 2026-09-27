@@ -29,8 +29,8 @@ describe('Row Level Security', () => {
     expect(rows[0].rolbypassrls).toBe(false);
     const tables = await prisma.$queryRaw<Array<{ relname: string; relrowsecurity: boolean; relforcerowsecurity: boolean }>>`
       SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class
-      WHERE relname IN ('productos','ordenes','tenant_users','counters','orden_detalle_extras')`;
-    expect(tables).toHaveLength(5);
+      WHERE relname IN ('productos','ordenes','tenant_users','counters','orden_detalle_extras','caja_diaria')`;
+    expect(tables).toHaveLength(6);
     for (const t of tables) {
       expect(t.relrowsecurity, t.relname).toBe(true);
       expect(t.relforcerowsecurity, t.relname).toBe(true);

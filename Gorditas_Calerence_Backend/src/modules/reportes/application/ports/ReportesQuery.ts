@@ -40,11 +40,19 @@ export interface VendidoRow<K extends string> {
   vecesVendido: number;
 }
 
+/** El dinero en caja de un dia. La fecha es el dia del negocio, sin hora. */
+export interface CajaRow {
+  fecha: string;
+  monto: number;
+}
+
 export interface ReportesQuery {
   ventas(rango: Rango | null): Promise<VentasReporte>;
   inventario(): Promise<unknown[]>;
   gastos(filter: { rango: Rango | null; idTipoGasto?: number }): Promise<GastosReporte>;
   crearGasto(data: { nombre: string; idTipoGasto: number; gastoTotal: number; descripcion: string; fecha: Date }): Promise<GastoRow | null>;
   eliminarGasto(id: number): Promise<boolean>;
+  caja(rango: Rango | null): Promise<CajaRow[]>;
+  fijarCaja(fecha: string, monto: number): Promise<CajaRow>;
   productosVendidos(rango: Rango | null, limit: number): Promise<{ productos: VendidoRow<'idProducto'>[]; platillos: VendidoRow<'idPlatillo'>[] }>;
 }
