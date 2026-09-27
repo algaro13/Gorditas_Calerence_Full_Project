@@ -1203,31 +1203,34 @@ const Reportes: React.FC = () => {
                             Hoy: ${getCajaDiaActual().toFixed(2)}
                           </p>
                           {editandoCajaDiaActual ? (
-                            <div className="flex items-center space-x-2 mt-2">
+                            /* En dos alturas, como la nota de un platillo: el campo y sus dos
+                               botones no caben en fila dentro de esta tarjeta. */
+                            <div className="mt-2 space-y-sp-1">
                               <input
                                 type="number"
                                 value={montoAgregarCaja}
                                 onChange={(e) => setMontoAgregarCaja(parseFloat(e.target.value) || 0)}
-                                className="w-24 px-2 py-1 border border-gray-300 rounded text-meta"
+                                className="campo"
                                 placeholder="Agregar..."
                                 step="0.01"
                                 min="0"
                                 autoFocus
+                                aria-label="Monto a agregar a la caja"
                               />
-                              <button
-                                onClick={confirmarAgregarCajaDiaActual}
-                                className="btn btn-neutro"
-                                title="Agregar a caja de hoy"
-                              >
-                                ✓ Agregar
-                              </button>
-                              <button
-                                onClick={cancelarEdicionCajaDiaActual}
-                                className="btn btn-destructivo"
-                                title="Cancelar"
-                              >
-                                ✕
-                              </button>
+                              <div className="flex gap-sp-1">
+                                <button
+                                  onClick={cancelarEdicionCajaDiaActual}
+                                  className="btn btn-neutro flex-1"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={confirmarAgregarCajaDiaActual}
+                                  className="btn btn-avanzar flex-1"
+                                >
+                                  Agregar
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <button

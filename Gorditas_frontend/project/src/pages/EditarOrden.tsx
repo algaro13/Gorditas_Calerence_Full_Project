@@ -1421,29 +1421,37 @@ const EditarOrden: React.FC = () => {
                             
                             {/* Sección de notas - editable */}
                             {editingNota === detalle._id ? (
-                              <div className="flex items-center space-x-2 mt-2">
+                              /* En dos alturas: el campo arriba y los botones debajo. Estaban
+                                 los tres en fila, y en la tarjeta de un platillo —poco mas de
+                                 250 px en un telefono— no caben: los botones se encogian por
+                                 debajo del ancho de su propio texto y «Guardar» y «Cancelar»
+                                 acababan montados uno sobre otro. */
+                              <div className="mt-2 space-y-sp-1">
                                 <input
                                   type="text"
                                   value={tempNota}
                                   onChange={(e) => setTempNota(e.target.value)}
-                                  className="flex-1 px-2 py-1 text-meta border border-blue-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  className="campo"
                                   placeholder="Escribe una nota..."
                                   disabled={savingNota}
+                                  aria-label="Nota del platillo"
                                 />
-                                <button
-                                  onClick={() => handleSaveNota(detalle._id!)}
-                                  disabled={savingNota}
-                                  className="btn btn-primario"
-                                >
-                                  {savingNota ? 'Guardando...' : 'Guardar'}
-                                </button>
-                                <button
-                                  onClick={handleCancelEditNota}
-                                  disabled={savingNota}
-                                  className="btn btn-neutro"
-                                >
-                                  Cancelar
-                                </button>
+                                <div className="flex gap-sp-1">
+                                  <button
+                                    onClick={handleCancelEditNota}
+                                    disabled={savingNota}
+                                    className="btn btn-neutro flex-1"
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    onClick={() => handleSaveNota(detalle._id!)}
+                                    disabled={savingNota}
+                                    className="btn btn-primario flex-1"
+                                  >
+                                    {savingNota ? 'Guardando...' : 'Guardar'}
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               <div className="mt-2">
@@ -1467,7 +1475,7 @@ const EditarOrden: React.FC = () => {
                                     className="btn ml-2 flex-shrink-0 btn-neutro"
                                     title={detalle.notas ? "Editar nota" : "Agregar nota"}
                                   >
-                                    {detalle.notas ? "Edit." : "+"} nota
+                                    {detalle.notas ? 'Editar nota' : 'Agregar nota'}
                                   </button>
                                 </div>
                               </div>

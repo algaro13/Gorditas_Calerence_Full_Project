@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { cliente, tomarOrden } from './ordenes';
 
 /**
  * El estándar, como regla que se ejecuta.
@@ -66,6 +67,25 @@ async function textosPequenos(page: Page) {
   }, MINIMO_LETRA);
 }
 
+/**
+ * Botones a los que no les cabe su propio texto.
+ *
+ * Un botón encogido por debajo del ancho de su etiqueta no se sale de su tarjeta —cabe dentro—,
+ * así que la regla del contenedor no lo ve. Lo que se desborda es el texto: «Guardar» salía
+ * cortado a la mitad y «Cancelar» encima.
+ */
+async function textoQueNoCabe(page: Page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('main button')]
+      .filter((e) => {
+        const el = e as HTMLElement;
+        // `truncate` recorta a propósito, con puntos suspensivos: eso no es un fallo.
+        return !el.className.includes('truncate') && e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0;
+      })
+      .map((e) => `«${(e as HTMLElement).innerText.trim().slice(0, 20)}» necesita ${e.scrollWidth}px y tiene ${e.clientWidth}`),
+  );
+}
+
 for (const ruta of RUTAS) {
   test(`${ruta} respeta los mínimos táctiles y de letra`, async ({ page }) => {
     await page.goto(ruta);
@@ -73,6 +93,7 @@ for (const ruta of RUTAS) {
 
     expect(await controlesPequenos(page), `controles por debajo de ${MINIMO_TACTIL}px en ${ruta}`).toEqual([]);
     expect(await textosPequenos(page), `texto por debajo de ${MINIMO_LETRA}px en ${ruta}`).toEqual([]);
+    expect(await textoQueNoCabe(page), `botones con el texto desbordado en ${ruta}`).toEqual([]);
 
     // Un desborde horizontal obliga a arrastrar la pantalla para leer, que en servicio no pasa:
     // simplemente no se lee.
@@ -82,3 +103,75 @@ for (const ruta of RUTAS) {
     expect(desborde, `desborde horizontal en ${ruta}`).toBe(false);
   });
 }
+
+/**
+ * Lo que no se abre, no se mide.
+ *
+ * La regla de que ningún control se salga de su tarjeta ya estaba escrita y había una prueba
+ * vigilándola. Pero medía las pantallas tal como se abren, y un editor en línea no existe hasta
+ * que alguien pulsa «Editar nota». Así llegaron a producción dos editores con «Guardar» y
+ * «Cancelar» montados uno sobre otro: en la tarjeta de un platillo no caben tres cosas en fila,
+ * los botones se encogían por debajo del ancho de su texto y las palabras se desbordaban.
+ *
+ * Esta prueba pulsa para abrirlos, mide, y cancela lo que abrió.
+ */
+test('los editores que se abren al pulsar también caben en su tarjeta', async ({ page }) => {
+  const abiertos: string[] = [];
+
+  // La nota de un platillo necesita una orden abierta con platillos. Se toma una: las pruebas
+  // del ciclo completo cobran las suyas, asi que apoyarse en lo que haya dejaria esta prueba
+  // dependiendo del orden en que corran las demas.
+  const nombre = cliente();
+  await tomarOrden(page, nombre);
+
+  await page.goto('/editar-orden');
+  await page.waitForLoadState('networkidle');
+  // Dos pasos: la tarjeta de la mesa y, dentro, la orden. El primer clic abre el resumen del
+  // grupo, que no trae los platillos uno a uno; el editor de notas vive en el detalle.
+  await page.getByText(nombre).first().click();
+  await page.getByText(/^Orden #/).first().click();
+  await expect(page.getByRole('heading', { name: 'Platillos' })).toBeVisible({ timeout: 10_000 });
+  // Cualquier cosa que acabe en «nota»: asi la prueba tambien encuentra el boton como se
+  // llamaba antes —«+ nota», «Edit. nota»—, y se puede comprobar contra el diseño viejo que la
+  // medida caza el empalme de verdad.
+  const editarNota = page.getByRole('button', { name: /nota$/i }).first();
+  if (await editarNota.count()) {
+    await editarNota.scrollIntoViewIfNeeded();
+    await editarNota.click();
+    await page.waitForTimeout(500);
+    abiertos.push('nota de un platillo');
+  }
+
+  // El editor de caja del reporte se abre en su propia pantalla; se mide aquí mismo cuando toca.
+  const fugados = await page.evaluate(() => {
+    const salida: string[] = [];
+    document.querySelectorAll('button, input, select, textarea').forEach((e) => {
+      const caja = e.closest('.rounded-lg, .rounded-xl, .rounded-md') as HTMLElement | null;
+      if (!caja || caja === e) return;
+      const a = e.getBoundingClientRect();
+      const c = caja.getBoundingClientRect();
+      if (a.width === 0 || c.width === 0) return;
+      const el = e as HTMLElement;
+      const nombre = (el.innerText || el.getAttribute('placeholder') || el.tagName).trim().slice(0, 20);
+      if (a.right > c.right + 1 || a.left < c.left - 1) {
+        salida.push(`«${nombre}» se sale ${Math.round(Math.max(a.right - c.right, c.left - a.left))}px de su tarjeta`);
+      }
+      // Y el caso que de verdad ocurrio: el boton NO se sale de la tarjeta —se encoge dentro de
+      // ella— y lo que se desborda es su propio texto. «Guardar» salia cortado a la mitad y
+      // «Cancelar» encima. Medir solo contra el contenedor no lo veia.
+      if (e.tagName === 'BUTTON' && !el.className.includes('truncate') && e.scrollWidth > e.clientWidth + 1) {
+        salida.push(`«${nombre}» no le cabe su propio texto (${e.scrollWidth} en ${e.clientWidth}px)`);
+      }
+    });
+    return salida;
+  });
+
+  // Se cancela lo que se abrió: medir no puede cambiar datos.
+  const cancelar = page.getByRole('button', { name: /^cancelar$/i }).first();
+  if (await cancelar.count()) await cancelar.click();
+
+  // Sin esto, el día que el selector deje de encontrar el editor la prueba pasaría sin haber
+  // medido nada, que es exactamente como se colaron estos dos.
+  expect(abiertos, 'no se abrió ningún editor: la prueba no midió nada').not.toEqual([]);
+  expect(fugados, 'controles fuera de su tarjeta con el editor abierto').toEqual([]);
+});
