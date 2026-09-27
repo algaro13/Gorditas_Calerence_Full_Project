@@ -10,7 +10,8 @@ import type { TenantRepository } from '../../../shared/application/ports/TenantR
 import type { IdentityProvider } from '../../../shared/application/ports/IdentityProvider';
 import type { VerificadorDeCorreo } from '../../../shared/http/express/email-verificado';
 import type { ActualizarConfigTenant, SubirLogoTenant } from '../application/use-cases/ConfiguracionTenant';
-import { PALETAS } from '../../../shared/domain/Tenant';
+import { accessBlockReason, PALETAS } from '../../../shared/domain/Tenant';
+import type { Clock } from '../../../shared/application/ports/Clock';
 
 export interface TenantsRouterDeps {
   tenants: TenantRepository;
@@ -30,6 +31,7 @@ export interface TenantsRouterDeps {
    * dia siguiente desde las 18:00 en Mexico, y el reporte de la cena salia en ceros.
    */
   timeZone: string;
+  clock: Clock;
 }
 
 const configSchema = Joi.object({
@@ -101,6 +103,12 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           emailVerificado,
         },
         zonaHoraria: deps.timeZone,
+        // Si el plan no deja operar, y por que. Lo decide el mismo codigo que bloquea las rutas
+        // de negocio: si el SPA se lo inventara, tarde o temprano diria una cosa distinta de la
+        // que hace el backend. Sin esto, el SPA recibia un 403 en cada pantalla, se quedaba con
+        // la lista vacia y no decia nada: el restaurante veia un sistema roto en vez de un
+        // aviso de que su prueba habia terminado.
+        accesoBloqueado: accessBlockReason(tenant, deps.clock.now()),
       });
     }),
   );

@@ -39,7 +39,7 @@ const plans: { id: PlanId; name: string; price: number; period: string; maxUsers
 const Plans: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const { tenant, hasPermission } = useAuth();
+  const { tenant, hasPermission, accesoBloqueado } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasPermission(['Admin']);
 
@@ -71,17 +71,38 @@ const Plans: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-pantalla font-bold text-gray-900 mb-3">Elige tu plan</h1>
-          <p className="text-gray-600 text-titulo">14 días de prueba gratis. Cancela cuando quieras.</p>
+          <h1 className="text-pantalla font-bold text-gray-900 mb-3">
+            {accesoBloqueado ? 'Tu acceso está en pausa' : 'Elige tu plan'}
+          </h1>
+          {/* Quien llega aqui porque su plan vencio necesita saberlo. Antes no habia aviso: el
+              POS devolvia listas vacias y parecia que los datos se habian borrado. */}
+          {accesoBloqueado ? (
+            <div className="mx-auto max-w-2xl rounded-lg border border-orange-200 bg-orange-50 p-sp-3 text-left">
+              <p className="text-cuerpo text-orange-900">
+                {accesoBloqueado === 'TRIAL_EXPIRED'
+                  ? 'Tu periodo de prueba terminó, así que el punto de venta está en pausa.'
+                  : 'Tu suscripción no está activa, así que el punto de venta está en pausa.'}
+              </p>
+              <p className="text-cuerpo text-orange-900 mt-2">
+                <strong>Tus datos están intactos.</strong> Elige un plan abajo y todo vuelve a
+                donde estaba: tus mesas, tus platillos, tus órdenes y tus reportes.
+              </p>
+            </div>
+          ) : (
+            <p className="text-gray-600 text-titulo">14 días de prueba gratis. Cancela cuando quieras.</p>
+          )}
           {tenant && (
             <p className="text-cuerpo text-gray-500 mt-2">
               Plan actual: <span className="font-medium">{tenant.plan}</span> ({tenant.planStatus})
             </p>
           )}
           <div className="mt-4 flex justify-center gap-4 text-cuerpo">
-            <button onClick={() => navigate('/')} className="text-gray-600 hover:text-gray-900 underline">
-              Volver al panel
-            </button>
+            {/* Con el acceso en pausa, «volver al panel» solo rebota aqui: no se ofrece. */}
+            {!accesoBloqueado && (
+              <button onClick={() => navigate('/')} className="text-gray-600 hover:text-gray-900 underline">
+                Volver al panel
+              </button>
+            )}
             {tenant?.planStatus !== 'trial' && isAdmin && (
               <button onClick={handlePortal} disabled={loading !== null} className="text-orange-700 hover:text-orange-900 underline disabled:opacity-50">
                 Gestionar suscripción

@@ -80,6 +80,28 @@ describe('Autenticación con tokens de Zitadel (JWKS local)', () => {
     // calculaba en UTC y desde las 18:00 en Mexico pedia el dia siguiente: el reporte de la cena
     // salia en ceros y el dinero de la caja se archivaba bajo manana.
     expect(res.body.data.zonaHoraria).toBe('America/Mexico_City');
+
+    // Con el plan al dia, nada bloquea.
+    expect(res.body.data.accesoBloqueado).toBeNull();
+  });
+
+  it('con la prueba vencida, /me dice por que esta bloqueado', async () => {
+    // Sin esto el SPA solo recibia un 403 por pantalla y se quedaba callado: listas vacias y
+    // botones que no hacian nada, en vez de «tu prueba termino».
+    await t.container.prisma.tenant.update({ where: { id: tenant.id }, data: { trialEndsAt: new Date('2020-01-01') } });
+    try {
+      const token = await tokenFor(t.keys, { userId: 'u-admin', orgId: tenant.orgId, roles: ['Admin'] });
+      const res = await request(t.app).get('/api/tenants/me').set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.accesoBloqueado).toBe('TRIAL_EXPIRED');
+
+      // Y la ruta de negocio sigue bloqueandose igual: son la misma regla.
+      const mesas = await request(t.app).get('/api/catalogos/mesa').set('Authorization', `Bearer ${token}`);
+      expect(mesas.status).toBe(403);
+      expect(mesas.body.code).toBe('TRIAL_EXPIRED');
+    } finally {
+      await t.container.prisma.tenant.update({ where: { id: tenant.id }, data: { trialEndsAt: null } });
+    }
   });
 
   it('organización sin tenant responde 404 NO_TENANT', async () => {

@@ -93,6 +93,7 @@ export function createApp(c: Container): Express {
       actualizarConfig: new ActualizarConfigTenant(c.tenants, c.storage, invalidateTenant),
       subirLogo: new SubirLogoTenant(c.tenants, c.storage, invalidateTenant),
       timeZone,
+      clock: c.clock,
     }),
   );
 

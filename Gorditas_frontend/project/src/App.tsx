@@ -31,11 +31,14 @@ const Spinner: React.FC = () => (
 );
 
 const AuthenticatedApp: React.FC = () => {
-  const { user, loading, isAuthenticated, tenantMissing, correoPorVerificar } = useAuth();
+  const { user, loading, isAuthenticated, tenantMissing, correoPorVerificar, accesoBloqueado } = useAuth();
 
   if (loading) return <Spinner />;
   if (isAuthenticated && tenantMissing) return <Navigate to="/sin-restaurante" replace />;
   if (correoPorVerificar) return <Navigate to="/verificar-correo" replace />;
+  // Sin plan que lo permita, el POS no puede operar: el backend contesta 403 a cada pantalla.
+  // Antes eso se veia como listas vacias y botones que no hacian nada.
+  if (accesoBloqueado) return <Navigate to="/planes" replace />;
   if (!user) return <Navigate to="/login" replace />;
 
   return (

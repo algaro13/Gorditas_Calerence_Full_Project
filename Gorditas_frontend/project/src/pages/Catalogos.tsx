@@ -733,21 +733,24 @@ const Catalogos: React.FC = () => {
             }
           }
           // Permitir al usuario elegir entre 'Nuevo pedido' (si no existe) o el nombre autogenerado
+          // En columna, y el campo con `min-w-0`: estaban en una fila `flex` y el campo pedia
+          // `w-full`, o sea el ancho entero, asi que el boton quedaba empujado fuera del dialogo
+          // y se veia cortado contra el borde.
           return (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-sp-1">
               <input
                 type="text"
                 value={formData.nombre || ''}
                 disabled={formData.nombre && 
                          formData.nombre.trim().toLowerCase() !== 'nuevo pedido' && 
                          formData.nombre.trim().toLowerCase() !== 'pedidos'}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
+                className="campo min-w-0 flex-1"
                 placeholder="Nombre de la mesa"
               />
               {!mesaEspecialExists && (
                 <button
                   type="button"
-                  className="btn bg-blue-100 text-blue-700 whitespace-nowrap"
+                  className="btn btn-neutro flex-shrink-0"
                   onClick={() => setFormData({ ...formData, nombre: 'Nuevo pedido' })}
                 >
                   Crear Nuevo pedido

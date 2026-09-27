@@ -14,11 +14,16 @@ export interface OnboardingPayload {
   guisos: { nombre: string }[];
 }
 
+/** Por que el plan no deja operar; `null` cuando deja. */
+export type MotivoBloqueo = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE';
+
 export interface TenantMeResponse {
   tenant: TenantInfo;
   user: { id: string; email: string | null; nombre: string | null; role: UserRole | null; roles: UserRole[]; emailVerificado?: boolean };
   /** La zona horaria del negocio, la misma con la que el backend corta el día en los reportes. */
   zonaHoraria?: string;
+  /** Si el plan no deja operar, y por qué. */
+  accesoBloqueado?: MotivoBloqueo | null;
 }
 
 /**
@@ -28,6 +33,7 @@ export interface TenantMeResponse {
 class ApiService {
   private tokenProvider: TokenProvider = () => null;
   private onUnauthorized: (() => void) | null = null;
+  private onPlanBloqueado: ((motivo: MotivoBloqueo) => void) | null = null;
 
   setTokenProvider(provider: TokenProvider) {
     this.tokenProvider = provider;
@@ -35,6 +41,9 @@ class ApiService {
 
   setOnUnauthorized(handler: (() => void) | null) {
     this.onUnauthorized = handler;
+  }
+  setOnPlanBloqueado(handler: ((motivo: MotivoBloqueo) => void) | null) {
+    this.onPlanBloqueado = handler;
   }
 
   private async request<T = unknown>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
@@ -55,6 +64,11 @@ class ApiService {
         body = null;
       }
       if (response.status === 401) this.onUnauthorized?.();
+      // Un plan puede vencer con la sesion abierta. Sin esto, cada pantalla se quedaba con su
+      // lista vacia y el operador veia un sistema roto en vez de saber que hay que pagar.
+      if (response.status === 403 && (body?.code === 'TRIAL_EXPIRED' || body?.code === 'SUBSCRIPTION_INACTIVE')) {
+        this.onPlanBloqueado?.(body.code as MotivoBloqueo);
+      }
       if (!response.ok || !body?.success) {
         return {
           success: false,

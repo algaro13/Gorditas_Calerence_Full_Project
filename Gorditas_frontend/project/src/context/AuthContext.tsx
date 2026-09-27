@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth as useOidc } from 'react-oidc-context';
-import { apiService } from '../services/api';
+import { apiService, type MotivoBloqueo } from '../services/api';
 import { scopesForOrg } from '../config/auth-config';
 import { getTenantSlug } from '../config/tenant-host';
 import { applyPalette, getPalette } from '../config/palettes';
@@ -20,6 +20,8 @@ interface AuthContextType {
   correoPendiente: string | null;
   /** La zona horaria del negocio; la usan las pantallas que necesitan saber qué día es hoy. */
   zonaHoraria: string | null;
+  /** Por qué el plan no deja operar; `null` cuando deja. Lo decide el backend. */
+  accesoBloqueado: MotivoBloqueo | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -60,6 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [correoVerificado, setCorreoVerificado] = useState<boolean | null>(null);
   const [correoPendiente, setCorreoPendiente] = useState<string | null>(null);
   const [zonaHoraria, setZonaHoraria] = useState<string | null>(null);
+  const [accesoBloqueado, setAccesoBloqueado] = useState<MotivoBloqueo | null>(null);
   const oidcRef = useRef(oidc);
   oidcRef.current = oidc;
 
@@ -71,7 +74,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiService.setOnUnauthorized(() => {
       void oidcRef.current.removeUser();
     });
-    return () => apiService.setOnUnauthorized(null);
+    // Un plan puede vencer con la sesion abierta: el 403 de cualquier llamada lo dice, y a
+    // partir de ahi la aplicacion deja de fingir que todo va bien.
+    apiService.setOnPlanBloqueado((motivo) => setAccesoBloqueado(motivo));
+    return () => {
+      apiService.setOnUnauthorized(null);
+      apiService.setOnPlanBloqueado(null);
+    };
   }, []);
 
   const user = useMemo<AuthUser | null>(() => {
@@ -108,6 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCorreoVerificado(res.data.user?.emailVerificado ?? true);
       setCorreoPendiente(res.data.user?.email ?? null);
       setZonaHoraria(res.data.zonaHoraria ?? null);
+      setAccesoBloqueado(res.data.accesoBloqueado ?? null);
       setError(null);
       fijarEstado('ready');
       applyPalette(getPalette(res.data.tenant.config?.paleta || 'orange'));
@@ -201,6 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     correoPorVerificar: authenticated && tenantState === 'ready' && correoVerificado === false,
     correoPendiente,
     zonaHoraria,
+    accesoBloqueado,
     loading,
     error: oidc.error?.message ?? error,
     isAuthenticated: authenticated,
