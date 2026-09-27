@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Edit3, Package, Truck, CreditCard, BarChart3, BookOpen, ChefHat, PlusCircle, Settings, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { MENU, type EntradaMenu } from './menu';
+import { MENU, SERVICIO, type EntradaMenu } from './menu';
 
 /**
  * La navegación, abajo, donde llega el pulgar.
@@ -53,11 +53,16 @@ export const NavegacionInferior: React.FC<Props> = ({ onAbrirMas }) => {
   }, []);
   const disponibles = MENU.filter((i: EntradaMenu) => hasPermission(i.roles as any));
 
-  // Se aprovecha que el menú ya filtra por rol: un mesero tiene cuatro destinos y los ve todos.
-  // El «Más» solo aparece cuando de verdad sobra algo, que en la práctica es solo para el
-  // administrador — y es quien menos corre.
-  const hayMas = disponibles.length > VISIBLES;
-  const enBarra = hayMas ? disponibles.slice(0, VISIBLES) : disponibles;
+  // La barra lleva las tareas del servicio que tenga el rol, en el orden en que ocurren. Cada
+  // rol tiene cuatro o menos, asi que nunca hay que recortar: un mesero ve las suyas cuatro y un
+  // cocinero la unica que tiene.
+  const enBarra = SERVICIO.map((id) => disponibles.find((i) => i.id === id))
+    .filter((i): i is EntradaMenu => Boolean(i))
+    .slice(0, VISIBLES);
+
+  // «Más» solo cuando el rol tiene algo fuera de la barra. Para un mesero no sobra nada, asi que
+  // no se le ofrece; para el administrador estan el panel, los catalogos y los reportes.
+  const hayMas = disponibles.length > enBarra.length;
 
   return (
     <nav

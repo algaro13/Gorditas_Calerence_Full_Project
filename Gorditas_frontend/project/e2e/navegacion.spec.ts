@@ -35,6 +35,32 @@ test('la barra de abajo lleva nombres escritos y navega', async ({ page }) => {
   await expect(barra.locator(`a[href="${ruta}"]`)).toHaveClass(/orange/);
 });
 
+/**
+ * Que la barra lleve lo que se pulsa durante el turno.
+ *
+ * Llevaba los primeros cuatro destinos del menú, y el primero era el Panel Principal —que se
+ * mira una o dos veces por turno— mientras Cobrar, que cierra cada mesa, quedaba detrás de
+ * «Más». Un sitio al alcance del pulgar vale lo que se pulsa.
+ */
+test('la barra lleva las tareas del servicio, no el panel', async ({ page }) => {
+  await page.goto('/');
+  const barra = page.locator(BARRA);
+  await expect(barra).toBeVisible({ timeout: 15_000 });
+
+  const rutas = await barra.locator('a').evaluateAll((as) =>
+    as.map((a) => a.getAttribute('href'))
+  );
+
+  expect(rutas, 'cobrar no está en la barra').toContain('/cobrar');
+  expect(rutas, 'el panel sigue ocupando un sitio del pulgar').not.toContain('/');
+
+  // Pero sigue alcanzable: «Más» abre el menú completo.
+  await barra.getByRole('button').click();
+  await expect(page.locator('aside').last().getByText('Panel Principal')).toBeVisible({
+    timeout: 10_000,
+  });
+});
+
 test('la barra no tapa el último control de la pantalla', async ({ page }) => {
   await page.goto('/catalogos');
   await page.waitForLoadState('networkidle');

@@ -12,6 +12,19 @@ import type { MenuItem } from '../../types';
  */
 export type EntradaMenu = MenuItem;
 
+/**
+ * Las tareas del servicio, en el orden en que ocurren: tomar la orden, editarla, prepararla o
+ * despacharla, y cobrar. Son las que lleva la barra de abajo.
+ *
+ * Antes la barra llevaba los primeros cuatro del menú, y el primero era el Panel Principal —que
+ * se mira una o dos veces por turno— mientras Cobrar, que cierra cada mesa, quedaba detrás de
+ * «Más». Un sitio al alcance del pulgar vale lo que se pulsa durante el turno.
+ *
+ * Están «surtir» y «despachar» las dos porque son el mismo momento del servicio para roles
+ * distintos: el encargado surte, el mesero despacha. Con una sola, el mesero perdería la suya.
+ */
+export const SERVICIO: string[] = ['nueva-orden', 'editar-orden', 'surtir-orden', 'despachar', 'cobrar'];
+
 export const MENU: MenuItem[] = [
   { id: 'dashboard', label: 'Panel Principal', icon: 'Home', path: '/', roles: ['Admin', 'Encargado'] },
   { id: 'nueva-orden', label: 'Nueva Orden', icon: 'PlusCircle', path: '/nueva-orden', roles: ['Admin', 'Encargado', 'Mesero'] },
