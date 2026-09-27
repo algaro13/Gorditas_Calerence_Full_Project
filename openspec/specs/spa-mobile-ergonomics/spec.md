@@ -177,7 +177,9 @@ Status indicators are not actions and keep their own colours.
 ### Requirement: Navigation sits where the thumb reaches
 On screens narrower than the desktop breakpoint, the SPA SHALL place its primary navigation at the bottom of the viewport, with each destination labelled in words rather than by icon alone.
 
-It SHALL show the destinations the current role actually has, up to four, and offer the remainder behind a single further control only when the role has more. Most roles in this system have four or fewer, so for them nothing is hidden.
+The bar SHALL carry the tasks of service —taking an order, editing it, preparing or delivering it, and charging for it— in the order they happen, showing the ones the signed-in role has. Everything else, including the dashboard, SHALL sit behind a single further control, offered only when the role has something outside the bar. A place at the bottom of the screen is worth what it is pressed during a shift: the dashboard is read once or twice, while charging closes every table.
+
+Where two destinations serve the same moment of service for different roles, the bar SHALL include both, so that each role finds its own rather than losing it behind the further control.
 
 Navigation SHALL NOT consume horizontal space on a phone. A permanent side rail took 19 percent of the width from the content, which is part of why table columns did not fit.
 
@@ -189,9 +191,13 @@ A floating message SHALL NOT be covered by anything. Clearing the bar is how tha
 - **WHEN** an operator moves between screens on a phone
 - **THEN** the destinations are within thumb reach at the bottom, each named in words
 
-#### Scenario: A role with few destinations
-- **WHEN** the signed-in role has four destinations or fewer
-- **THEN** all of them are visible and none is hidden behind a further control
+#### Scenario: Charging a table
+- **WHEN** a waiter finishes a table on a phone
+- **THEN** charging is one tap away in the bar, not behind the further control
+
+#### Scenario: A role with only service tasks
+- **WHEN** the signed-in role has nothing beyond the tasks of service
+- **THEN** all of them are visible and no further control is offered
 
 #### Scenario: A message while the bar is present
 - **WHEN** an action produces a message on a phone
