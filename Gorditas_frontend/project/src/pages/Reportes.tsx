@@ -159,12 +159,24 @@ const Reportes: React.FC = () => {
    * entraba en el respaldo, se borraba al limpiar el navegador, y —lo peor— dos restaurantes
    * abiertos en el mismo navegador compartian la misma llave.
    */
-  const cargarMontoCaja = async () => {
-    const res = await apiService.getCaja();
-    if (!res.success || !res.data) return;
+  /**
+   * Trae la caja, la mezcla con lo que ya hubiera y devuelve lo traido.
+   *
+   * Devuelve, y no solo guarda, porque quien arma el resumen necesita saber que dias tienen caja
+   * en el mismo momento en que lo arma: leer el estado justo despues de fijarlo daria el valor
+   * anterior, y un dia de solo caja no apareceria hasta el siguiente refresco.
+   */
+  const traerCaja = async (inicio?: string, fin?: string) => {
+    const res = await apiService.getCaja(inicio, fin);
+    if (!res.success || !res.data) return {};
     const montos: { [fecha: string]: number } = {};
     for (const fila of res.data.caja) montos[fila.fecha] = fila.monto;
-    setMontoCajaPorFecha(montos);
+    setMontoCajaPorFecha((previo) => ({ ...previo, ...montos }));
+    return montos;
+  };
+
+  const cargarMontoCaja = async () => {
+    const montos = await traerCaja();
     await subirCajaDelNavegador(montos);
   };
 
@@ -282,7 +294,21 @@ const Reportes: React.FC = () => {
     loadReports();
   }, [activeTab, fechaInicio, fechaFin]);
 
+  /**
+   * Cada carga lleva su numero, y solo la ultima manda.
+   *
+   * Cambiar las dos fechas del filtro seguidas dispara dos cargas: la primera con el rango a
+   * medio cambiar y la segunda con el bueno. Si la primera contesta despues, sus datos pisan a
+   * los de la segunda y la pantalla acaba mostrando numeros de un periodo que no es el que dicen
+   * los campos. Paso de verdad al probar: los dos campos decian el mismo dia de 1999 y arriba
+   * habia $795 de ventas.
+   */
+  const turnoDeCarga = useRef(0);
+
   const loadReports = async () => {
+    const miTurno = ++turnoDeCarga.current;
+    const vigente = () => miTurno === turnoDeCarga.current;
+
     // Cerrar sección de "Ver órdenes" al recargar manualmente
     setDiaSeleccionado(null);
     setOrdenExpandida(null);
@@ -308,37 +334,60 @@ const Reportes: React.FC = () => {
             setPlatillos(platillos);
             setExtras(extras);
 
-            if (ventasPorDia.length > 0) {
-              // Obtener los gastos del mismo período
-              const gastosRes = await apiService.getReporteGastos(fechaInicio, fechaFin);
-              const gastosPorDia = gastosRes.success 
-                ? (gastosRes.data.gastosPorDia || []).reduce((acc: {[key: string]: number}, gasto: any) => {
+            // Los gastos se piden siempre, haya ventas o no. Antes esta llamada vivia dentro
+            // de un `if (ventasPorDia.length > 0)`, asi que un mes sin ventas y con gastos se
+            // veia completamente vacio.
+            const gastosRes = await apiService.getReporteGastos(fechaInicio, fechaFin);
+            const gastosPorDia: { [fecha: string]: number } = gastosRes.success
+              ? (gastosRes.data.gastosPorDia || []).reduce(
+                  (acc: { [key: string]: number }, gasto: any) => {
                     acc[gasto._id] = gasto.gastos || 0;
                     return acc;
-                  }, {})
-                : {};
+                  },
+                  {},
+                )
+              : {};
 
-              // Procesar cada venta
-              for (const venta of ventasPorDia) {
-                const fecha = venta._id;
-                const ventasTotales = venta.ventas || 0;
-                const gastosTotales = gastosPorDia[fecha] || 0;
-                
-                ventasFormateadas.push({
-                  fecha,
-                  ventasTotales,
-                  gastosTotales,
-                  utilidad: ventasTotales - gastosTotales,
-                  ordenes: venta.ordenes || 0
-                });
-              }
+            const cajaPorDia = await traerCaja(fechaInicio, fechaFin);
 
-              // Ordenar por fecha descendente
-              ventasFormateadas.sort((a, b) => 
-                new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-              );
+            const ventasPorFecha: { [fecha: string]: { ventas: number; ordenes: number } } = {};
+            for (const venta of ventasPorDia) {
+              ventasPorFecha[venta._id] = { ventas: venta.ventas || 0, ordenes: venta.ordenes || 0 };
             }
 
+            // Un dia con movimiento es un dia del resumen: ventas, caja o gastos.
+            //
+            // Antes se recorrian solo los dias con ventas, y como los totales de arriba se
+            // calculan sobre esta misma lista, lo que ocurriera en un dia sin ventas no se
+            // sumaba en ninguna parte. Con los gastos eso no era un renglon que faltaba: la
+            // utilidad salia inflada, porque se ignoraba dinero que si se gasto.
+            // Un cero no es movimiento. Un dia puede tener fila de caja valiendo cero —porque
+            // alguien la corrigio a cero, o porque la dejo una prueba— y ese dia no ocurrio
+            // nada: aparecia como una tarjeta entera de ceros.
+            const conValor = (m: { [f: string]: number }) => Object.keys(m).filter((f) => m[f] !== 0);
+            const dias = new Set([
+              ...Object.keys(ventasPorFecha),
+              ...conValor(gastosPorDia),
+              ...conValor(cajaPorDia),
+            ]);
+
+            for (const fecha of dias) {
+              const delDia = ventasPorFecha[fecha] ?? { ventas: 0, ordenes: 0 };
+              const gastosTotales = gastosPorDia[fecha] || 0;
+              ventasFormateadas.push({
+                fecha,
+                ventasTotales: delDia.ventas,
+                gastosTotales,
+                utilidad: delDia.ventas - gastosTotales,
+                ordenes: delDia.ordenes,
+              });
+            }
+
+            // Las fechas son `YYYY-MM-DD`: comparandolas como texto se ordenan solas, sin
+            // construir un `Date` por comparacion.
+            ventasFormateadas.sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
+
+            if (!vigente()) return;
             setReporteVentas(ventasFormateadas);
           }
           break;
@@ -355,6 +404,7 @@ const Reportes: React.FC = () => {
               valorTotal: producto.cantidad * producto.costo,
               stockMinimo: producto.cantidad <= 5
             }));
+            if (!vigente()) return;
             setReporteInventario(inventarioFormateado);
           }
           break;
@@ -375,6 +425,7 @@ const Reportes: React.FC = () => {
                 totalVendido: p.totalVentas
               }))
             ];
+            if (!vigente()) return;
             setProductosVendidos(todosProductos);
           }
           break;
@@ -382,6 +433,7 @@ const Reportes: React.FC = () => {
         case 'gastos':
           const gastosRes = await apiService.getReporteGastos(fechaInicio, fechaFin);
           if (gastosRes.success) {
+            if (!vigente()) return;
             setReporteGastos(gastosRes.data.gastos);
           }
           break;
@@ -390,7 +442,9 @@ const Reportes: React.FC = () => {
       setError('Error cargando reportes');
       console.error('Error en loadReports:', error);
     } finally {
-      setLoading(false);
+      // Solo la ultima carga apaga el indicador: si lo apagara una vieja, la pantalla diria que
+      // termino mientras la buena sigue en camino.
+      if (vigente()) setLoading(false);
     }
   };
 
@@ -594,25 +648,21 @@ const Reportes: React.FC = () => {
     return reporteInventario.reduce((total, item) => total + item.valorTotal, 0);
   };
 
-  // Función auxiliar para obtener fecha en formato YYYY-MM-DD usando UTC
-  // Esta función debe replicar EXACTAMENTE la lógica del backend MongoDB:
-  // $dateToString: { format: '%Y-%m-%d', date: '$fechaHora' } (sin timezone = UTC)
+  /**
+   * El dia al que pertenece una orden, para emparejarla con el dia que se abrio.
+   *
+   * Llevaba `America/Mexico_City` escrita a mano —correcta para este restaurante y equivocada
+   * para cualquier otro— y tres comentarios que decian que replicaba un `$dateToString` de
+   * MongoDB «sin timezone = UTC», que es justo lo contrario de lo que hacia el codigo. Usa la
+   * zona del negocio, como el resto de la pantalla.
+   */
   const obtenerFechaDelDia = (fecha: string | Date): string => {
     const fechaObj = new Date(fecha);
-    // Verificar que la fecha sea válida
     if (isNaN(fechaObj.getTime())) {
       console.warn(`Fecha inválida recibida: ${fecha}`);
       return '';
     }
-    // Obtener la fecha en la zona horaria de Zacatecas (America/Mexico_City)
-    // Esto agrupa los pedidos por día local, no UTC
-    const fechaLocalStr = fechaObj.toLocaleString('en-CA', {
-      timeZone: 'America/Mexico_City',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    // El formato en-CA da YYYY-MM-DD
+    const fechaLocalStr = diaEn(zonaHoraria, fechaObj);
     return fechaLocalStr;
   };
 
@@ -1233,9 +1283,15 @@ const Reportes: React.FC = () => {
                           <h4 className="text-cuerpo font-semibold text-gray-900">
                             {formatearFecha(reporte.fecha)}
                           </h4>
-                          <dl className="grid grid-cols-2 gap-sp-2">
+                          {/* Los gastos del dia no se mostraban en ninguna parte: solo entraban
+                              en el total del periodo. Un dia de solo gastos habria sido una
+                              tarjeta de ceros. */}
+                          <dl className="grid grid-cols-3 gap-sp-1">
                             <Dato etiqueta="Ventas">
                               <span className="text-green-600">${reporte.ventasTotales.toFixed(2)}</span>
+                            </Dato>
+                            <Dato etiqueta="Gastos">
+                              <span className="text-red-600">${reporte.gastosTotales.toFixed(2)}</span>
                             </Dato>
                             <Dato etiqueta="Órdenes">{reporte.ordenes}</Dato>
                           </dl>
@@ -1246,17 +1302,20 @@ const Reportes: React.FC = () => {
                             <p className="text-meta text-gray-500">Caja</p>
                             {campoCaja(reporte)}
                           </div>
-                          <button
-                            className="btn btn-neutro w-full"
-                            onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
-                          >
-                            Ver órdenes
-                          </button>
+                          {/* Un dia de solo caja o solo gastos no tiene ordenes que ver. */}
+                          {reporte.ordenes > 0 && (
+                            <button
+                              className="btn btn-neutro w-full"
+                              onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
+                            >
+                              Ver órdenes
+                            </button>
+                          )}
                         </Tarjeta>
                       ))}
                       {reporteVentas.length === 0 && (
                         <p className="py-8 text-center text-gray-500 text-cuerpo">
-                          No hay ventas en este período
+                          No hay movimiento en este período
                         </p>
                       )}
                     </div>
@@ -1267,6 +1326,7 @@ const Reportes: React.FC = () => {
                           <tr className="text-meta">
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Fecha</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Ventas</th>
+                            <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Gastos</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Caja</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Órdenes</th>
                             <th className="text-left py-2 sm:py-3 px-3 sm:px-4 font-medium text-gray-900">Acciones</th>
@@ -1281,17 +1341,22 @@ const Reportes: React.FC = () => {
                               <td className="py-2 sm:py-3 px-3 sm:px-4 text-green-600 font-medium whitespace-nowrap">
                                 ${reporte.ventasTotales.toFixed(2)}
                               </td>
+                              <td className="py-2 sm:py-3 px-3 sm:px-4 text-red-600 font-medium whitespace-nowrap">
+                                ${reporte.gastosTotales.toFixed(2)}
+                              </td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">
                                 {campoCaja(reporte)}
                               </td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4 whitespace-nowrap">{reporte.ordenes}</td>
                               <td className="py-2 sm:py-3 px-3 sm:px-4">
-                                <button
-                                  className="btn btn-neutro"
-                                  onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
-                                >
-                                  Ver órdenes
-                                </button>
+                                {reporte.ordenes > 0 && (
+                                  <button
+                                    className="btn btn-neutro"
+                                    onClick={() => mostrarOrdenesDeDia(reporte.fecha)}
+                                  >
+                                    Ver órdenes
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           ))}

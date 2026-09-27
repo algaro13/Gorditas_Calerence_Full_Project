@@ -53,6 +53,16 @@ tocarlos.
   desglose por día, y el de caja también.
 - El significado de la utilidad.
 
+## Una carrera que salió al probarlo
+
+Al cambiar las dos fechas del filtro seguidas, la pantalla puede acabar mostrando números de un
+período distinto al que dicen los campos. Cada cambio dispara una carga; la primera pide el
+rango a medio cambiar y la segunda el rango bueno, y si la primera contesta después, sus datos
+pisan a los de la segunda. Los campos dicen una cosa y los totales cuentan otra.
+
+Se arregla numerando las cargas: una respuesta que llega cuando ya se pidió otra cosa se
+descarta.
+
 ## De paso
 
 `obtenerFechaDelDia`, que decide qué órdenes pertenecen al día que se abre, lleva la zona

@@ -321,3 +321,75 @@ test('lo que había anotado en el navegador se sube una vez', async ({ page }) =
   // Se deja como estaba.
   expect((await caja('PUT', dia, 0)).estado).toBe(200);
 });
+
+/**
+ * Que un día con movimiento aparezca, aunque no haya vendido nada.
+ *
+ * El resumen se armaba recorriendo solo los días con ventas, y como los cuatro totales de arriba
+ * se calculan sobre esa lista, lo que ocurriera un día sin ventas no se sumaba en ninguna parte.
+ * Con los gastos eso no era un renglón que faltaba: la utilidad salía inflada, porque se
+ * ignoraba dinero que sí se gastó.
+ */
+test('un día sin ventas pero con gastos o caja aparece y cuenta', async ({ page }) => {
+  await page.goto('/reportes');
+  await page.waitForLoadState('networkidle');
+
+  // Un día de 1999: seguro que no tiene ventas.
+  const dia = '1999-06-15';
+  const gasto = 2000;
+  const caja = 500;
+
+  const api = (metodo: string, ruta: string, cuerpo?: unknown) =>
+    page.evaluate(
+      async ([m, r, c]) => {
+        const llave = Object.keys(localStorage).find((k) => k.startsWith('oidc.user'));
+        const token = llave ? JSON.parse(localStorage.getItem(llave)!).access_token : null;
+        const res = await fetch(`http://localhost:5000/api${r}`, {
+          method: m as string,
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: c === null ? undefined : JSON.stringify(c),
+        });
+        return { estado: res.status, cuerpo: await res.json() };
+      },
+      [metodo, ruta, cuerpo ?? null] as const
+    );
+
+  // Hace falta un tipo de gasto cualquiera de los que ya existen.
+  const tipos = await api('GET', '/catalogos/tipoGasto?limit=1', null);
+  const idTipoGasto = tipos.cuerpo.data?.items?.[0]?._id;
+  expect(idTipoGasto, 'no hay tipos de gasto con los que probar').toBeTruthy();
+
+  const creado = await api('POST', '/reportes/gastos', {
+    nombre: 'Renta de un día cerrado',
+    idTipoGasto,
+    gastoTotal: gasto,
+    fecha: `${dia}T12:00:00.000Z`,
+  });
+  expect(creado.estado).toBe(201);
+  const idGasto = creado.cuerpo.data._id;
+
+  try {
+    expect((await api('PUT', `/reportes/caja/${dia}`, { monto: caja })).estado).toBe(200);
+
+    // Se pide justo ese día, que no tiene ni una venta.
+    const fechas = page.locator('input[type="date"]');
+    await fechas.nth(0).fill(dia);
+    await fechas.nth(1).fill(dia);
+
+    // Antes esto mostraba «No hay ventas en este período» y los totales en cero.
+    // `.first()`: la tarjeta y la fila de la tabla existen las dos en el documento, aunque a
+    // este ancho solo se dibuje la tarjeta.
+    await expect(page.getByText('15/06/1999').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('$2000.00').first()).toBeVisible();
+    await expect(page.getByText('$500.00').first()).toBeVisible();
+
+    // Y la utilidad del período los tiene en cuenta: 0 de ventas + 500 de caja - 2000 de gastos.
+    await expect(page.getByText('$-1500.00').first()).toBeVisible();
+
+    // Un día sin órdenes no ofrece abrirlas.
+    await expect(page.getByRole('button', { name: /ver órdenes/i })).toHaveCount(0);
+  } finally {
+    await api('DELETE', `/reportes/gastos/${idGasto}`, null);
+    await api('PUT', `/reportes/caja/${dia}`, { monto: 0 });
+  }
+});
