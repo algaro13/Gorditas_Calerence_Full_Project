@@ -34,32 +34,35 @@ carta— y la diferencia se anota en una línea aparte, con importe negativo:
 | 1 × Refresco 600 ml | $15.00 |
 | Promoción: martes 3x2 en gorditas | −$25.00 |
 | Combo comida | −$5.00 |
-| **Total** | **$60.00** |
+| **Total** | **$70.00** |
 
 Las dos primeras líneas son exactamente las de hoy. Las dos siguientes son filas de una tabla
 nueva. `recalcularTotal` pasa de sumar tres cosas a sumar cuatro.
 
 Así todo lo que hay debajo sigue funcionando sin enterarse: la cocina ve qué preparar, el stock
-se descuenta, los reportes por producto cuadran, y cada descuento queda con su nombre, su
-importe y quién lo autorizó.
+se descuenta, los reportes por producto cuadran, y cada descuento queda con el nombre de la
+regla que lo concedió y su importe.
 
 La alternativa —una columna `descuento` en la orden— se descarta: es más simple y pierde el
-porqué. No distingue un combo de un descuento a mano y no permite reportar por promoción.
+porqué. No distingue un combo de una promoción y no permite reportar por cuál se aplicó.
 
 ## Las decisiones que hay que fijar por escrito
 
-**Un descuento de promoción es derivado, no escrito.** Si se aplicara al añadir la línea, quitar
-una gordita dejaría el 3x2 mal calculado. Cada vez que cambia la orden, el servidor vuelve a
-decidir qué promociones aplican y reescribe sus líneas de descuento. El descuento **manual** es
-lo contrario —un dato que alguien escribió— así que se distingue por su origen y sobrevive al
-recálculo.
+**Todo descuento sale de una regla; no hay descuentos a mano.** El dinero sale del cajón de una
+sola forma: una regla que el restaurante escribió antes. Un importe que alguien teclea en el
+mostrador no se distingue de un faltante al cuadrar el día, y custodiarlo —rol, motivo escrito,
+nombre de quien lo autorizó y su propia cifra en el reporte— cuesta más que la cortesía que
+compra. Si mañana se quiere hacer una, se hace como promoción: se define una vez y se aplica por
+el mismo camino que las demás.
+
+**Los descuentos son derivados.** Si se aplicaran al añadir la línea, quitar una gordita dejaría
+el 3x2 mal calculado. Cada vez que cambia la orden, el servidor vuelve a decidir qué promociones
+aplican y reescribe sus líneas de descuento. Esto solo es posible porque ninguno se escribe a
+mano: todos se pueden volver a calcular desde lo que la orden tiene.
 
 **Dos promociones aplicables no se acumulan.** Gana la que más favorece al cliente, salvo que
 una esté marcada como acumulable. Sin esta regla, el mismo ticket da importes distintos según el
 orden en que se evalúen.
-
-**Descontar a mano es sacar dinero del cajón.** Exige rol de Admin o Encargado, motivo escrito,
-y aparece en el reporte del día. Es el único control que de verdad importa aquí.
 
 **El horario de una promoción es el del negocio.** Una «hora feliz de 4 a 6» evaluada en UTC
 empieza a las diez de la mañana — es el mismo fallo que el día del reporte calculado en UTC, ya
@@ -84,16 +87,31 @@ se cuenta como era el día que se vendió.
 
 Hoy el reporte suma `o.total` y lo llama «Ventas». Con descuentos ese total pasa a ser **neto**,
 y el número cambia de significado sin avisar a nadie. El reporte necesita las tres cifras
-—bruto, descuento y neto— o el restaurante no puede ver cuánto regaló.
+—bruto, descuento y neto— o el restaurante no puede ver cuánto regaló. Y desglosado por
+promoción, para distinguir la que trae gente de la que solo regala lo que se habría vendido
+igual.
+
+## El ticket
+
+Es donde el descuento se vuelve comprobable. Un ticket que solo imprime el total ya descontado no
+lo puede revisar el cliente ni auditar el dueño: no hay forma de distinguir una promoción que se
+aplicó de un precio mal cobrado.
+
+Así que imprime los artículos a precio de carta, un subtotal, cada descuento con el nombre de lo
+que lo concedió, el total y lo que se ahorró. De paso se arreglan dos cosas del ticket de hoy:
+dice `RESTAURANTE` en duro aunque el sistema conoce el nombre del negocio, e identifica la orden
+con los últimos seis caracteres de su UUID en vez del folio que usan los reportes — hoy un ticket
+en la mano no se puede cruzar con el corte del día.
 
 ## En qué orden
 
 Cada fase se sostiene sola y se puede desplegar sola:
 
 1. **Congelar la orden pagada.** Arregla algo que ya está mal y es requisito de todo lo demás.
-2. **La línea de descuento y el descuento manual**, con rol, motivo y su cifra en el reporte.
-   Con solo esto ya hay combos —a mano— y un control de caja que hoy no existe.
-3. **El catálogo de promociones** con las tres formas cerradas, evaluadas en el servidor.
+2. **La línea de descuento**, con su sitio en el ticket y su cifra en el reporte. Es el andamio
+   sobre el que se apoya todo lo demás.
+3. **El catálogo de promociones** con las tres formas cerradas, evaluadas en el servidor. Aquí
+   aparecen los combos y las promociones de verdad.
 4. **Las ventanas de día y hora**, encima de las tres formas.
 
 ## Qué no cambia
