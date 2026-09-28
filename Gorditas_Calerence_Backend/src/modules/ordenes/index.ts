@@ -37,8 +37,8 @@ export function createOrdenesModule(deps: OrdenesModuleDeps): { router: Router; 
     cambiarEstatus: new CambiarEstatus(deps.uow, ordenes, deps.clock),
     verificar: new VerificarOrden(deps.uow, ordenes),
     actualizarFechaHora: new ActualizarFechaHora(deps.uow, ordenes, deps.clock),
-    marcarLinea: new MarcarLinea(deps.uow, lineas),
-    actualizarNota: new ActualizarNotaPlatillo(deps.uow, lineas),
+    marcarLinea: new MarcarLinea(deps.uow, lineas, ordenes),
+    actualizarNota: new ActualizarNotaPlatillo(deps.uow, lineas, ordenes),
     eliminarLinea: new EliminarLinea(deps.uow, ordenes, lineas),
     eliminarOrden: new EliminarOrden(deps.uow, ordenes),
   };

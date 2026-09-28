@@ -26,6 +26,18 @@ enum OrdenEstatus {
   Cancelado
 }
 
+/// Las tres formas que puede tomar una promoción. Conjunto cerrado a propósito: un motor de
+/// reglas genérico es donde se atascan estos proyectos. Una forma nueva se añade aquí, a mano,
+/// con sus parámetros y sus pruebas.
+enum FormaPromocion {
+  /// Un conjunto de artículos a un precio fijo.
+  combo
+  /// Lleva N, paga M, sobre los artículos que la promoción señale.
+  nxm
+  /// Un porcentaje sobre una categoría o sobre la orden entera.
+  porcentaje
+}
+
 enum Plan {
   trial
   basico
@@ -94,6 +106,9 @@ model Tenant {
   tiposGasto            TipoGasto[]
   gastos                Gasto[]
   cajaDiaria            CajaDiaria[]
+  promociones           Promocion[]
+  promocionItems        PromocionItem[]
+  ordenDescuentos       OrdenDescuento[]
   ordenes               Orden[]
   subordenes            Suborden[]
   detallesPlatillo      OrdenDetallePlatillo[]
@@ -214,6 +229,7 @@ model Producto {
   @@index([tenantId, activo])
   @@index([tenantId, cantidad])
   @@map("productos")
+  promocionItems PromocionItem[]
 }
 
 model TipoPlatillo {
@@ -232,6 +248,7 @@ model TipoPlatillo {
   @@index([tenantId, nombre])
   @@index([tenantId, activo])
   @@map("tipos_platillo")
+  promociones Promocion[]
 }
 
 model Platillo {
@@ -256,6 +273,7 @@ model Platillo {
   @@index([tenantId, idTipoPlatillo])
   @@index([tenantId, activo])
   @@map("platillos")
+  promocionItems PromocionItem[]
 }
 
 model TipoExtra {
@@ -387,6 +405,102 @@ model CajaDiaria {
   @@map("caja_diaria")
 }
 
+/// Una regla que le baja el precio a una orden.
+///
+/// La vigencia se evalúa en la zona horaria del negocio, en el servidor: una hora feliz de 16 a
+/// 18 interpretada en UTC empieza a las diez de la mañana en México.
+model Promocion {
+  id         Int            @id @default(autoincrement())
+  tenantId   String         @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  nombre     String
+  forma      FormaPromocion
+  activo     Boolean        @default(true)
+  /// Si no, solo se concede la que más favorece al cliente.
+  combinable Boolean        @default(false)
+
+  /// combo: el precio del conjunto.
+  precio     Decimal? @db.Decimal(12, 2)
+  /// nxm: se lleva `lleva` y paga `paga`.
+  lleva      Int?
+  paga       Int?
+  /// porcentaje: cuánto se descuenta.
+  porcentaje Decimal? @db.Decimal(5, 2)
+
+  /// Alcance opcional por categoría de platillo; sin él y sin items, aplica a toda la orden.
+  idTipoPlatillo Int? @map("id_tipo_platillo")
+
+  /// Vigencia. Null en todos = siempre.
+  desde      DateTime? @db.Date
+  hasta      DateTime? @db.Date
+  /// 0 = domingo. Vacío = todos los días.
+  diasSemana Int[]     @map("dias_semana")
+  /// `HH:MM` en la zona del negocio.
+  horaInicio String?   @map("hora_inicio")
+  horaFin    String?   @map("hora_fin")
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tipoPlatillo  TipoPlatillo?    @relation(fields: [tenantId, idTipoPlatillo], references: [tenantId, id])
+  items         PromocionItem[]
+  descuentos    OrdenDescuento[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, activo])
+  @@map("promociones")
+}
+
+/// Qué artículos entran en una promoción: los del combo, o aquellos sobre los que cuenta el NxM.
+model PromocionItem {
+  id          Int    @id @default(autoincrement())
+  tenantId    String @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idPromocion Int    @map("id_promocion")
+  idPlatillo  Int?   @map("id_platillo")
+  idProducto  Int?   @map("id_producto")
+  cantidad    Int    @default(1)
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  promocion Promocion @relation(fields: [tenantId, idPromocion], references: [tenantId, id], onDelete: Cascade)
+  platillo  Platillo? @relation(fields: [tenantId, idPlatillo], references: [tenantId, id])
+  producto  Producto? @relation(fields: [tenantId, idProducto], references: [tenantId, id])
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idPromocion])
+  @@map("promocion_items")
+}
+
+/// Lo que una promoción o un combo le quita a una orden.
+///
+/// Es una línea más, con importe negativo, y por eso el total sigue siendo la suma de las
+/// líneas. Guardar solo una columna `descuento` en la orden habría perdido el porqué: no
+/// distinguiría un combo de una promoción ni permitiría reportar por cuál se aplicó.
+///
+/// `nombre` es copia de la promoción en el momento de venderse, igual que las líneas copian
+/// `nombrePlatillo`: lo que se vendió se cuenta como era el día que se vendió, aunque después
+/// la promoción se renombre o se retire.
+model OrdenDescuento {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
+  idOrden     String   @map("id_orden") @db.Uuid
+  idPromocion Int      @map("id_promocion")
+  nombre      String
+  importe     Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orden     Orden      @relation(fields: [tenantId, idOrden], references: [tenantId, id], onDelete: Cascade)
+  /// Una promoción que ya se aplicó no se borra: se desactiva. Así ninguna orden pasada pierde
+  /// de dónde salió su descuento.
+  promocion Promocion  @relation(fields: [tenantId, idPromocion], references: [tenantId, id], onDelete: Restrict)
+
+  @@unique([tenantId, id])
+  @@index([tenantId, idOrden])
+  @@index([tenantId, idPromocion])
+  @@map("orden_descuentos")
+}
+
 // ---------- Órdenes ----------
 
 model Orden {
@@ -409,8 +523,9 @@ model Orden {
   tenant     Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   tipoOrden  TipoOrden              @relation(fields: [tenantId, idTipoOrden], references: [tenantId, id])
   mesa       Mesa?                  @relation(fields: [tenantId, idMesa], references: [tenantId, id])
-  subordenes Suborden[]
-  productos  OrdenDetalleProducto[]
+  subordenes  Suborden[]
+  productos   OrdenDetalleProducto[]
+  descuentos  OrdenDescuento[]
 
   @@unique([tenantId, folio])
   @@unique([tenantId, id])

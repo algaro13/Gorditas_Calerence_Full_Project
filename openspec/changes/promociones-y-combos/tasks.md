@@ -3,9 +3,9 @@ de las demás.
 
 ## 1. Congelar la orden pagada
 
-- [ ] 1.1 Añadir, quitar o modificar líneas de una orden Pagada se rechaza
-- [ ] 1.2 El total de una orden Pagada no se recalcula
-- [ ] 1.3 Una prueba que lo afirme: hoy no falla nada si se hace
+- [x] 1.1 Añadir, quitar o modificar líneas de una orden Pagada se rechaza
+- [x] 1.2 El total de una orden Pagada no se recalcula
+- [x] 1.3 Una prueba que lo afirme: hoy no falla nada si se hace
 
 ## 2. La línea de descuento
 

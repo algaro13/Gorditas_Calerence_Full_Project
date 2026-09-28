@@ -146,6 +146,42 @@ describe('Módulo ordenes', () => {
     expect((await api().put('/api/ordenes/platillo/00000000-0000-0000-0000-000000000000/listo').set(auth(mesero))).status).toBe(404);
   });
 
+  it('una orden pagada ya no cambia: ni sus lineas ni su total', async () => {
+    const orden = await crearOrden();
+    const sub = await api().post(`/api/ordenes/${orden._id}/suborden`).set(auth(mesero)).send({ nombre: 'Ana' });
+    const subId = sub.body.data._id as string;
+    const plat = await api()
+      .post(`/api/ordenes/suborden/${subId}/platillo`)
+      .set(auth(mesero))
+      .send({ idPlatillo: cat.platillo.id, idGuiso: cat.guiso.id, cantidad: 1 });
+    const platId = plat.body.data._id as string;
+    const totalCobrado = plat.body.data.total;
+
+    // Se cobra. A partir de aqui la orden es un hecho consumado.
+    expect((await api().put(`/api/ordenes/${orden._id}/estatus`).set(auth(admin)).send({ estatus: 'Pagada' })).status).toBe(200);
+
+    // Hasta ahora nada de esto fallaba, y `recalcularTotal` cambiaba el total de algo ya cobrado.
+    const rechazos = [
+      await api().post(`/api/ordenes/${orden._id}/suborden`).set(auth(mesero)).send({ nombre: 'Tarde' }),
+      await api().post(`/api/ordenes/suborden/${subId}/platillo`).set(auth(mesero)).send({ idPlatillo: cat.platillo.id, idGuiso: cat.guiso.id, cantidad: 1 }),
+      await api().post(`/api/ordenes/${orden._id}/producto`).set(auth(mesero)).send({ idProducto: cat.producto.id, cantidad: 1 }),
+      await api().post(`/api/ordenes/platillo/${platId}/extra`).set(auth(mesero)).send({ idExtra: cat.extra.id, cantidad: 1 }),
+      await api().put(`/api/ordenes/platillo/${platId}/nota`).set(auth(mesero)).send({ notas: 'despues de pagar' }),
+      await api().put(`/api/ordenes/platillo/${platId}/listo`).set(auth(cocinero)),
+      await api().delete(`/api/ordenes/platillo/${platId}`).set(auth(mesero)),
+    ];
+    for (const r of rechazos) {
+      expect(r.status).toBe(409);
+      expect(r.body.code).toBe('ORDEN_PAGADA');
+    }
+
+    // Y lo que importa: el importe que se cobro sigue siendo el mismo.
+    const despues = await api().get(`/api/ordenes/${orden._id}`).set(auth(mesero));
+    expect(despues.body.data.total).toBe(totalCobrado);
+    expect(despues.body.data.platillos).toHaveLength(1);
+    expect(despues.body.data.platillos[0].notas).toBeNull();
+  });
+
   it('stock insuficiente responde 400 sin crear línea; el decremento es atómico', async () => {
     const orden = await crearOrden();
     const mucho = await api().post(`/api/ordenes/${orden._id}/producto`).set(auth(mesero)).send({ idProducto: cat.producto.id, cantidad: 100 });

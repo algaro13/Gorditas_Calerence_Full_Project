@@ -1,11 +1,26 @@
 import type { UnitOfWork } from '../../../../shared/application/ports/UnitOfWork';
-import { NotFoundError, ValidationError } from '../../../../shared/domain/DomainError';
+import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/domain/DomainError';
+import { estaCongelada } from '../../domain/OrdenStatus';
 import { multiply, toMoney } from '../../../../shared/domain/Money';
 import type { LineaExtra, LineaPlatillo, LineaProducto, Suborden } from '../../domain/types';
 import type { CatalogoLookup } from '../ports/CatalogoLookup';
 import type { OrdenLineasRepository } from '../ports/OrdenLineasRepository';
 import type { OrdenRepository } from '../ports/OrdenRepository';
 import type { StockRepository } from '../ports/StockRepository';
+
+/**
+ * Ninguna línea se toca en una orden pagada.
+ *
+ * Vive aquí, en un solo sitio, porque son cinco caminos los que escriben líneas y basta que uno
+ * se olvide para que el total de una orden cobrada vuelva a poder moverse.
+ */
+export async function exigirOrdenAbierta(ordenes: OrdenRepository, idOrden: string): Promise<void> {
+  const orden = await ordenes.findById(idOrden);
+  if (!orden) throw new NotFoundError('Orden no encontrada', 'ORDEN_NOT_FOUND');
+  if (estaCongelada(orden.estatus)) {
+    throw new ConflictError('La orden ya fue pagada y no puede modificarse', 'ORDEN_PAGADA');
+  }
+}
 
 /** El precio lo fija el catálogo; el enviado por el cliente solo aplica si el catálogo no tiene precio. */
 function precioAutoritativo(catalogo: number, cliente: number | undefined): number {
@@ -24,6 +39,9 @@ export class AgregarSuborden {
     return this.uow.run(async () => {
       const orden = await this.ordenes.findById(idOrden);
       if (!orden) throw new NotFoundError('Orden no encontrada', 'ORDEN_NOT_FOUND');
+      if (estaCongelada(orden.estatus)) {
+        throw new ConflictError('La orden ya fue pagada y no puede modificarse', 'ORDEN_PAGADA');
+      }
       return this.lineas.createSuborden(orden.id, nombre.trim());
     });
   }
@@ -49,6 +67,7 @@ export class AgregarPlatillo {
     return this.uow.run(async () => {
       const suborden = await this.lineas.findSuborden(idSuborden);
       if (!suborden) throw new NotFoundError('Suborden no encontrada', 'SUBORDEN_NOT_FOUND');
+      await exigirOrdenAbierta(this.ordenes, suborden.idOrden);
       if (!Number.isInteger(input.cantidad) || input.cantidad <= 0) throw new ValidationError('Costo y cantidad deben ser números mayores a 0');
 
       const [platillo, guiso] = await Promise.all([this.catalogo.platillo(input.idPlatillo), this.catalogo.guiso(input.idGuiso)]);
@@ -94,6 +113,9 @@ export class AgregarProducto {
     return this.uow.run(async () => {
       const orden = await this.ordenes.findById(idOrden);
       if (!orden) throw new NotFoundError('Orden no encontrada', 'ORDEN_NOT_FOUND');
+      if (estaCongelada(orden.estatus)) {
+        throw new ConflictError('La orden ya fue pagada y no puede modificarse', 'ORDEN_PAGADA');
+      }
       if (!Number.isInteger(input.cantidad) || input.cantidad <= 0) throw new ValidationError('La cantidad debe ser mayor a 0');
 
       const producto = await this.catalogo.producto(input.idProducto);
@@ -136,6 +158,8 @@ export class AgregarExtra {
     return this.uow.run(async () => {
       const platillo = await this.lineas.findPlatillo(idLineaPlatillo);
       if (!platillo) throw new NotFoundError('Detalle de platillo no encontrado', 'LINEA_NOT_FOUND');
+      const idOrdenDelPlatillo = await this.lineas.ordenIdOf('platillo', platillo.id);
+      if (idOrdenDelPlatillo) await exigirOrdenAbierta(this.ordenes, idOrdenDelPlatillo);
       if (!Number.isInteger(input.cantidad) || input.cantidad <= 0) throw new ValidationError('La cantidad debe ser mayor a 0');
 
       const extra = await this.catalogo.extra(input.idExtra);
