@@ -22,9 +22,11 @@ export class PrismaReportesQuery implements ReportesQuery {
     const db = currentDb();
     const tz = this.timeZone;
     const rangoSql = rango ? Prisma.sql`AND o.fecha_hora >= ${rango.from} AND o.fecha_hora < ${rango.to}` : Prisma.empty;
+    // El mismo filtro, para las consultas que unen descuentos con sus órdenes bajo otro alias.
+    const rangoDesc = rango ? Prisma.sql`AND o.fecha_hora >= ${rango.from} AND o.fecha_hora < ${rango.to}` : Prisma.empty;
 
     const where: Prisma.OrdenWhereInput = { estatus: 'Pagada', ...(rango ? { fechaHora: { gte: rango.from, lt: rango.to } } : {}) };
-    const [ordenes, ordenesPagadas, resumenRows, porDia, porTipo] = await Promise.all([
+    const [ordenes, ordenesPagadas, resumenRows, descuentoRows, porPromocion, porDia, porTipo] = await Promise.all([
       db.orden.findMany({
         where,
         orderBy: { fechaHora: 'desc' },
@@ -34,8 +36,22 @@ export class PrismaReportesQuery implements ReportesQuery {
       db.$queryRaw<Array<{ totalVentas: number; cantidadOrdenes: number; promedioVenta: number }>>(Prisma.sql`
         SELECT COALESCE(SUM(o.total),0)::float8 AS "totalVentas", COUNT(*)::int AS "cantidadOrdenes", COALESCE(AVG(o.total),0)::float8 AS "promedioVenta"
         FROM ordenes o WHERE o.estatus = 'Pagada' ${rangoSql}`),
-      db.$queryRaw<Array<{ _id: string; ventas: number; ordenes: number }>>(Prisma.sql`
-        SELECT to_char(o.fecha_hora AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS "_id", COALESCE(SUM(o.total),0)::float8 AS ventas, COUNT(*)::int AS ordenes
+      // Lo que se regaló, en total y por promoción. `importe` es negativo, así que se invierte
+      // aquí para que el reporte hable de cuánto se descontó y no de cuánto se restó.
+      db.$queryRaw<Array<{ total: number }>>(Prisma.sql`
+        SELECT COALESCE(-SUM(d.importe),0)::float8 AS total
+        FROM orden_descuentos d JOIN ordenes o ON o.id = d.id_orden
+        WHERE o.estatus = 'Pagada' ${rangoDesc}`),
+      db.$queryRaw<Array<{ _id: string; descuento: number; ordenes: number }>>(Prisma.sql`
+        SELECT d.nombre AS "_id", COALESCE(-SUM(d.importe),0)::float8 AS descuento, COUNT(DISTINCT d.id_orden)::int AS ordenes
+        FROM orden_descuentos d JOIN ordenes o ON o.id = d.id_orden
+        WHERE o.estatus = 'Pagada' ${rangoDesc}
+        GROUP BY d.nombre ORDER BY descuento DESC`),
+      db.$queryRaw<Array<{ _id: string; ventas: number; descuentos: number; ordenes: number }>>(Prisma.sql`
+        SELECT to_char(o.fecha_hora AT TIME ZONE ${tz}, 'YYYY-MM-DD') AS "_id",
+               COALESCE(SUM(o.total),0)::float8 AS ventas,
+               COALESCE(-SUM((SELECT COALESCE(SUM(d.importe),0) FROM orden_descuentos d WHERE d.id_orden = o.id)),0)::float8 AS descuentos,
+               COUNT(*)::int AS ordenes
         FROM ordenes o WHERE o.estatus = 'Pagada' ${rangoSql}
         GROUP BY 1 ORDER BY 1`),
       db.$queryRaw<Array<{ _id: string; ventas: number; ordenes: number }>>(Prisma.sql`
@@ -58,8 +74,14 @@ export class PrismaReportesQuery implements ReportesQuery {
       platillos: toApi(platillos.map(({ extras: _e, ...p }) => p)),
       extras: toApi(extras),
       total: ordenes.length,
-      resumen: resumenRows[0] ?? { totalVentas: 0, cantidadOrdenes: 0, promedioVenta: 0 },
-      ventasPorDia: porDia,
+      resumen: {
+        ...(resumenRows[0] ?? { totalVentas: 0, cantidadOrdenes: 0, promedioVenta: 0 }),
+        totalDescuentos: descuentoRows[0]?.total ?? 0,
+        // El bruto no se guarda: es lo cobrado más lo que se regaló.
+        totalBruto: (resumenRows[0]?.totalVentas ?? 0) + (descuentoRows[0]?.total ?? 0),
+      },
+      ventasPorDia: porDia.map((d) => ({ ...d, bruto: d.ventas + d.descuentos })),
+      descuentosPorPromocion: porPromocion,
       ventasPorTipo: porTipo,
       ordenesPagadas,
     };

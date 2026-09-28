@@ -13,6 +13,7 @@ import { createCatalogosModule } from './modules/catalogos';
 import { createUsuariosModule } from './modules/usuarios';
 import { createInventarioModule } from './modules/inventario';
 import { createReportesModule } from './modules/reportes';
+import { createPromocionesModule } from './modules/promociones';
 import { createOnboardingModule } from './modules/onboarding';
 import { createBillingModule } from './modules/billing';
 
@@ -111,7 +112,16 @@ export function createApp(c: Container): Express {
   app.use('/api/onboarding', onboarding.router);
   app.use('/api/billing', billing.router);
 
-  const ordenes = createOrdenesModule({ uow: c.uow, clock: c.clock, timeZone });
+  const promociones = createPromocionesModule({ uow: c.uow, clock: c.clock, timeZone });
+  // El adaptador vive aquí porque es el único sitio que conoce los dos módulos. La orden pide
+  // «rehaz mis descuentos» y no sabe que del otro lado hay promociones; promociones no sabe que
+  // existen las órdenes hasta que le preguntan por una.
+  const ordenes = createOrdenesModule({
+    uow: c.uow,
+    clock: c.clock,
+    timeZone,
+    descuentos: { recalcularDe: (idOrden) => promociones.recalcularDescuentos.execute(idOrden) },
+  });
   const usuarios = createUsuariosModule({
     uow: c.uow,
     identity: c.identityProvider,
@@ -127,6 +137,7 @@ export function createApp(c: Container): Express {
   const reportes = createReportesModule({ uow: c.uow, clock: c.clock, timeZone });
 
   app.use('/api/ordenes', pos, ordenes.router);
+  app.use('/api/promociones', pos, promociones.router);
   app.use('/api/catalogos', pos, catalogos.router);
   app.use('/api/usuarios', pos, usuarios.router);
   app.use('/api/inventario', pos, inventario.router);

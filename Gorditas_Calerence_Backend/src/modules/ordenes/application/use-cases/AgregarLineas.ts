@@ -7,6 +7,7 @@ import type { CatalogoLookup } from '../ports/CatalogoLookup';
 import type { OrdenLineasRepository } from '../ports/OrdenLineasRepository';
 import type { OrdenRepository } from '../ports/OrdenRepository';
 import type { StockRepository } from '../ports/StockRepository';
+import type { RecalcularOrden } from './RecalcularOrden';
 
 /**
  * Ninguna línea se toca en una orden pagada.
@@ -61,6 +62,7 @@ export class AgregarPlatillo {
     private readonly ordenes: OrdenRepository,
     private readonly lineas: OrdenLineasRepository,
     private readonly catalogo: CatalogoLookup,
+    private readonly recalcular: RecalcularOrden,
   ) {}
 
   execute(idSuborden: string, input: AgregarPlatilloInput): Promise<LineaPlatillo & { total: number }> {
@@ -88,7 +90,7 @@ export class AgregarPlatillo {
         importe: multiply(costoPlatillo, input.cantidad),
         notas: input.notas?.trim() || null,
       });
-      const total = await this.ordenes.recalcularTotal(suborden.idOrden);
+      const total = await this.recalcular.execute(suborden.idOrden);
       return { ...linea, total };
     });
   }
@@ -107,6 +109,7 @@ export class AgregarProducto {
     private readonly lineas: OrdenLineasRepository,
     private readonly stock: StockRepository,
     private readonly catalogo: CatalogoLookup,
+    private readonly recalcular: RecalcularOrden,
   ) {}
 
   execute(idOrden: string, input: AgregarProductoInput): Promise<LineaProducto & { total: number }> {
@@ -134,7 +137,7 @@ export class AgregarProducto {
         cantidad: input.cantidad,
         importe: multiply(costoProducto, input.cantidad),
       });
-      const total = await this.ordenes.recalcularTotal(orden.id);
+      const total = await this.recalcular.execute(orden.id);
       return { ...linea, total };
     });
   }
@@ -152,6 +155,7 @@ export class AgregarExtra {
     private readonly ordenes: OrdenRepository,
     private readonly lineas: OrdenLineasRepository,
     private readonly catalogo: CatalogoLookup,
+    private readonly recalcular: RecalcularOrden,
   ) {}
 
   execute(idLineaPlatillo: string, input: AgregarExtraInput): Promise<LineaExtra & { total: number }> {
@@ -175,7 +179,7 @@ export class AgregarExtra {
         importe: multiply(costoExtra, input.cantidad),
       });
       const idOrden = await this.lineas.ordenIdOf('platillo', platillo.id);
-      const total = idOrden ? await this.ordenes.recalcularTotal(idOrden) : 0;
+      const total = idOrden ? await this.recalcular.execute(idOrden) : 0;
       return { ...linea, total };
     });
   }

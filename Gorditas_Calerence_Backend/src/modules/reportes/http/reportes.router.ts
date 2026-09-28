@@ -54,6 +54,7 @@ export function createReportesRouter(uc: ReportesUseCases, opts: { timeZone: str
         pagination: { total: r.total },
         resumen: r.resumen,
         ventasPorDia: r.ventasPorDia,
+        descuentosPorPromocion: r.descuentosPorPromocion,
         ventasPorTipo: r.ventasPorTipo,
         ordenesPagadas: r.ordenesPagadas,
       });

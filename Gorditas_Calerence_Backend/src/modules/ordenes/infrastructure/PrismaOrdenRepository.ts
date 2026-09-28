@@ -95,6 +95,7 @@ export class PrismaOrdenRepository implements OrdenRepository {
       include: {
         subordenes: { orderBy: { createdAt: 'asc' }, include: { platillos: { orderBy: { createdAt: 'asc' }, include: { extras: { orderBy: { createdAt: 'asc' } } } } } },
         productos: { orderBy: { createdAt: 'asc' } },
+        descuentos: { orderBy: { createdAt: 'asc' } },
       },
     });
     if (!row) return null;
@@ -105,6 +106,12 @@ export class PrismaOrdenRepository implements OrdenRepository {
       productos: row.productos.map(toLineaProducto),
       platillos,
       extras: platillos.flatMap((p) => p.extras),
+      descuentos: row.descuentos.map((d) => ({
+        id: d.id,
+        idPromocion: d.idPromocion,
+        nombre: d.nombre,
+        importe: toMoney(d.importe),
+      })),
     };
   }
 
@@ -129,7 +136,10 @@ export class PrismaOrdenRepository implements OrdenRepository {
         + COALESCE((SELECT SUM(p.importe) FROM orden_detalle_platillos p JOIN subordenes s ON s.id = p.id_suborden WHERE s.id_orden = o.id), 0)
         + COALESCE((SELECT SUM(e.importe) FROM orden_detalle_extras e
                     JOIN orden_detalle_platillos p ON p.id = e.id_orden_detalle_platillo
-                    JOIN subordenes s ON s.id = p.id_suborden WHERE s.id_orden = o.id), 0),
+                    JOIN subordenes s ON s.id = p.id_suborden WHERE s.id_orden = o.id), 0)
+        -- Los descuentos son líneas más, con importe negativo: por eso se suman igual que el
+        -- resto y el total sigue siendo la suma de lo que la orden tiene.
+        + COALESCE((SELECT SUM(d.importe) FROM orden_descuentos d WHERE d.id_orden = o.id), 0),
         updated_at = now()
       WHERE o.id = ${id}::uuid
       RETURNING o.total

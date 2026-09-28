@@ -9,8 +9,15 @@ export interface VentasReporte {
   platillos: unknown[];
   extras: unknown[];
   total: number;
-  resumen: { totalVentas: number; cantidadOrdenes: number; promedioVenta: number };
-  ventasPorDia: Array<{ _id: string; ventas: number; ordenes: number }>;
+  /**
+   * `totalVentas` es lo cobrado —neto—. Con promociones dejó de ser lo mismo que lo que valían
+   * los artículos, así que hacen falta las tres cifras: sin el bruto y el descuento no se puede
+   * ver cuánto se regaló.
+   */
+  resumen: { totalVentas: number; totalBruto: number; totalDescuentos: number; cantidadOrdenes: number; promedioVenta: number };
+  ventasPorDia: Array<{ _id: string; ventas: number; bruto: number; descuentos: number; ordenes: number }>;
+  /** Qué dio cada promoción: la que trae gente se distingue de la que regala lo que ya se vendía. */
+  descuentosPorPromocion: Array<{ _id: string; descuento: number; ordenes: number }>;
   ventasPorTipo: Array<{ _id: string; ventas: number; ordenes: number }>;
   ordenesPagadas: number;
 }

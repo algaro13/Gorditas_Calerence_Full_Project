@@ -9,27 +9,27 @@ de las demás.
 
 ## 2. La línea de descuento
 
-- [ ] 2.1 Tabla de descuentos por orden: importe negativo y nombre copiado de la regla
-- [ ] 2.2 `recalcularTotal` la suma — el único sitio donde se calcula el total
+- [x] 2.1 Tabla de descuentos por orden: importe negativo y nombre copiado de la regla
+- [x] 2.2 `recalcularTotal` la suma — el único sitio donde se calcula el total
 - [ ] 2.3 La orden muestra sus descuentos como líneas, en la caja y en el detalle
 - [ ] 2.4 El ticket: artículos, subtotal, cada descuento con su nombre, total y ahorro
 - [ ] 2.5 El ticket lleva el nombre del restaurante y el folio de los reportes
-- [ ] 2.6 El reporte del día muestra bruto, descuento y neto
-- [ ] 2.7 El descuento desglosado por promoción, no solo su suma
+- [x] 2.6 El reporte del día muestra bruto, descuento y neto
+- [x] 2.7 El descuento desglosado por promoción, no solo su suma
 
 ## 3. El catálogo de promociones
 
-- [ ] 3.1 Promoción por restaurante, con su forma y sus parámetros
-- [ ] 3.2 Las tres formas cerradas: combo, NxM y porcentaje sobre categoría
-- [ ] 3.3 Evaluación derivada: al cambiar las líneas, se reescriben sus descuentos
-- [ ] 3.4 Sin acumular, salvo marca explícita: gana la que más favorece al cliente
+- [x] 3.1 Promoción por restaurante, con su forma y sus parámetros
+- [x] 3.2 Las tres formas cerradas: combo, NxM y porcentaje sobre categoría
+- [x] 3.3 Evaluación derivada: al cambiar las líneas, se reescriben sus descuentos
+- [x] 3.4 Sin acumular, salvo marca explícita: gana la que más favorece al cliente
 - [ ] 3.5 Un combo se despliega en sus líneas reales, con su stock y su cocina
-- [ ] 3.6 Ninguna forma de teclear un importe a mano sobre una orden
+- [x] 3.6 Ninguna forma de teclear un importe a mano sobre una orden
 
 ## 4. Ventanas de día y hora
 
-- [ ] 4.1 Vigencia por fechas, días de la semana y franja horaria
-- [ ] 4.2 Evaluadas en la zona del negocio, en el servidor
+- [x] 4.1 Vigencia por fechas, días de la semana y franja horaria
+- [x] 4.2 Evaluadas en la zona del negocio, en el servidor
 
 ## 5. Verificación
 

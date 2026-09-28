@@ -3,6 +3,7 @@ import { NotFoundError } from '../../../../shared/domain/DomainError';
 import type { LineaKind, OrdenLineasRepository } from '../ports/OrdenLineasRepository';
 import type { OrdenRepository } from '../ports/OrdenRepository';
 import { exigirOrdenAbierta } from './AgregarLineas';
+import type { RecalcularOrden } from './RecalcularOrden';
 
 const NOMBRES: Record<LineaKind, string> = { producto: 'Producto', platillo: 'Platillo', extra: 'Extra' };
 
@@ -45,6 +46,7 @@ export class EliminarLinea {
     private readonly uow: UnitOfWork,
     private readonly ordenes: OrdenRepository,
     private readonly lineas: OrdenLineasRepository,
+    private readonly recalcular: RecalcularOrden,
   ) {}
 
   execute(kind: LineaKind, id: string): Promise<void> {
@@ -53,7 +55,8 @@ export class EliminarLinea {
       if (!idOrden) throw new NotFoundError(`${NOMBRES[kind]} no encontrado`, 'LINEA_NOT_FOUND');
       await exigirOrdenAbierta(this.ordenes, idOrden);
       await this.lineas.deleteLinea(kind, id);
-      await this.ordenes.recalcularTotal(idOrden);
+      // Quitar una línea puede retirar la promoción que esa línea ganaba.
+      await this.recalcular.execute(idOrden);
     });
   }
 }

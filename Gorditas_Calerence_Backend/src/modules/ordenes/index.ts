@@ -6,6 +6,8 @@ import { ActualizarFechaHora, CambiarEstatus, VerificarOrden } from './applicati
 import { ListarOrdenes, ObtenerOrden } from './application/use-cases/ConsultarOrdenes';
 import { CrearOrden } from './application/use-cases/CrearOrden';
 import { ActualizarNotaPlatillo, EliminarLinea, EliminarOrden, MarcarLinea } from './application/use-cases/LineasOrden';
+import { RecalcularOrden } from './application/use-cases/RecalcularOrden';
+import { SIN_DESCUENTOS, type Descuentos } from './application/ports/Descuentos';
 import { createOrdenesRouter, type OrdenesUseCases } from './http/ordenes.router';
 import { PrismaCatalogoLookup } from './infrastructure/PrismaCatalogoLookup';
 import { PrismaFolioGenerator } from './infrastructure/PrismaFolioGenerator';
@@ -17,6 +19,8 @@ export interface OrdenesModuleDeps {
   uow: UnitOfWork;
   clock: Clock;
   timeZone: string;
+  /** Quién rehace los descuentos cuando cambian las líneas. Sin él, la orden no tiene ninguno. */
+  descuentos?: Descuentos;
 }
 
 export function createOrdenesModule(deps: OrdenesModuleDeps): { router: Router; useCases: OrdenesUseCases } {
@@ -25,21 +29,24 @@ export function createOrdenesModule(deps: OrdenesModuleDeps): { router: Router; 
   const stock = new PrismaStockRepository();
   const catalogo = new PrismaCatalogoLookup();
   const folios = new PrismaFolioGenerator(deps.timeZone);
+  // Un solo sitio que rehace los descuentos y recalcula el total, usado por todo lo que cambia
+  // una línea: así no puede haber un camino que mueva el total sin revisar las promociones.
+  const recalcular = new RecalcularOrden(ordenes, deps.descuentos ?? SIN_DESCUENTOS);
 
   const useCases: OrdenesUseCases = {
     listar: new ListarOrdenes(deps.uow, ordenes),
     obtener: new ObtenerOrden(deps.uow, ordenes),
     crear: new CrearOrden(deps.uow, ordenes, catalogo, folios, deps.clock),
     agregarSuborden: new AgregarSuborden(deps.uow, ordenes, lineas),
-    agregarPlatillo: new AgregarPlatillo(deps.uow, ordenes, lineas, catalogo),
-    agregarProducto: new AgregarProducto(deps.uow, ordenes, lineas, stock, catalogo),
-    agregarExtra: new AgregarExtra(deps.uow, ordenes, lineas, catalogo),
+    agregarPlatillo: new AgregarPlatillo(deps.uow, ordenes, lineas, catalogo, recalcular),
+    agregarProducto: new AgregarProducto(deps.uow, ordenes, lineas, stock, catalogo, recalcular),
+    agregarExtra: new AgregarExtra(deps.uow, ordenes, lineas, catalogo, recalcular),
     cambiarEstatus: new CambiarEstatus(deps.uow, ordenes, deps.clock),
     verificar: new VerificarOrden(deps.uow, ordenes),
     actualizarFechaHora: new ActualizarFechaHora(deps.uow, ordenes, deps.clock),
     marcarLinea: new MarcarLinea(deps.uow, lineas, ordenes),
     actualizarNota: new ActualizarNotaPlatillo(deps.uow, lineas, ordenes),
-    eliminarLinea: new EliminarLinea(deps.uow, ordenes, lineas),
+    eliminarLinea: new EliminarLinea(deps.uow, ordenes, lineas, recalcular),
     eliminarOrden: new EliminarOrden(deps.uow, ordenes),
   };
 

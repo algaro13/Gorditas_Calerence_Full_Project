@@ -69,11 +69,14 @@ describe('Módulo reportes', () => {
     expect(d.platillos[0].idOrden).toBe(ordenConPlatillo);
     expect(d.productos.every((p: { idOrden?: string }) => typeof p.idOrden === 'string')).toBe(true);
     expect(d.pagination).toEqual({ total: 2 });
-    expect(d.resumen).toEqual({ totalVentas: 150, cantidadOrdenes: 2, promedioVenta: 75 });
+    // Sin promociones, bruto y neto son la misma cifra. Que lo sean es parte de lo que se afirma:
+    // el reporte no empieza a inventar descuentos donde no los hubo.
+    expect(d.resumen).toEqual({ totalVentas: 150, totalBruto: 150, totalDescuentos: 0, cantidadOrdenes: 2, promedioVenta: 75 });
     expect(d.ventasPorDia).toEqual([
-      { _id: '2026-09-05', ventas: 100, ordenes: 1 },
-      { _id: '2026-09-06', ventas: 50, ordenes: 1 },
+      { _id: '2026-09-05', ventas: 100, bruto: 100, descuentos: 0, ordenes: 1 },
+      { _id: '2026-09-06', ventas: 50, bruto: 50, descuentos: 0, ordenes: 1 },
     ]);
+    expect(d.descuentosPorPromocion).toEqual([]);
     expect(d.ventasPorTipo).toEqual([{ _id: 'En mesa', ventas: 150, ordenes: 2 }]);
     expect(d.ordenesPagadas).toBe(2);
 

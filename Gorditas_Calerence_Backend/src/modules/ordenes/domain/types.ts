@@ -57,11 +57,21 @@ export interface LineaExtra extends LineaBase {
   costoExtra: number;
 }
 
+/** Lo que una promoción le quitó a la orden. Es una línea más, con importe negativo. */
+export interface LineaDescuento {
+  id: string;
+  idPromocion: number;
+  /** Copia del nombre al venderse: lo que se vendió se cuenta como era ese día. */
+  nombre: string;
+  importe: number;
+}
+
 export interface OrdenConDetalles extends OrdenCabecera {
   subordenes: Suborden[];
   productos: LineaProducto[];
   platillos: Array<LineaPlatillo & { extras: LineaExtra[] }>;
   extras: LineaExtra[];
+  descuentos: LineaDescuento[];
 }
 
 export interface CatalogoItem {
