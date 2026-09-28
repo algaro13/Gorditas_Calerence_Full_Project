@@ -105,10 +105,50 @@ export interface Orden extends BaseEntity {
   notas?: string;
 }
 
+/** Las tres formas que puede tomar una promoción. Conjunto cerrado a propósito. */
+export type FormaPromocion = 'combo' | 'nxm' | 'porcentaje';
+
+export interface PromocionItem {
+  idPlatillo?: number | null;
+  idProducto?: number | null;
+  cantidad: number;
+}
+
+export interface Promocion {
+  id: number;
+  nombre: string;
+  forma: FormaPromocion;
+  activo: boolean;
+  /** Si no, solo se concede la que más favorece al cliente. */
+  combinable: boolean;
+  precio?: number | null;
+  lleva?: number | null;
+  paga?: number | null;
+  porcentaje?: number | null;
+  idTipoPlatillo?: number | null;
+  items: PromocionItem[];
+  desde?: string | null;
+  hasta?: string | null;
+  /** 0 = domingo. Vacío = todos los días. */
+  diasSemana: number[];
+  horaInicio?: string | null;
+  horaFin?: string | null;
+}
+
+/** Lo que una promoción le quitó a la orden. Es una línea más, con importe negativo. */
+export interface LineaDescuento {
+  _id: string;
+  idPromocion: number;
+  /** Copia del nombre al venderse: lo que se vendió se cuenta como era ese día. */
+  nombre: string;
+  importe: number;
+}
+
 export interface OrdenCompleta extends Orden {
   productos?: OrdenDetalleProducto[];
   platillos?: OrdenDetallePlatillo[];
   extras?: any[];
+  descuentos?: LineaDescuento[];
 }
 
 export interface Suborden extends BaseEntity {

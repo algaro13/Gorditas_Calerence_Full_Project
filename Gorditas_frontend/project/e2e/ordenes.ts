@@ -81,3 +81,27 @@ export async function tomarOrden(page: Page, nombre: string) {
   await expect(page.getByText(nombre)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/\$(?!0\.00)\d+\.\d{2}/).first()).toBeVisible({ timeout: 10_000 });
 }
+
+/**
+ * Lleva una orden recién tomada hasta la pantalla de cobro: se surte y se despacha.
+ *
+ * Lo usan la prueba del ciclo completo y la de promociones, que necesita ver el descuento donde
+ * se cobra. Una orden en recepción no aparece en Cobrar, así que sin estos dos pasos la prueba
+ * fallaba buscando una tarjeta que no existía todavía.
+ */
+export async function llevarACaja(page: Page, nombre: string): Promise<void> {
+  await page.goto('/surtir-orden');
+  await expect(page.getByText(nombre)).toBeVisible({ timeout: 15_000 });
+  await tarjetaDe(page, nombre, /surtir todas/i).click();
+  await expect(page.getByText(nombre)).toBeHidden({ timeout: 15_000 });
+
+  await page.goto('/despachar');
+  await page.waitForLoadState('networkidle');
+  // Se entrega todo lo pendiente en vez de buscar esta orden: Despachar agrupa por mesa y no
+  // muestra el cliente hasta expandir. En una base de pruebas entregar de más es inocuo.
+  const entregar = page.getByRole('button', { name: /entregar/i });
+  while (await entregar.count()) {
+    await entregar.first().click();
+    await page.waitForLoadState('networkidle');
+  }
+}

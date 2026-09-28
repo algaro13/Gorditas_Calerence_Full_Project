@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app-config';
-import type { ApiResponse, EstadoDeCupo, PlanId, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
+import type { ApiResponse, EstadoDeCupo, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
 type TokenProvider = () => string | null | undefined;
 
@@ -98,6 +98,19 @@ class ApiService {
   }
   getTenantMe() {
     return this.request<TenantMeResponse>('/tenants/me');
+  }
+  getPromociones(soloActivas = false) {
+    return this.request<{ promociones: Promocion[] }>(`/promociones${soloActivas ? '?activas=true' : ''}`);
+  }
+  crearPromocion(data: Partial<Promocion>) {
+    return this.request<Promocion>('/promociones', this.json('POST', data));
+  }
+  actualizarPromocion(id: number, data: Partial<Promocion>) {
+    return this.request<Promocion>(`/promociones/${id}`, this.json('PUT', data));
+  }
+  /** Desactiva: una promoción que ya se aplicó sigue explicando los descuentos que dio. */
+  desactivarPromocion(id: number) {
+    return this.request<{ id: number }>(`/promociones/${id}`, { method: 'DELETE' });
   }
   getCaja(fechaInicio?: string, fechaFin?: string) {
     const q = fechaInicio && fechaFin ? `?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}` : '';

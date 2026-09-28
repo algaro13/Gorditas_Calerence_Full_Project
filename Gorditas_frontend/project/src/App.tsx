@@ -20,6 +20,7 @@ import Despachar from './pages/Despachar';
 import RecibirProducto from './pages/RecibirProducto';
 import Cobrar from './pages/Cobrar';
 import Catalogos from './pages/Catalogos';
+import Promociones from './pages/Promociones';
 import Reportes from './pages/Reportes';
 import Inventario from './pages/Inventario';
 import { getTenantSlug } from './config/tenant-host';
@@ -115,6 +116,15 @@ const AuthenticatedApp: React.FC = () => {
         />
 
         {/* Catálogos - Admin, Encargado, Mesero, Despachador */}
+        <Route
+          path="/promociones"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <Promociones />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/catalogos"
           element={

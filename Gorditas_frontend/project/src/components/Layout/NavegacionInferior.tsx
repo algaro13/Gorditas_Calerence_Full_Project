@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Edit3, Package, Truck, CreditCard, BarChart3, BookOpen, ChefHat, PlusCircle, Settings, MoreHorizontal } from 'lucide-react';
+import { Home, Edit3, Package, Truck, CreditCard, BarChart3, BookOpen, ChefHat, PlusCircle, Settings, Tag, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { MENU, SERVICIO, type EntradaMenu } from './menu';
 
@@ -17,7 +17,7 @@ import { MENU, SERVICIO, type EntradaMenu } from './menu';
  */
 
 const ICONOS: Record<string, React.ComponentType<{ className?: string }>> = {
-  Home, Edit3, Package, Truck, CreditCard, BarChart3, BookOpen, ChefHat, PlusCircle, Settings,
+  Home, Edit3, Package, Truck, CreditCard, BarChart3, BookOpen, ChefHat, PlusCircle, Settings, Tag,
 };
 
 /** Cuántos caben cómodos en 375 px con su nombre debajo. El quinto hueco es para «Más». */

@@ -12,8 +12,12 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Orden, OrdenCompleta, MesaAgrupada } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const Cobrar: React.FC = () => {
+  // El ticket lleva el nombre del restaurante. Decía «RESTAURANTE» en duro, así que en un
+  // sistema de varios restaurantes cada ticket salía con el nombre de ninguno.
+  const { tenant } = useAuth();
   // Eliminamos mesas y selectedMesa
   const [ordenesActivas, setOrdenesActivas] = useState<OrdenCompleta[]>([]);
   const [mesasAgrupadas, setMesasAgrupadas] = useState<MesaAgrupada[]>([]);
@@ -381,6 +385,35 @@ const Cobrar: React.FC = () => {
     }
   };
 
+  /** Lo que valían los artículos antes de descontar: el total más lo que se quitó. */
+  const brutoDe = (orden: OrdenCompleta) =>
+    (orden.total || 0) - (orden.descuentos || []).reduce((s, d) => s + d.importe, 0);
+
+  const ahorroDe = (orden: OrdenCompleta) =>
+    -(orden.descuentos || []).reduce((s, d) => s + d.importe, 0);
+
+  /**
+   * El subtotal y cada descuento con su nombre.
+   *
+   * Un ticket que solo imprime el total ya descontado no lo puede revisar el cliente ni auditar
+   * el dueño: no hay forma de distinguir una promoción que se aplicó de un precio mal cobrado.
+   * Sin descuentos no se imprime nada, para no añadirle una resta de cero a cada ticket.
+   */
+  const lineasDeDescuento = (orden: OrdenCompleta) => {
+    const descuentos = orden.descuentos || [];
+    if (descuentos.length === 0) return '';
+    return `
+      <p>Subtotal: $${brutoDe(orden).toFixed(2)}</p>
+      ${descuentos.map((d) => `<p>${d.nombre}: -$${Math.abs(d.importe).toFixed(2)}</p>`).join('')}
+      <div class="line"></div>
+    `;
+  };
+
+  const lineaDeAhorro = (orden: OrdenCompleta) => {
+    const ahorro = ahorroDe(orden);
+    return ahorro > 0 ? `<p>Ahorraste: $${ahorro.toFixed(2)}</p>` : '';
+  };
+
   const generateTicketContent = (orden: OrdenCompleta) => {
     const fecha = orden.fecha ? new Date(orden.fecha) : new Date();
     
@@ -405,13 +438,13 @@ const Cobrar: React.FC = () => {
     
     return `
       <div class="header">
-        <h2>RESTAURANTE</h2>
-        <p>Ticket de Venta</p>
+        <h2>${tenant?.nombre || 'Restaurante'}</h2>
+        <p>Ticket de venta</p>
         <div class="line"></div>
       </div>
       <p><strong>Fecha:</strong> ${fecha.toLocaleDateString('es-ES')}</p>
       <p><strong>Hora:</strong> ${fecha.toLocaleTimeString('es-ES')}</p>
-      <p><strong>Orden:</strong> #${orden._id?.toString().slice(-6)}</p>
+      <p><strong>Orden:</strong> ${orden.folio || orden._id?.toString().slice(-6)}</p>
       <div class="line"></div>
       <h3>PLATILLOS</h3>
       ${generatePlatillosHtml()}
@@ -421,9 +454,11 @@ const Cobrar: React.FC = () => {
         : '<p>Sin productos</p>'
       }
       <div class="line"></div>
+      ${lineasDeDescuento(orden)}
       <div class="total">
         <p>TOTAL: $${orden.total?.toFixed(2)}</p>
       </div>
+      ${lineaDeAhorro(orden)}
       <div class="line"></div>
       <p style="text-align: center;">¡Gracias por su preferencia!</p>
     `;
@@ -453,8 +488,8 @@ const Cobrar: React.FC = () => {
     
     return `
       <div class="header">
-        <h2>RESTAURANTE</h2>
-        <p>Ticket de Venta - ${mesa.nombreMesa}</p>
+        <h2>${tenant?.nombre || 'Restaurante'}</h2>
+        <p>Ticket de venta - ${mesa.nombreMesa}</p>
         <div class="line"></div>
       </div>
       <p><strong>Fecha:</strong> ${fecha.toLocaleDateString('es-ES')}</p>
@@ -473,6 +508,7 @@ const Cobrar: React.FC = () => {
             ? orden.productos.map((p: any) => `<p>  ${p.cantidad}x ${p.nombreProducto || p.nombre || ''} - $${(p.importe !== undefined ? p.importe.toFixed(2) : '0.00')}</p>`).join('')
             : '<p>  Sin productos</p>'
           }
+          ${(orden.descuentos || []).map((d) => `<p>  ${d.nombre}: -$${Math.abs(d.importe).toFixed(2)}</p>`).join('')}
           <p><strong>Subtotal Orden:</strong> $${orden.total?.toFixed(2)}</p>
           <div class="line"></div>
         `).join('')}
@@ -482,6 +518,10 @@ const Cobrar: React.FC = () => {
       <div class="total">
         <p>TOTAL MESA ${mesa.nombreMesa}: $${mesa.totalMonto.toFixed(2)}</p>
       </div>
+      ${(() => {
+        const ahorro = mesa.ordenes.reduce((s: number, o: OrdenCompleta) => s + ahorroDe(o), 0);
+        return ahorro > 0 ? `<p>Ahorraste: $${ahorro.toFixed(2)}</p>` : '';
+      })()}
       <div class="line"></div>
       <p style="text-align: center;">¡Gracias por su preferencia!</p>
     `;
@@ -704,6 +744,22 @@ const Cobrar: React.FC = () => {
                                   </li>
                                 ))}
                               </ul>
+                            </div>
+                          )}
+                          {/* Los descuentos, con el nombre de lo que los concedió: en la caja
+                              hay que poder explicar por qué se cobra menos que la suma. */}
+                          {(orden.descuentos || []).length > 0 && (
+                            <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5">
+                              <div className="flex justify-between text-meta text-gray-500">
+                                <span>Subtotal</span>
+                                <span className="tabular-nums">${brutoDe(orden).toFixed(2)}</span>
+                              </div>
+                              {(orden.descuentos || []).map((d) => (
+                                <div key={d._id} className="flex justify-between text-meta text-blue-600">
+                                  <span className="min-w-0 break-words">{d.nombre}</span>
+                                  <span className="tabular-nums whitespace-nowrap">-${Math.abs(d.importe).toFixed(2)}</span>
+                                </div>
+                              ))}
                             </div>
                           )}
                           {/* Total y estatus */}

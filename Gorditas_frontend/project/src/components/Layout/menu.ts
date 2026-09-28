@@ -33,6 +33,7 @@ export const MENU: MenuItem[] = [
   { id: 'despachar', label: 'Despachar', icon: 'Truck', path: '/despachar', roles: ['Mesero'] },
   { id: 'recibir-productos', label: 'Recibir Productos', icon: 'Package', path: '/recibir-productos', roles: ['Admin', 'Encargado'] },
   { id: 'cobrar', label: 'Cobrar', icon: 'CreditCard', path: '/cobrar', roles: ['Admin', 'Encargado', 'Mesero'] },
+  { id: 'promociones', label: 'Promociones', icon: 'Tag', path: '/promociones', roles: ['Admin'] },
   { id: 'catalogos', label: 'Catálogos', icon: 'BookOpen', path: '/catalogos', roles: ['Admin'] },
   { id: 'reportes', label: 'Reportes', icon: 'BarChart3', path: '/reportes', roles: ['Admin'] },
   { id: 'configuracion', label: 'Configuración', icon: 'Settings', path: '/configuracion', roles: ['Admin', 'Encargado'] },

@@ -35,11 +35,23 @@ interface GastoPorDia {
 
 interface ReporteVentas {
   fecha: string;
+  /** Lo cobrado: neto, ya con las promociones descontadas. */
   ventasTotales: number;
+  /** Lo que valían los artículos antes de descontar. */
+  bruto: number;
+  /** Lo que se regaló ese día. */
+  descuentos: number;
   gastosTotales: number;
   utilidad: number;
   ordenes: number;
   montoCaja?: number; // Nuevo campo para el monto de caja
+}
+
+/** Lo que dio cada promoción en el período: la que trae gente frente a la que solo regala. */
+interface DescuentoPorPromocion {
+  _id: string;
+  descuento: number;
+  ordenes: number;
 }
 
 interface ProductoInventario {
@@ -117,6 +129,7 @@ const Reportes: React.FC = () => {
   const [reporteInventario, setReporteInventario] = useState<ReporteInventario[]>([]);
   const [productosVendidos, setProductosVendidos] = useState<ProductoVendido[]>([]);
   const [reporteGastos, setReporteGastos] = useState<Gasto[]>([]);
+  const [descuentosPorPromocion, setDescuentosPorPromocion] = useState<DescuentoPorPromocion[]>([]);
   
   const [ordenes, setOrdenes] = useState<any[]>([]);
   const [productos, setProductos] = useState<any[]>([]);
@@ -330,6 +343,7 @@ const Reportes: React.FC = () => {
             const extras = ventasRes.data.extras || [];
 
             setOrdenes(ordenes);
+            setDescuentosPorPromocion(ventasRes.data.descuentosPorPromocion || []);
             setProductos(productos);
             setPlatillos(platillos);
             setExtras(extras);
@@ -350,9 +364,13 @@ const Reportes: React.FC = () => {
 
             const cajaPorDia = await traerCaja(fechaInicio, fechaFin);
 
-            const ventasPorFecha: { [fecha: string]: { ventas: number; ordenes: number } } = {};
+            const ventasPorFecha: { [fecha: string]: { ventas: number; descuentos: number; ordenes: number } } = {};
             for (const venta of ventasPorDia) {
-              ventasPorFecha[venta._id] = { ventas: venta.ventas || 0, ordenes: venta.ordenes || 0 };
+              ventasPorFecha[venta._id] = {
+                ventas: venta.ventas || 0,
+                descuentos: venta.descuentos || 0,
+                ordenes: venta.ordenes || 0,
+              };
             }
 
             // Un dia con movimiento es un dia del resumen: ventas, caja o gastos.
@@ -372,11 +390,14 @@ const Reportes: React.FC = () => {
             ]);
 
             for (const fecha of dias) {
-              const delDia = ventasPorFecha[fecha] ?? { ventas: 0, ordenes: 0 };
+              const delDia = ventasPorFecha[fecha] ?? { ventas: 0, descuentos: 0, ordenes: 0 };
               const gastosTotales = gastosPorDia[fecha] || 0;
               ventasFormateadas.push({
                 fecha,
                 ventasTotales: delDia.ventas,
+                descuentos: delDia.descuentos,
+                // El bruto no se guarda: es lo cobrado más lo que se regaló.
+                bruto: delDia.ventas + delDia.descuentos,
                 gastosTotales,
                 utilidad: delDia.ventas - gastosTotales,
                 ordenes: delDia.ordenes,
@@ -631,6 +652,8 @@ const Reportes: React.FC = () => {
   const getTotalIngresosConCaja = () => {
     return getTotalVentas() + getTotalCaja();
   };
+
+  const getTotalDescuentos = () => reporteVentas.reduce((t, r) => t + (r.descuentos || 0), 0);
 
   const getTotalGastos = () => {
     return reporteVentas.reduce((total, reporte) => 
@@ -1187,6 +1210,14 @@ const Reportes: React.FC = () => {
                           <p className="text-pantalla font-bold text-green-900">
                             ${getTotalVentas().toFixed(2)}
                           </p>
+                          {/* Con promociones, «Ventas» pasó a ser neto. Sin el bruto y lo
+                              descontado, el número habría cambiado de significado sin avisar. */}
+                          {getTotalDescuentos() > 0 && (
+                            <p className="text-meta text-green-700 mt-1">
+                              ${(getTotalVentas() + getTotalDescuentos()).toFixed(2)} menos $
+                              {getTotalDescuentos().toFixed(2)} de promociones
+                            </p>
+                          )}
                         </div>
                         <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                       </div>
@@ -1289,12 +1320,15 @@ const Reportes: React.FC = () => {
                           {/* Los gastos del dia no se mostraban en ninguna parte: solo entraban
                               en el total del periodo. Un dia de solo gastos habria sido una
                               tarjeta de ceros. */}
-                          <dl className="grid grid-cols-3 gap-sp-1">
+                          <dl className="grid grid-cols-2 gap-sp-1">
                             <Dato etiqueta="Ventas">
                               <span className="text-green-600">${reporte.ventasTotales.toFixed(2)}</span>
                             </Dato>
                             <Dato etiqueta="Gastos">
                               <span className="text-red-600">${reporte.gastosTotales.toFixed(2)}</span>
+                            </Dato>
+                            <Dato etiqueta="Promociones">
+                              <span className="text-blue-600">${(reporte.descuentos || 0).toFixed(2)}</span>
                             </Dato>
                             <Dato etiqueta="Órdenes">{reporte.ordenes}</Dato>
                           </dl>
@@ -1367,6 +1401,27 @@ const Reportes: React.FC = () => {
                       </table>
                     </div>
                   </div>
+                  {/* Lo que dio cada promoción. Sin este desglose no se distingue la que trae
+                      gente de la que solo regala lo que se habría vendido igual. */}
+                  {descuentosPorPromocion.length > 0 && (
+                    <div>
+                      <h3 className="text-titulo font-semibold text-gray-900 mb-4">Promociones aplicadas</h3>
+                      <div className="space-y-sp-2">
+                        {descuentosPorPromocion.map((d) => (
+                          <Tarjeta key={d._id}>
+                            <h4 className="text-cuerpo font-semibold text-gray-900 break-words">{d._id}</h4>
+                            <dl className="grid grid-cols-2 gap-sp-1">
+                              <Dato etiqueta="Descontado">
+                                <span className="text-blue-600">${d.descuento.toFixed(2)}</span>
+                              </Dato>
+                              <Dato etiqueta="Órdenes">{d.ordenes}</Dato>
+                            </dl>
+                          </Tarjeta>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Órdenes del día */}
                   {diaSeleccionado && (
                     <div className="mt-6">
