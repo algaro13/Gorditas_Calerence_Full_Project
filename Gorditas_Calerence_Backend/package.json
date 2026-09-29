@@ -15,6 +15,7 @@
     "migrate:deploy": "dotenv -e .env.development -- prisma migrate deploy",
     "migrate:deploy:prod": "prisma migrate deploy",
     "migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
+    "e2e:limpiar": "dotenv -e .env.development -- tsx scripts/limpiar-e2e.ts",
     "db:studio": "dotenv -e .env.development -- prisma studio",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -12,6 +12,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Borra lo que dejaron corridas de hace más de una semana. Ver e2e/limpieza.global.ts.
+  globalSetup: './e2e/limpieza.global.ts',
   // En serie: comparten el restaurante de pruebas y su base, así que en paralelo se pisarían.
   fullyParallel: false,
   workers: 1,
