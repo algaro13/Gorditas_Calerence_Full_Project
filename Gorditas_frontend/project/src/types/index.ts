@@ -135,6 +135,19 @@ export interface Promocion {
   horaFin?: string | null;
 }
 
+/**
+ * Un combo tal y como lo ve quien toma la orden: qué lleva y cuánto cuesta.
+ *
+ * Se añade a la orden como sus artículos, a precio de carta; la diferencia la pone el servidor
+ * como línea de descuento al recalcular, igual que cualquier otra promoción.
+ */
+export interface ComboVendible {
+  id: number;
+  nombre: string;
+  precio: number;
+  items: PromocionItem[];
+}
+
 /** Lo que una promoción le quitó a la orden. Es una línea más, con importe negativo. */
 export interface LineaDescuento {
   _id: string;

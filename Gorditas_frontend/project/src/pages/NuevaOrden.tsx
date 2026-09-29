@@ -7,11 +7,12 @@ import {
   ArrowLeft,
   ArrowRight,
   ChefHat,
-  RotateCcw
+  RotateCcw,
+  Tag
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { precioVenta } from '../utils/precios';
-import { Mesa, Platillo, Guiso, OrderStep, ApiResponse, Extra, TipoExtra } from '../types';
+import { Mesa, Platillo, Guiso, OrderStep, ApiResponse, Extra, TipoExtra, ComboVendible } from '../types';
 
 interface PlatilloSeleccionado {
   platillo: Platillo;
@@ -47,6 +48,10 @@ const NuevaOrden: React.FC = () => {
   const [extras, setExtras] = useState<Extra[]>([]);
   const [tiposExtras, setTiposExtras] = useState<TipoExtra[]>([]);
   const [guisos, setGuisos] = useState<Guiso[]>([]);
+  const [combos, setCombos] = useState<ComboVendible[]>([]);
+  // El combo que se está armando: uno de la lista y un guiso por cada gordita que lleva.
+  const [modalComboOpen, setModalComboOpen] = useState(false);
+  const [comboEnArmado, setComboEnArmado] = useState<{ combo: ComboVendible; guisos: (Guiso | null)[] } | null>(null);
   
   // Estados para los modales de selección
   const [modalPlatilloOpen, setModalPlatilloOpen] = useState(false);
@@ -227,6 +232,14 @@ const NuevaOrden: React.FC = () => {
       setMesasOcupadas(new Set());
     }
   };
+
+  // Aparte de los catálogos: si no hay combos, o no se pueden leer, la orden se toma igual.
+  useEffect(() => {
+    apiService
+      .getCombos()
+      .then((r) => setCombos(r.success && r.data ? r.data.combos : []))
+      .catch(() => setCombos([]));
+  }, []);
 
   const getMesaInfo = (mesaId: string | undefined) => {
     if (!mesaId) {
@@ -444,6 +457,80 @@ const NuevaOrden: React.FC = () => {
   };
 
 
+
+  /**
+   * Un combo entra en la orden como lo que lleva: sus platillos y sus productos, a precio de
+   * carta, cada uno por su camino de siempre. Así la cocina ve qué preparar, el inventario
+   * descuenta la bebida y el reporte cuenta los productos. La diferencia con el precio del combo
+   * no se calcula aquí: la pone el servidor como línea de descuento cuando la orden ya tiene los
+   * artículos, igual que cualquier promoción.
+   */
+  const platilloDe = (id?: number | null) => platillos.find((p) => Number(p._id) === Number(id));
+  const productoDe = (id?: number | null) => productos.find((p) => Number(p._id) === Number(id));
+
+  /** Una entrada por gordita, porque cada una puede ir de un guiso distinto. */
+  const unidadesDePlatillo = (combo: ComboVendible) =>
+    combo.items.filter((i) => i.idPlatillo).flatMap((i) => Array.from({ length: i.cantidad }, () => platilloDe(i.idPlatillo)));
+
+  const describirCombo = (combo: ComboVendible) =>
+    combo.items
+      .map((i) => `${i.cantidad} × ${(i.idPlatillo ? platilloDe(i.idPlatillo) : productoDe(i.idProducto))?.nombre ?? '¿?'}`)
+      .join(' + ');
+
+  /** Un combo cuyo artículo ya no está en el catálogo, o sin existencia, no se puede vender. */
+  const faltaEnCombo = (combo: ComboVendible): string | null => {
+    for (const i of combo.items) {
+      if (i.idPlatillo && !platilloDe(i.idPlatillo)) return 'Un platillo del combo ya no está en el menú';
+      if (i.idProducto) {
+        const prod = productoDe(i.idProducto);
+        if (!prod || !prod.activo) return 'Un producto del combo ya no está disponible';
+        if (prod.cantidad < i.cantidad) return `Sin existencia de ${prod.nombre}`;
+      }
+    }
+    return null;
+  };
+
+  const elegirCombo = (combo: ComboVendible) => {
+    setComboEnArmado({ combo, guisos: unidadesDePlatillo(combo).map(() => null) });
+  };
+
+  const cerrarCombo = () => {
+    setModalComboOpen(false);
+    setComboEnArmado(null);
+  };
+
+  const agregarCombo = () => {
+    if (!comboEnArmado) return;
+    const { combo, guisos: elegidos } = comboEnArmado;
+    const falta = faltaEnCombo(combo);
+    if (falta) {
+      setError(falta);
+      return;
+    }
+    if (elegidos.some((g) => !g)) return;
+
+    // Las gorditas del mismo platillo y guiso van en una sola línea, como si se hubieran pedido así.
+    const unidades = unidadesDePlatillo(combo);
+    const nuevos: PlatilloSeleccionado[] = [];
+    unidades.forEach((platillo, idx) => {
+      const guiso = elegidos[idx]!;
+      const igual = nuevos.find((n) => n.platillo._id === platillo!._id && n.guiso._id === guiso._id);
+      if (igual) igual.cantidad += 1;
+      else nuevos.push({ platillo: platillo!, guiso, cantidad: 1, extras: [], notas: '' });
+    });
+
+    const nuevosProductos = combo.items
+      .filter((i) => i.idProducto)
+      .map((i) => {
+        const prod = productoDe(i.idProducto)!;
+        return { idProducto: prod._id, nombreProducto: prod.nombre, costoProducto: prod.costo, cantidad: i.cantidad };
+      });
+
+    setPlatillosSeleccionados((prev) => [...prev, ...nuevos]);
+    setProductosSeleccionados((prev) => [...prev, ...nuevosProductos]);
+    setError('');
+    cerrarCombo();
+  };
 
   const handleRemovePlatillo = (index: number) => {
     setPlatillosSeleccionados(prev => prev.filter((_, i) => i !== index));
@@ -1112,6 +1199,17 @@ const NuevaOrden: React.FC = () => {
                   <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
                   <span className="hidden sm:inline">Agregar Producto</span><span className="sm:hidden">Producto</span>
                 </button>
+
+                {/* Solo si hay combos vigentes: un botón que no lleva a nada estorba en la caja. */}
+                {combos.length > 0 && (
+                  <button
+                    onClick={() => setModalComboOpen(true)}
+                    className={`btn btn-lg w-full btn-neutro ${(platillosSeleccionados.length > 0 || productosSeleccionados.length > 0) ? 'col-span-2 order-last' : ''}`}
+                  >
+                    <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Agregar Combo</span><span className="sm:hidden">Combo</span>
+                  </button>
+                )}
 
                 {/* Botón de crear orden solo cuando hay items seleccionados */}
                 {(platillosSeleccionados.length > 0 || productosSeleccionados.length > 0) && (
@@ -1901,6 +1999,92 @@ const NuevaOrden: React.FC = () => {
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Combo — se elige el combo y el guiso de cada gordita */}
+      {modalComboOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-1 sm:p-2">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-2 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-titulo font-bold text-gray-900">
+                  {comboEnArmado ? comboEnArmado.combo.nombre : 'Seleccionar Combo'}
+                </h2>
+                {comboEnArmado && (
+                  <p className="text-cuerpo text-gray-600 mt-1">{describirCombo(comboEnArmado.combo)}</p>
+                )}
+              </div>
+              <button onClick={cerrarCombo} className="text-gray-400 hover:text-gray-600 text-pantalla" aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+
+            {!comboEnArmado ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                {combos.map((combo) => {
+                  const falta = faltaEnCombo(combo);
+                  return (
+                    <button
+                      key={combo.id}
+                      onClick={() => elegirCombo(combo)}
+                      disabled={!!falta}
+                      className={`p-3 sm:p-4 rounded-lg border-2 transition-colors text-left ${
+                        falta ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed' : 'border-gray-200 hover:border-green-500 hover:bg-green-50'
+                      }`}
+                    >
+                      <div className="text-cuerpo font-semibold text-gray-900">{combo.nombre}</div>
+                      <div className="text-meta text-gray-600 mt-1">{describirCombo(combo)}</div>
+                      <div className="text-meta text-green-600 font-medium mt-1">${combo.precio.toFixed(2)}</div>
+                      {falta && <div className="text-meta text-red-600 mt-1">{falta}</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {unidadesDePlatillo(comboEnArmado.combo).map((platillo, idx) => (
+                  <label key={idx} className="block">
+                    <span className="text-cuerpo font-medium text-gray-900">
+                      {platillo?.nombre} {unidadesDePlatillo(comboEnArmado.combo).length > 1 ? `#${idx + 1}` : ''}
+                    </span>
+                    <select
+                      value={comboEnArmado.guisos[idx]?._id ?? ''}
+                      onChange={(e) => {
+                        const guiso = guisos.find((g) => String(g._id) === e.target.value) ?? null;
+                        setComboEnArmado((prev) =>
+                          prev ? { ...prev, guisos: prev.guisos.map((g, i) => (i === idx ? guiso : g)) } : prev,
+                        );
+                      }}
+                      className="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-cuerpo"
+                    >
+                      <option value="">Elige el guiso…</option>
+                      {guisos.filter((g) => g.activo !== false).map((g) => (
+                        <option key={g._id} value={g._id}>
+                          {g.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+                <p className="text-meta text-gray-500">
+                  Los artículos entran a precio de carta; el precio del combo se aplica solo al crear la orden.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <button onClick={() => setComboEnArmado(null)} className="btn w-full text-gray-700 bg-gray-100 hover:bg-gray-200">
+                    Volver a Combos
+                  </button>
+                  <button
+                    onClick={agregarCombo}
+                    disabled={comboEnArmado.guisos.some((g) => !g)}
+                    className="btn w-full btn-primario disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Agregar combo
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

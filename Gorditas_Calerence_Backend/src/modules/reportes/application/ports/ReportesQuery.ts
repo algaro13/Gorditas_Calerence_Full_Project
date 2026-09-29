@@ -8,6 +8,8 @@ export interface VentasReporte {
   productos: unknown[];
   platillos: unknown[];
   extras: unknown[];
+  /** Las líneas de descuento de cada orden, con su `idOrden`: lo que explica que cobre menos. */
+  descuentos: unknown[];
   total: number;
   /**
    * `totalVentas` es lo cobrado —neto—. Con promociones dejó de ser lo mismo que lo que valían

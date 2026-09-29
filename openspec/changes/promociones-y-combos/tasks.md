@@ -11,9 +11,9 @@ de las demás.
 
 - [x] 2.1 Tabla de descuentos por orden: importe negativo y nombre copiado de la regla
 - [x] 2.2 `recalcularTotal` la suma — el único sitio donde se calcula el total
-- [ ] 2.3 La orden muestra sus descuentos como líneas, en la caja y en el detalle
-- [ ] 2.4 El ticket: artículos, subtotal, cada descuento con su nombre, total y ahorro
-- [ ] 2.5 El ticket lleva el nombre del restaurante y el folio de los reportes
+- [x] 2.3 La orden muestra sus descuentos como líneas, en la caja y en el detalle
+- [x] 2.4 El ticket: artículos, subtotal, cada descuento con su nombre, total y ahorro
+- [x] 2.5 El ticket lleva el nombre del restaurante y el folio de los reportes
 - [x] 2.6 El reporte del día muestra bruto, descuento y neto
 - [x] 2.7 El descuento desglosado por promoción, no solo su suma
 
@@ -23,7 +23,7 @@ de las demás.
 - [x] 3.2 Las tres formas cerradas: combo, NxM y porcentaje sobre categoría
 - [x] 3.3 Evaluación derivada: al cambiar las líneas, se reescriben sus descuentos
 - [x] 3.4 Sin acumular, salvo marca explícita: gana la que más favorece al cliente
-- [ ] 3.5 Un combo se despliega en sus líneas reales, con su stock y su cocina
+- [x] 3.5 Un combo se despliega en sus líneas reales, con su stock y su cocina
 - [x] 3.6 Ninguna forma de teclear un importe a mano sobre una orden
 
 ## 4. Ventanas de día y hora
@@ -33,15 +33,15 @@ de las demás.
 
 ## 5. Verificación
 
-- [ ] 5.1 Un combo con bebida descuenta el inventario de la bebida
-- [ ] 5.2 La cocina ve los platillos del combo, no el nombre del combo
-- [ ] 5.3 Quitar la línea que ganaba la promoción retira su descuento
-- [ ] 5.4 Dos promociones aplicables dan siempre el mismo total
-- [ ] 5.5 Recalcular una orden sin cambios no cambia sus descuentos
-- [ ] 5.6 Una hora feliz de 16 a 18 no aplica a las 10 de la mañana
-- [ ] 5.7 Una orden pagada no cambia de total pase lo que pase
-- [ ] 5.8 Las dos suites en verde
+- [x] 5.1 Un combo con bebida descuenta el inventario de la bebida
+- [x] 5.2 La cocina ve los platillos del combo, no el nombre del combo
+- [x] 5.3 Quitar la línea que ganaba la promoción retira su descuento
+- [x] 5.4 Dos promociones aplicables dan siempre el mismo total
+- [x] 5.5 Recalcular una orden sin cambios no cambia sus descuentos
+- [x] 5.6 Una hora feliz de 16 a 18 no aplica a las 10 de la mañana
+- [x] 5.7 Una orden pagada no cambia de total pase lo que pase
+- [x] 5.8 Las dos suites en verde
 
 ## 6. Cierre
 
-- [ ] 6.1 Commit y `openspec archive`
+- [x] 6.1 Commit y `openspec archive`

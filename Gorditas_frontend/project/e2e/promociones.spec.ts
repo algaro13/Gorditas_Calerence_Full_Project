@@ -82,3 +82,67 @@ test('una promoción se crea, la orden la gana sola y la caja explica la resta',
     await sinPromocionesActivas(page);
   }
 });
+
+test('un combo entra en la orden como lo que lleva, y la caja cobra su precio', async ({ page }) => {
+  await page.goto('/promociones');
+  await page.waitForLoadState('networkidle');
+  await sinPromocionesActivas(page);
+
+  // Del catálogo que siembra `npm run dev:seed`: una gordita y un producto con existencia.
+  const platillos = (await api(page, 'GET', '/catalogos/platillo?limit=100')).cuerpo.data.items;
+  const productos = (await api(page, 'GET', '/catalogos/producto?limit=100')).cuerpo.data.items;
+  const gordita = platillos.find((p: { nombre: string; activo: boolean }) => /^Gordita de/i.test(p.nombre) && p.activo);
+  const bebida = productos.find((p: { cantidad: number; activo: boolean }) => p.activo && p.cantidad >= 1);
+  expect(gordita, 'el catálogo de pruebas no tiene gorditas').toBeDefined();
+  expect(bebida, 'el catálogo de pruebas no tiene productos con existencia').toBeDefined();
+
+  // Diez pesos menos que sus artículos a precio de carta.
+  const carta = Number(gordita.precio) * 2 + Number(bebida.costo);
+  const nombre = `Combo E2E ${Date.now()}`;
+  const creada = await api(page, 'POST', '/promociones', {
+    nombre,
+    forma: 'combo',
+    precio: carta - 10,
+    items: [
+      { idPlatillo: gordita._id, cantidad: 2 },
+      { idProducto: bebida._id, cantidad: 1 },
+    ],
+  });
+  expect(creada.estado).toBe(201);
+
+  try {
+    const quien = cliente();
+    await page.goto('/nueva-orden');
+    await page.getByText(/^Nuevo pedido$/i).first().click();
+    await page.getByPlaceholder(/nombre del cliente/i).fill(quien);
+    await page.getByRole('button', { name: /^(Sig|Siguiente)/ }).click();
+
+    // Se elige el combo y el guiso de cada gordita; nada más.
+    await page.getByRole('button', { name: /combo/i }).first().click();
+    await page.getByRole('button', { name: new RegExp(nombre) }).click();
+    const guisos = page.locator('select');
+    await expect(guisos).toHaveCount(2);
+    for (let i = 0; i < 2; i++) await guisos.nth(i).selectOption({ index: 1 });
+    await page.getByRole('button', { name: /^Agregar combo$/ }).click();
+
+    // Entra como sus artículos: las dos gorditas y la bebida, no una línea que diga «combo».
+    await expect(page.getByText(/platillos seleccionados \(2\)/i)).toBeVisible();
+    await expect(page.getByText(/productos seleccionados \(1\)/i)).toBeVisible();
+    await page.getByRole('button', { name: /crear orden/i }).click();
+    await expect(page.getByText(/^Mesa \d+$/).first()).toBeVisible({ timeout: 20_000 });
+    await page.waitForLoadState('networkidle');
+
+    await llevarACaja(page, quien);
+    await page.goto('/cobrar');
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText(quien).first()).toBeVisible({ timeout: 15_000 });
+    await page.getByText(quien).first().click();
+
+    // La caja explica la resta: el combo con su nombre y lo que quitó.
+    await expect(page.getByText(nombre).first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText('-$10.00').first()).toBeVisible();
+    await expect(page.getByText(`$${(carta - 10).toFixed(2)}`).first()).toBeVisible();
+  } finally {
+    await sinPromocionesActivas(page);
+  }
+});

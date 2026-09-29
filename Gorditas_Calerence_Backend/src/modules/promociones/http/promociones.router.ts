@@ -1,13 +1,14 @@
 import { Router } from 'express';
 import Joi from 'joi';
 import { asyncHandler } from '../../../shared/http/express/async-handler';
-import { isAdmin, isEncargado } from '../../../shared/http/express/authenticate';
+import { isAdmin, isEncargado, isMesero } from '../../../shared/http/express/authenticate';
 import { sendCreated, sendError, sendOk } from '../../../shared/http/express/respond';
 import { validateBody } from '../../../shared/http/express/validate';
 import type {
   ActualizarPromocion,
   CrearPromocion,
   DesactivarPromocion,
+  ListarCombosVigentes,
   ListarPromociones,
 } from '../application/use-cases/Promociones';
 
@@ -16,6 +17,7 @@ export interface PromocionesUseCases {
   crear: CrearPromocion;
   actualizar: ActualizarPromocion;
   desactivar: DesactivarPromocion;
+  combos: ListarCombosVigentes;
 }
 
 const hora = Joi.string().pattern(/^([01]\d|2[0-3]):[0-5]\d$/);
@@ -61,6 +63,16 @@ export function createPromocionesRouter(uc: PromocionesUseCases): Router {
     isEncargado,
     asyncHandler(async (req, res) => {
       sendOk(res, { promociones: await uc.listar.execute(req.query.activas === 'true') });
+    }),
+  );
+
+  // Lo que el mesero sí ve: los combos que puede vender ahora, y de qué están hechos. Va antes
+  // de '/:id' y no le da la lista completa, que sigue siendo de quien maneja el reporte.
+  router.get(
+    '/combos',
+    isMesero,
+    asyncHandler(async (_req, res) => {
+      sendOk(res, { combos: await uc.combos.execute() });
     }),
   );
 

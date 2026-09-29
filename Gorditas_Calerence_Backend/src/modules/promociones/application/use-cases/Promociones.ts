@@ -1,7 +1,7 @@
 import type { Clock } from '../../../../shared/application/ports/Clock';
 import type { UnitOfWork } from '../../../../shared/application/ports/UnitOfWork';
 import { NotFoundError, ValidationError } from '../../../../shared/domain/DomainError';
-import { evaluarPromociones } from '../../domain/evaluar';
+import { estaVigente, evaluarPromociones, type PromocionItem } from '../../domain/evaluar';
 import type { NuevaPromocion, PromocionesRepository, PromocionRow } from '../ports/PromocionesRepository';
 
 /**
@@ -83,6 +83,41 @@ export class DesactivarPromocion {
   execute(id: number): Promise<void> {
     return this.uow.run(async () => {
       if (!(await this.repo.desactivar(id))) throw new NotFoundError('Promoción no encontrada', 'PROMOCION_NOT_FOUND');
+    });
+  }
+}
+
+/** Lo que quien toma la orden necesita para vender un combo: qué lleva y cuánto cuesta. */
+export interface ComboVendible {
+  id: number;
+  nombre: string;
+  precio: number;
+  items: PromocionItem[];
+}
+
+/**
+ * Los combos que se pueden vender ahora mismo, mirado desde el reloj del restaurante.
+ *
+ * Existe aparte de la lista porque quien toma la orden es el mesero, y la lista completa —con
+ * porcentajes, vigencias y promociones desactivadas— es de quien maneja el reporte. Al mesero le
+ * basta saber qué combos hay y de qué están hechos: el combo entra en la orden como sus
+ * artículos, y el descuento lo decide el servidor al recalcular, como cualquier otro.
+ */
+export class ListarCombosVigentes {
+  constructor(
+    private readonly uow: UnitOfWork,
+    private readonly repo: PromocionesRepository,
+    private readonly clock: Clock,
+    private readonly timeZone: string,
+  ) {}
+
+  execute(): Promise<ComboVendible[]> {
+    return this.uow.run(async () => {
+      const ahora = this.clock.now();
+      const activas = await this.repo.list(true);
+      return activas
+        .filter((p) => p.forma === 'combo' && p.precio != null && p.items.length > 0 && estaVigente(p, ahora, this.timeZone))
+        .map((p) => ({ id: p.id, nombre: p.nombre, precio: p.precio as number, items: p.items }));
     });
   }
 }

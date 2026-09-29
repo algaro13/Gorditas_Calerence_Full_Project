@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Aviso } from '../components/Aviso';
+import type { LineaDescuento } from '../types';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -135,6 +136,9 @@ const Reportes: React.FC = () => {
   const [productos, setProductos] = useState<any[]>([]);
   const [platillos, setPlatillos] = useState<any[]>([]);
   const [extras, setExtras] = useState<any[]>([]);
+  // Las líneas de descuento de cada orden: sin ellas, el detalle de una orden con promoción no
+  // cuadra con lo que se cobró.
+  const [descuentos, setDescuentos] = useState<Array<LineaDescuento & { idOrden: string }>>([]);
   const [ordenesDia, setOrdenesDia] = useState<any[]>([]);
   const [diaSeleccionado, setDiaSeleccionado] = useState<string | null>(null);
   const [ordenExpandida, setOrdenExpandida] = useState<string | null>(null);
@@ -341,12 +345,14 @@ const Reportes: React.FC = () => {
             const productos = ventasRes.data.productos || [];
             const platillos = ventasRes.data.platillos || [];
             const extras = ventasRes.data.extras || [];
+            const descuentosDeOrdenes = ventasRes.data.descuentos || [];
 
             setOrdenes(ordenes);
             setDescuentosPorPromocion(ventasRes.data.descuentosPorPromocion || []);
             setProductos(productos);
             setPlatillos(platillos);
             setExtras(extras);
+            setDescuentos(descuentosDeOrdenes);
 
             // Los gastos se piden siempre, haya ventas o no. Antes esta llamada vivia dentro
             // de un `if (ventasPorDia.length > 0)`, asi que un mes sin ventas y con gastos se
@@ -847,6 +853,8 @@ const Reportes: React.FC = () => {
       extras: extras.filter((extra) => extra.idOrdenDetallePlatillo === platillo._id),
     }));
 
+    const descuentosGrupo = descuentos.filter((d) => grupo.ordenes.some((o: { _id: string }) => o._id === d.idOrden));
+
     const totalProductos = productosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
     const totalPlatillos = platillosGrupo.reduce((sum: number, p: any) => sum + p.cantidad, 0);
 
@@ -889,6 +897,7 @@ const Reportes: React.FC = () => {
         return sum + (pl.importe || 0) + extrasTotal;
       }, 0),
       importeProductos: productosGrupo.reduce((sum: number, p: any) => sum + p.importe, 0),
+      descuentosGrupo,
     };
   };
 
@@ -1000,6 +1009,24 @@ const Reportes: React.FC = () => {
           <p className="text-gray-500">No hay platillos.</p>
         )}
       </div>
+
+      {/* Lo que explica que la orden cobre menos que sus artículos: cada descuento, con su nombre. */}
+      {g.descuentosGrupo.length > 0 && (
+        <div>
+          <h4 className="font-semibold mb-1">Promociones</h4>
+          <div className="divide-y divide-gray-200 text-blue-700">
+            {g.descuentosGrupo.map((d) => (
+              <React.Fragment key={d._id}>{linea(d.nombre, '', `-$${Math.abs(d.importe).toFixed(2)}`)}</React.Fragment>
+            ))}
+            {linea(
+              'Total descuentos',
+              '',
+              `-$${Math.abs(g.descuentosGrupo.reduce((s, d) => s + d.importe, 0)).toFixed(2)}`,
+              'font-semibold border-t border-gray-300'
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );

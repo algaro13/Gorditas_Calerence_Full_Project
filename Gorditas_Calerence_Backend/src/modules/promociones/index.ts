@@ -5,6 +5,7 @@ import {
   ActualizarPromocion,
   CrearPromocion,
   DesactivarPromocion,
+  ListarCombosVigentes,
   ListarPromociones,
   RecalcularDescuentos,
 } from './application/use-cases/Promociones';
@@ -22,6 +23,7 @@ export function createPromocionesModule(deps: { uow: UnitOfWork; clock: Clock; t
       crear: new CrearPromocion(deps.uow, repo),
       actualizar: new ActualizarPromocion(deps.uow, repo),
       desactivar: new DesactivarPromocion(deps.uow, repo),
+      combos: new ListarCombosVigentes(deps.uow, repo, deps.clock, deps.timeZone),
     }),
     recalcularDescuentos: new RecalcularDescuentos(repo, deps.clock, deps.timeZone),
   };

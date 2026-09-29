@@ -178,8 +178,12 @@ test('el detalle de una orden muestra sus platillos y cuadra con su total', asyn
     // prueba. Se mide con `count` en vez de leer directamente, porque leer un elemento que no
     // existe agota el tiempo de espera y entonces el informe diria «timeout» en lugar de decir
     // que ninguna orden mostro lo que se vendio en ella.
-    const totales = page.locator('div').filter({ hasText: /Total platillos|Total productos/ });
+    // El detalle entero, no el bloque más interno que diga «Total …»: ese era solo el de
+    // platillos, y una orden con productos y platillos —un combo— salía descuadrada.
+    const totales = page.locator('div.bg-gray-50.rounded-lg').filter({ hasText: /Total platillos|Total productos/ });
     const texto = (await totales.count()) > 0 ? await totales.last().innerText() : '';
+    // Una orden con promoción cobra menos que sus artículos; el detalle tiene que decir cuánto.
+    const textoDescuentos = texto;
 
     // El total de la orden, tal como lo muestra su propia tarjeta.
     const tarjeta = await page.getByRole('button', { name: /ocultar/i }).first()
@@ -192,13 +196,14 @@ test('el detalle de una orden muestra sus platillos y cuadra con su total', asyn
     };
     const platillos = importes(/Total platillos[^$]*\$([\d.]+)/);
     const productos = importes(/Total productos[^$]*\$([\d.]+)/);
+    const descontado = parseFloat(textoDescuentos.match(/Total descuentos[^$]*\$([\d.]+)/)?.[1] ?? '0');
     const total = parseFloat(tarjeta.match(/Total\s*\$([\d.]+)/)?.[1] ?? '0');
 
     if (platillos + productos > 0) {
-      cuadran.push(`${(platillos + productos).toFixed(2)} vs ${total.toFixed(2)}`);
+      cuadran.push(`${(platillos + productos - descontado).toFixed(2)} vs ${total.toFixed(2)}`);
       expect(
-        Math.abs(platillos + productos - total),
-        `los importes del detalle no suman el total de la orden: ${platillos} + ${productos} ≠ ${total}`
+        Math.abs(platillos + productos - descontado - total),
+        `los importes del detalle no suman el total de la orden: ${platillos} + ${productos} − ${descontado} ≠ ${total}`
       ).toBeLessThan(0.01);
     }
 

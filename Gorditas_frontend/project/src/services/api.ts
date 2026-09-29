@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app-config';
-import type { ApiResponse, EstadoDeCupo, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
+import type { ApiResponse, ComboVendible, EstadoDeCupo, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
 type TokenProvider = () => string | null | undefined;
 
@@ -101,6 +101,10 @@ class ApiService {
   }
   getPromociones(soloActivas = false) {
     return this.request<{ promociones: Promocion[] }>(`/promociones${soloActivas ? '?activas=true' : ''}`);
+  }
+  /** Los combos que se pueden vender ahora; lo que el mesero ve de las promociones. */
+  getCombos() {
+    return this.request<{ combos: ComboVendible[] }>('/promociones/combos');
   }
   crearPromocion(data: Partial<Promocion>) {
     return this.request<Promocion>('/promociones', this.json('POST', data));

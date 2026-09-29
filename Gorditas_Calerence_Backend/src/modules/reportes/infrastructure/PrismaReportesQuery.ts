@@ -30,7 +30,11 @@ export class PrismaReportesQuery implements ReportesQuery {
       db.orden.findMany({
         where,
         orderBy: { fechaHora: 'desc' },
-        include: { productos: true, subordenes: { include: { platillos: { include: { extras: true } } } } },
+        include: {
+          productos: true,
+          subordenes: { include: { platillos: { include: { extras: true } } } },
+          descuentos: { orderBy: { createdAt: 'asc' } },
+        },
       }),
       db.orden.count({ where: { estatus: 'Pagada' } }),
       db.$queryRaw<Array<{ totalVentas: number; cantidadOrdenes: number; promedioVenta: number }>>(Prisma.sql`
@@ -66,13 +70,17 @@ export class PrismaReportesQuery implements ReportesQuery {
     // pierde y quien lea la respuesta no puede saber en que orden se vendio el platillo.
     const platillos = ordenes.flatMap((o) => o.subordenes.flatMap((s) => s.platillos.map((p) => ({ ...p, idOrden: o.id }))));
     const extras = platillos.flatMap((p) => p.extras);
-    const cabeceras = ordenes.map(({ productos: _p, subordenes: _s, ...o }) => o);
+    // Sin ellos, el detalle de una orden con promoción no cuadra: sus artículos suman más que
+    // lo que se cobró, y no hay forma de saber por qué.
+    const descuentos = ordenes.flatMap((o) => o.descuentos);
+    const cabeceras = ordenes.map(({ productos: _p, subordenes: _s, descuentos: _d, ...o }) => o);
 
     return {
       ordenes: toApi(cabeceras),
       productos: toApi(productos),
       platillos: toApi(platillos.map(({ extras: _e, ...p }) => p)),
       extras: toApi(extras),
+      descuentos: toApi(descuentos),
       total: ordenes.length,
       resumen: {
         ...(resumenRows[0] ?? { totalVentas: 0, cantidadOrdenes: 0, promedioVenta: 0 }),

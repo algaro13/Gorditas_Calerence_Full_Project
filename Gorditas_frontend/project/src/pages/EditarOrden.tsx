@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { precioVenta } from '../utils/precios';
-import { Orden, Suborden, OrdenDetallePlatillo, OrdenDetalleProducto, Platillo, Guiso, Producto, MesaAgrupada, Extra, TipoExtra } from '../types';
+import { Orden, Suborden, OrdenDetallePlatillo, OrdenDetalleProducto, Platillo, Guiso, Producto, MesaAgrupada, Extra, TipoExtra, LineaDescuento } from '../types';
 
 const EditarOrden: React.FC = () => {
   const [ordenes, setOrdenes] = useState<Orden[]>([]);
@@ -29,6 +29,10 @@ const EditarOrden: React.FC = () => {
   const [subordenes, setSubordenes] = useState<Suborden[]>([]);
   const [platillosDetalle, setPlatillosDetalle] = useState<OrdenDetallePlatillo[]>([]);
   const [productosDetalle, setProductosDetalle] = useState<OrdenDetalleProducto[]>([]);
+  // Lo que la orden tiene descontado ahora mismo, y el total que ya lo incluye. Sin ellos, al
+  // añadir la gordita que completa un combo el total no cuadra con las líneas y nadie sabe por qué.
+  const [descuentosDetalle, setDescuentosDetalle] = useState<LineaDescuento[]>([]);
+  const [totalDetalle, setTotalDetalle] = useState<number | null>(null);
   
   const [platillos, setPlatillos] = useState<Platillo[]>([]);
   const [guisos, setGuisos] = useState<Guiso[]>([]);
@@ -84,7 +88,7 @@ const EditarOrden: React.FC = () => {
   const [selectedMesaToDelete, setSelectedMesaToDelete] = useState<MesaAgrupada | null>(null);
 
   // Estado para almacenar detalles de órdenes en las tarjetas móviles
-  const [ordenesDetalles, setOrdenesDetalles] = useState<{ [key: string]: { platillos: any[], productos: any[] } }>({});
+  const [ordenesDetalles, setOrdenesDetalles] = useState<{ [key: string]: { platillos: any[], productos: any[], descuentos: LineaDescuento[] } }>({});
   // Estado para controlar qué resúmenes están expandidos (por ID de orden)
   const [resumenesExpandidos, setResumenesExpandidos] = useState<Set<string>>(new Set());
 
@@ -327,21 +331,23 @@ const EditarOrden: React.FC = () => {
             return {
               ordenId: orden._id!,
               platillos: response.data.platillos || [],
-              productos: response.data.productos || []
+              productos: response.data.productos || [],
+              descuentos: response.data.descuentos || []
             };
           }
-          return { ordenId: orden._id!, platillos: [], productos: [] };
+          return { ordenId: orden._id!, platillos: [], productos: [], descuentos: [] };
         } catch {
-          return { ordenId: orden._id!, platillos: [], productos: [] };
+          return { ordenId: orden._id!, platillos: [], productos: [], descuentos: [] };
         }
       });
 
       const detalles = await Promise.all(detallesPromises);
-      const detallesMap: { [key: string]: { platillos: any[], productos: any[] } } = {};
+      const detallesMap: { [key: string]: { platillos: any[], productos: any[], descuentos: LineaDescuento[] } } = {};
       detalles.forEach(detalle => {
         detallesMap[detalle.ordenId] = {
           platillos: detalle.platillos,
-          productos: detalle.productos
+          productos: detalle.productos,
+          descuentos: detalle.descuentos
         };
       });
 
@@ -436,12 +442,16 @@ const EditarOrden: React.FC = () => {
   const loadOrdenDetails = async (orden: Orden, shouldScroll: boolean = true) => {
     try {
       setSelectedOrden(orden);
+      setDescuentosDetalle([]);
+      setTotalDetalle(null);
       const response = await apiService.getOrdenDetails(orden._id!);
       
       if (response.success) {
         setSubordenes(response.data.subordenes || []);
         setPlatillosDetalle(response.data.platillos || []);
         setProductosDetalle(response.data.productos || []);
+        setDescuentosDetalle(response.data.descuentos || []);
+        setTotalDetalle(typeof response.data.total === 'number' ? response.data.total : null);
 
         // Scroll to order details on mobile
         if (shouldScroll) {
@@ -647,7 +657,8 @@ const EditarOrden: React.FC = () => {
               ...prev,
               [selectedOrden._id]: {
                 platillos: detallesResponse.data.platillos || [],
-                productos: detallesResponse.data.productos || []
+                productos: detallesResponse.data.productos || [],
+                descuentos: detallesResponse.data.descuentos || []
               }
             }));
           }
@@ -746,7 +757,8 @@ const EditarOrden: React.FC = () => {
               ...prev,
               [selectedOrden._id]: {
                 platillos: detallesResponse.data.platillos || [],
-                productos: detallesResponse.data.productos || []
+                productos: detallesResponse.data.productos || [],
+                descuentos: detallesResponse.data.descuentos || []
               }
             }));
           }
@@ -1240,7 +1252,8 @@ const EditarOrden: React.FC = () => {
                                                           ...prev,
                                                           [orden._id!]: {
                                                             platillos: response.data.platillos || [],
-                                                            productos: response.data.productos || []
+                                                            productos: response.data.productos || [],
+                                                            descuentos: response.data.descuentos || []
                                                           }
                                                         }));
                                                       }
@@ -1284,7 +1297,8 @@ const EditarOrden: React.FC = () => {
                                                           ...prev,
                                                           [orden._id!]: {
                                                             platillos: response.data.platillos || [],
-                                                            productos: response.data.productos || []
+                                                            productos: response.data.productos || [],
+                                                            descuentos: response.data.descuentos || []
                                                           }
                                                         }));
                                                       }
@@ -1300,6 +1314,21 @@ const EditarOrden: React.FC = () => {
                                                 >
                                                   <Minus className="w-3 h-3" />
                                                 </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Lo que explica que el total sea menor que sus artículos */}
+                                      {(ordenesDetalles[orden._id!].descuentos || []).length > 0 && (
+                                        <div>
+                                          <p className="text-meta font-medium text-blue-700 mb-1">Promociones:</p>
+                                          <div className="space-y-1">
+                                            {ordenesDetalles[orden._id!].descuentos.map((d) => (
+                                              <div key={d._id} className="flex items-center justify-between text-meta bg-blue-50 rounded px-1.5 py-1 text-blue-700">
+                                                <span className="truncate flex-1">{d.nombre}</span>
+                                                <span className="ml-2 tabular-nums">-${Math.abs(d.importe).toFixed(2)}</span>
                                               </div>
                                             ))}
                                           </div>
@@ -1357,8 +1386,13 @@ const EditarOrden: React.FC = () => {
                       {selectedOrden.estatus}
                     </span>
                     <span className="text-cuerpo text-gray-500">
-                      Total: <span className="font-semibold text-green-600">${selectedOrden.total.toFixed(2)}</span>
+                      Total: <span className="font-semibold text-green-600">${(totalDetalle ?? selectedOrden.total).toFixed(2)}</span>
                     </span>
+                    {descuentosDetalle.map((d) => (
+                      <span key={d._id} className="text-cuerpo text-blue-700">
+                        {d.nombre}: -${Math.abs(d.importe).toFixed(2)}
+                      </span>
+                    ))}
                   </div>
                 )}
               </div>

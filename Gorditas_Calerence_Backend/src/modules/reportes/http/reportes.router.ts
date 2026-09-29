@@ -51,6 +51,7 @@ export function createReportesRouter(uc: ReportesUseCases, opts: { timeZone: str
         productos: r.productos,
         platillos: r.platillos,
         extras: r.extras,
+        descuentos: r.descuentos,
         pagination: { total: r.total },
         resumen: r.resumen,
         ventasPorDia: r.ventasPorDia,

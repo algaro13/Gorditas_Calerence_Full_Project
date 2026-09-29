@@ -185,9 +185,88 @@ describe('Módulo promociones', () => {
 
       const mia = d.descuentosPorPromocion.find((x: { _id: string }) => x._id === 'Mitad de precio');
       expect(mia, 'la promoción no aparece desglosada en el reporte').toMatchObject({ descuento: 25, ordenes: 1 });
+
+      // Y la orden lleva su línea de descuento, para que su detalle cuadre con lo cobrado.
+      const suyos = d.descuentos.filter((x: { idOrden: string }) => x.idOrden === idOrden);
+      expect(suyos).toEqual([expect.objectContaining({ nombre: 'Mitad de precio', importe: -25 })]);
     } finally {
       await api().delete(`/api/promociones/${idPromo}`).set(auth(admin));
     }
+  });
+
+  describe('un combo se vende como lo que lleva', () => {
+    let idCombo: number;
+
+    beforeAll(async () => {
+      // 2 gorditas (25 c/u) + un agua (15) = 65 de carta; el combo cuesta 55.
+      const combo = await api()
+        .post('/api/promociones')
+        .set(auth(admin))
+        .send({
+          nombre: 'Combo comida',
+          forma: 'combo',
+          precio: 55,
+          items: [
+            { idPlatillo: cat.platillo.id, cantidad: 2 },
+            { idProducto: cat.producto.id, cantidad: 1 },
+          ],
+        });
+      expect(combo.status).toBe(201);
+      idCombo = combo.body.data.id;
+    });
+
+    afterAll(async () => {
+      await api().delete(`/api/promociones/${idCombo}`).set(auth(admin));
+    });
+
+    /** Lo que hace la caja al vender el combo: sus artículos, uno por uno, a precio de carta. */
+    async function venderCombo() {
+      const { idOrden } = await ordenCon(2);
+      const bebida = await api().post(`/api/ordenes/${idOrden}/producto`).set(auth(mesero)).send({ idProducto: cat.producto.id, cantidad: 1 });
+      expect(bebida.status).toBe(201);
+      return idOrden;
+    }
+
+    const existencia = async () => {
+      const res = await api().get('/api/catalogos/producto?limit=100').set(auth(admin));
+      return res.body.data.items.find((p: { _id: number }) => p._id === cat.producto.id).cantidad as number;
+    };
+
+    it('el mesero ve qué combos puede vender, y de qué están hechos', async () => {
+      const res = await api().get('/api/promociones/combos').set(auth(mesero));
+      expect(res.status).toBe(200);
+      const combo = res.body.data.combos.find((c: { id: number }) => c.id === idCombo);
+      expect(combo).toMatchObject({ nombre: 'Combo comida', precio: 55 });
+      expect(combo.items).toHaveLength(2);
+      // Solo combos: un porcentaje no es algo que se pueda «añadir» a una orden.
+      expect(res.body.data.combos.every((c: { precio: number }) => c.precio > 0)).toBe(true);
+    });
+
+    it('la bebida del combo sale del inventario, como si se hubiera pedido sola', async () => {
+      const antes = await existencia();
+      const idOrden = await venderCombo();
+      expect(await existencia()).toBe(antes - 1);
+
+      const d = await verOrden(idOrden);
+      // Las líneas a precio de carta, y la diferencia como su propia línea.
+      expect(d.productos).toHaveLength(1);
+      expect(d.productos[0]).toMatchObject({ nombreProducto: 'Agua', importe: 15 });
+      expect(d.descuentos).toEqual([expect.objectContaining({ nombre: 'Combo comida', importe: -10 })]);
+      expect(d.total).toBe(55);
+    });
+
+    it('la cocina ve los platillos del combo, no el nombre del combo', async () => {
+      const idOrden = await venderCombo();
+      const cocina = await api().get('/api/ordenes?limit=1000&estatusNo=Pagada,Cancelado').set(auth(mesero));
+      const orden = cocina.body.data.ordenes.find((o: { _id: string }) => o._id === idOrden);
+      expect(orden, 'la orden no llegó a la cocina').toBeDefined();
+
+      const d = await verOrden(idOrden);
+      const nombres = [...d.platillos.map((p: { nombrePlatillo: string }) => p.nombrePlatillo), ...d.productos.map((p: { nombreProducto: string }) => p.nombreProducto)];
+      expect(nombres).toEqual(expect.arrayContaining(['Gordita sencilla', 'Agua']));
+      expect(nombres).not.toContain('Combo comida');
+      expect(d.platillos[0].cantidad).toBe(2);
+    });
   });
 
   it('otro restaurante no ve estas promociones', async () => {
