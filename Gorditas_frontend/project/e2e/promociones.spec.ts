@@ -146,3 +146,54 @@ test('un combo entra en la orden como lo que lleva, y la caja cobra su precio', 
     await sinPromocionesActivas(page);
   }
 });
+
+/**
+ * Los campos numéricos se pueden vaciar con el teclado.
+ *
+ * Convertían en cada tecla (`parseFloat(v) || 0`): al borrar el último dígito el valor volvía a
+ * 0 y el campo nunca quedaba vacío, así que no había forma de quitar el «0» del precio ni el «1»
+ * de la cantidad. Las pruebas no lo veían porque `fill()` sustituye el valor de una vez; aquí se
+ * borra tecla a tecla, como lo hace una persona.
+ */
+test('el precio y la cantidad de un combo se pueden borrar y reescribir', async ({ page }) => {
+  const nombre = `Combo teclado ${Date.now()}`;
+  await page.goto('/promociones');
+  await page.waitForLoadState('networkidle');
+
+  await page.getByRole('button', { name: /nueva promoción/i }).click();
+  await page.getByPlaceholder('Martes de gorditas').fill(nombre);
+  await page.getByRole('button', { name: /^Combo/ }).click();
+
+  // Un artículo: la cantidad nace en 1.
+  const agregar = page.locator('select').filter({ hasText: /Agregar artículo/ });
+  await agregar.selectOption({ index: 1 });
+
+  const precio = page.locator('input[type="number"]').first();
+  const cantidad = page.locator('input[type="number"]').nth(1);
+  await expect(cantidad).toHaveValue('1');
+
+  // Se borra con el teclado y queda vacío; no reaparece el valor anterior.
+  await precio.click();
+  await precio.press('Control+a');
+  await precio.press('Backspace');
+  await expect(precio).toHaveValue('');
+  await precio.pressSequentially('60');
+  await expect(precio).toHaveValue('60');
+
+  await cantidad.click();
+  await cantidad.press('End');
+  await cantidad.press('Backspace');
+  await expect(cantidad).toHaveValue('');
+
+  // Vacía no se guarda: lo dice en vez de mandar un combo sin cantidad.
+  await page.getByRole('button', { name: /^Guardar$/ }).click();
+  await expect(page.getByText(/cantidad de al menos 1/i)).toBeVisible();
+
+  await cantidad.pressSequentially('3');
+  await expect(cantidad).toHaveValue('3');
+  await page.getByRole('button', { name: /^Guardar$/ }).click();
+  await expect(page.getByText(nombre).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/3× .* por \$60\.00/).first()).toBeVisible();
+
+  await sinPromocionesActivas(page);
+});

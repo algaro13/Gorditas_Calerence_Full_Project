@@ -13,6 +13,7 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { numeroDeCampo } from '../utils/campos';
 import { Producto } from '../types';
 
 interface ProductoInventario {
@@ -22,8 +23,9 @@ interface ProductoInventario {
   cantidad: number;
   costo: number;
   activo?: boolean;
-  cantidadNueva?: number;
-  costoNuevo?: number;
+  /** `null` mientras el campo está vacío; ver `numeroDeCampo`. */
+  cantidadNueva?: number | null;
+  costoNuevo?: number | null;
   activoNuevo?: boolean;
   editando?: boolean;
 }
@@ -37,8 +39,8 @@ const RecibirProductos: React.FC = () => {
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     codigoBarras: '',
-    cantidad: 0,
-    costo: 0,
+    cantidad: 0 as number | null,
+    costo: 0 as number | null,
     idTipoProducto: ''
   });
   const [tiposProducto, setTiposProducto] = useState<any[]>([]);
@@ -125,11 +127,17 @@ const RecibirProductos: React.FC = () => {
   };
 
   const handleSave = async (producto: ProductoInventario) => {
+    // Vacío no es cero: guardar un campo borrado dejaría la existencia en un valor que nadie
+    // escribió. Un 0 sí vale —el producto se agotó— y se guarda como 0.
+    if (producto.cantidadNueva === null || producto.costoNuevo === null) {
+      setError('La cantidad y el costo no pueden quedar vacíos');
+      return;
+    }
     setSaving(true);
     try {
       const updatedData = {
-        cantidad: producto.cantidadNueva || producto.cantidad,
-        costo: producto.costoNuevo || producto.costo,
+        cantidad: producto.cantidadNueva ?? producto.cantidad,
+        costo: producto.costoNuevo ?? producto.costo,
         activo: producto.activoNuevo !== undefined ? producto.activoNuevo : producto.activo
       };
 
@@ -160,7 +168,7 @@ const RecibirProductos: React.FC = () => {
   const handleAgregarCantidad = (producto: ProductoInventario, cantidad: number) => {
     const updatedProductos = productos.map(p => 
       p._id === producto._id 
-        ? { ...p, cantidadNueva: (p.cantidadNueva || p.cantidad) + cantidad }
+        ? { ...p, cantidadNueva: (p.cantidadNueva ?? p.cantidad) + cantidad }
         : p
     );
     setProductos(updatedProductos);
@@ -169,7 +177,7 @@ const RecibirProductos: React.FC = () => {
   const handleQuitarCantidad = (producto: ProductoInventario, cantidad: number) => {
     const updatedProductos = productos.map(p => 
       p._id === producto._id 
-        ? { ...p, cantidadNueva: Math.max(0, (p.cantidadNueva || p.cantidad) - cantidad) }
+        ? { ...p, cantidadNueva: Math.max(0, (p.cantidadNueva ?? p.cantidad) - cantidad) }
         : p
     );
     setProductos(updatedProductos);
@@ -200,7 +208,12 @@ const RecibirProductos: React.FC = () => {
 
     setSaving(true);
     try {
-      const response = await apiService.createCatalogItem('producto', nuevoProducto);
+      // Un alta con la cantidad o el costo en blanco empieza en 0, como antes de poder vaciarlos.
+      const response = await apiService.createCatalogItem('producto', {
+        ...nuevoProducto,
+        cantidad: nuevoProducto.cantidad ?? 0,
+        costo: nuevoProducto.costo ?? 0,
+      });
       
       if (response.success) {
         setSuccess('Producto creado exitosamente');
@@ -250,10 +263,10 @@ const RecibirProductos: React.FC = () => {
         </button>
         <input
           type="number"
-          value={producto.cantidadNueva || producto.cantidad}
+          value={producto.cantidadNueva ?? ''}
           onChange={(e) => {
             setProductos(productos.map((p) =>
-              p._id === producto._id ? { ...p, cantidadNueva: parseInt(e.target.value) || 0 } : p,
+              p._id === producto._id ? { ...p, cantidadNueva: numeroDeCampo(e.target.value) } : p,
             ));
           }}
           className="campo w-20 text-center"
@@ -279,10 +292,10 @@ const RecibirProductos: React.FC = () => {
     producto.editando ? (
       <input
         type="number"
-        value={producto.costoNuevo || producto.costo}
+        value={producto.costoNuevo ?? ''}
         onChange={(e) => {
           setProductos(productos.map((p) =>
-            p._id === producto._id ? { ...p, costoNuevo: parseFloat(e.target.value) || 0 } : p,
+            p._id === producto._id ? { ...p, costoNuevo: numeroDeCampo(e.target.value) } : p,
           ));
         }}
         className="campo w-24"
@@ -544,8 +557,8 @@ const RecibirProductos: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={nuevoProducto.cantidad}
-                    onChange={(e) => setNuevoProducto({...nuevoProducto, cantidad: parseInt(e.target.value) || 0})}
+                    value={nuevoProducto.cantidad ?? ''}
+                    onChange={(e) => setNuevoProducto({...nuevoProducto, cantidad: numeroDeCampo(e.target.value)})}
                     className="campo"
                     min="0"
                   />
@@ -556,8 +569,8 @@ const RecibirProductos: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={nuevoProducto.costo}
-                    onChange={(e) => setNuevoProducto({...nuevoProducto, costo: parseFloat(e.target.value) || 0})}
+                    value={nuevoProducto.costo ?? ''}
+                    onChange={(e) => setNuevoProducto({...nuevoProducto, costo: numeroDeCampo(e.target.value)})}
                     className="campo"
                     min="0"
                     step="0.01"

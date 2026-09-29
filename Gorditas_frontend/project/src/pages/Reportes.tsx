@@ -21,6 +21,7 @@ import { apiService } from '../services/api';
 import ExcelJS from 'exceljs';
 import { useAuth } from '../context/AuthContext';
 import { diaEn } from '../utils/dia';
+import { numeroDeCampo } from '../utils/campos';
 
 interface VentaPorDia {
   _id: string;
@@ -149,7 +150,7 @@ const Reportes: React.FC = () => {
   const [nuevoGasto, setNuevoGasto] = useState({
     nombre: '',
     idTipoGasto: '',
-    gastoTotal: 0,
+    gastoTotal: 0 as number | null,
     descripcion: ''
   });
   const [savingGasto, setSavingGasto] = useState(false);
@@ -158,12 +159,12 @@ const Reportes: React.FC = () => {
   // Estados para la funcionalidad de caja
   const [montoCajaPorFecha, setMontoCajaPorFecha] = useState<{[fecha: string]: number}>({});
   const [editandoCaja, setEditandoCaja] = useState<string | null>(null);
-  const [montoTemporal, setMontoTemporal] = useState<number>(0);
+  const [montoTemporal, setMontoTemporal] = useState<number | null>(0);
   const [guardandoCaja, setGuardandoCaja] = useState<string | null>(null);
   
   // Estados para editar caja del día actual en el recuadro superior
   const [editandoCajaDiaActual, setEditandoCajaDiaActual] = useState<boolean>(false);
-  const [montoAgregarCaja, setMontoAgregarCaja] = useState<number>(0);
+  const [montoAgregarCaja, setMontoAgregarCaja] = useState<number | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -260,6 +261,11 @@ const Reportes: React.FC = () => {
 
   const confirmarEdicionCaja = async () => {
     if (editandoCaja) {
+      // Vacío no es cero: se pide el monto en vez de guardar un 0 que nadie escribió.
+      if (montoTemporal === null) {
+        setError('Escribe el monto de caja');
+        return;
+      }
       setGuardandoCaja(editandoCaja);
       try {
         await guardarMontoCaja(editandoCaja, montoTemporal);
@@ -281,23 +287,27 @@ const Reportes: React.FC = () => {
   const iniciarEdicionCajaDiaActual = () => {
     const fechaActual = obtenerFechaActual();
     setEditandoCajaDiaActual(true);
-    setMontoAgregarCaja(0);
+    setMontoAgregarCaja(null);
   };
 
   const cancelarEdicionCajaDiaActual = () => {
     setEditandoCajaDiaActual(false);
-    setMontoAgregarCaja(0);
+    setMontoAgregarCaja(null);
   };
 
   const confirmarAgregarCajaDiaActual = async () => {
     const fechaActual = obtenerFechaActual();
+    if (montoAgregarCaja === null) {
+      setError('Escribe el monto a agregar');
+      return;
+    }
     const montoActual = montoCajaPorFecha[fechaActual] || 0;
     const nuevoMonto = montoActual + montoAgregarCaja;
     
     
     await guardarMontoCaja(fechaActual, nuevoMonto);
     setEditandoCajaDiaActual(false);
-    setMontoAgregarCaja(0);
+    setMontoAgregarCaja(null);
   };
 
   useEffect(() => {
@@ -495,7 +505,7 @@ const Reportes: React.FC = () => {
   };
 
   const handleCreateGasto = async () => {
-    if (!nuevoGasto.nombre || !nuevoGasto.idTipoGasto || nuevoGasto.gastoTotal <= 0) {
+    if (!nuevoGasto.nombre || !nuevoGasto.idTipoGasto || (nuevoGasto.gastoTotal ?? 0) <= 0) {
       setError('Por favor completa todos los campos requeridos');
       return;
     }
@@ -504,7 +514,7 @@ const Reportes: React.FC = () => {
     setError('');
 
     try {
-      const response = await apiService.createGasto(nuevoGasto);
+      const response = await apiService.createGasto({ ...nuevoGasto, gastoTotal: nuevoGasto.gastoTotal ?? 0 });
       
       if (response.success) {
         setShowGastoModal(false);
@@ -1056,8 +1066,8 @@ const Reportes: React.FC = () => {
       <div className="flex items-center gap-sp-1">
         <input
           type="number"
-          value={montoTemporal}
-          onChange={(e) => setMontoTemporal(parseFloat(e.target.value) || 0)}
+          value={montoTemporal ?? ''}
+          onChange={(e) => setMontoTemporal(numeroDeCampo(e.target.value))}
           className="campo w-24"
           placeholder="0.00"
           step="0.01"
@@ -1266,8 +1276,8 @@ const Reportes: React.FC = () => {
                             <div className="mt-2 space-y-sp-1">
                               <input
                                 type="number"
-                                value={montoAgregarCaja}
-                                onChange={(e) => setMontoAgregarCaja(parseFloat(e.target.value) || 0)}
+                                value={montoAgregarCaja ?? ''}
+                                onChange={(e) => setMontoAgregarCaja(numeroDeCampo(e.target.value))}
                                 className="campo"
                                 placeholder="Agregar..."
                                 step="0.01"
@@ -1912,8 +1922,8 @@ const Reportes: React.FC = () => {
                   type="number"
                   step="0.01"
                   min="0"
-                  value={nuevoGasto.gastoTotal}
-                  onChange={(e) => setNuevoGasto({ ...nuevoGasto, gastoTotal: parseFloat(e.target.value) || 0 })}
+                  value={nuevoGasto.gastoTotal ?? ''}
+                  onChange={(e) => setNuevoGasto({ ...nuevoGasto, gastoTotal: numeroDeCampo(e.target.value) })}
                   className="campo"
                   placeholder="0.00"
                 />

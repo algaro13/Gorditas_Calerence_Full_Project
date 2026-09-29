@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Tag, X } from 'lucide-react';
 import { Aviso } from '../components/Aviso';
 import { apiService } from '../services/api';
+import { numeroDeCampo } from '../utils/campos';
 import type { FormaPromocion, Promocion, PromocionItem } from '../types';
 
 /** Lo que esta pantalla necesita de un catálogo: su identificador y cómo se llama. */
@@ -116,8 +117,12 @@ const Promociones: React.FC = () => {
   };
 
   const guardar = async () => {
-    setGuardando(true);
     setError('');
+    if ((form.items ?? []).some((it) => !Number.isInteger(it.cantidad) || it.cantidad < 1)) {
+      setError('Cada artículo necesita una cantidad de al menos 1');
+      return;
+    }
+    setGuardando(true);
     // El servidor vuelve a validar que cada forma traiga lo suyo: aquí solo se evita el viaje.
     const datos: Partial<Promocion> = {
       ...form,
@@ -165,7 +170,8 @@ const Promociones: React.FC = () => {
   const cambiarCantidad = (indice: number, cantidad: number) => {
     setForm({
       ...form,
-      items: (form.items ?? []).map((it, i) => (i === indice ? { ...it, cantidad: Math.max(1, cantidad) } : it)),
+      // Se deja en 0 mientras se escribe —el campo se ve vacío—; guardar no lo acepta.
+      items: (form.items ?? []).map((it, i) => (i === indice ? { ...it, cantidad } : it)),
     });
   };
 
@@ -291,7 +297,7 @@ const Promociones: React.FC = () => {
                   type="number"
                   className="campo"
                   value={form.precio ?? ''}
-                  onChange={(e) => setForm({ ...form, precio: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setForm({ ...form, precio: numeroDeCampo(e.target.value) })}
                   min="0"
                   step="0.01"
                 />
@@ -306,7 +312,7 @@ const Promociones: React.FC = () => {
                     type="number"
                     className="campo"
                     value={form.lleva ?? ''}
-                    onChange={(e) => setForm({ ...form, lleva: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setForm({ ...form, lleva: numeroDeCampo(e.target.value) })}
                     min="2"
                   />
                 </div>
@@ -316,7 +322,7 @@ const Promociones: React.FC = () => {
                     type="number"
                     className="campo"
                     value={form.paga ?? ''}
-                    onChange={(e) => setForm({ ...form, paga: parseInt(e.target.value) || 0 })}
+                    onChange={(e) => setForm({ ...form, paga: numeroDeCampo(e.target.value) })}
                     min="1"
                   />
                 </div>
@@ -330,7 +336,7 @@ const Promociones: React.FC = () => {
                   type="number"
                   className="campo"
                   value={form.porcentaje ?? ''}
-                  onChange={(e) => setForm({ ...form, porcentaje: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => setForm({ ...form, porcentaje: numeroDeCampo(e.target.value) })}
                   min="1"
                   max="100"
                 />
@@ -364,8 +370,8 @@ const Promociones: React.FC = () => {
                     <input
                       type="number"
                       className="campo w-20"
-                      value={it.cantidad}
-                      onChange={(e) => cambiarCantidad(i, parseInt(e.target.value) || 1)}
+                      value={it.cantidad || ''}
+                      onChange={(e) => cambiarCantidad(i, numeroDeCampo(e.target.value) ?? 0)}
                       min="1"
                       aria-label="Cantidad"
                     />
