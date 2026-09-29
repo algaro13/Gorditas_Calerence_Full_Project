@@ -34,7 +34,7 @@ async function paletaSeleccionada(page: Page): Promise<string> {
 
 test('cambiar el precio de un platillo lo guarda', async ({ page }) => {
   await page.goto('/catalogos');
-  await page.getByRole('button', { name: 'Platillos', exact: true }).click();
+  await page.getByLabel('Catálogo').selectOption({ label: 'Platillos' });
 
   // En teléfono el catálogo se muestra en tarjetas, no en tabla: la fila existe en el DOM pero
   // está oculta desde que las columnas dejaron de caber. Se busca la tarjeta.
@@ -60,7 +60,7 @@ test('cambiar el precio de un platillo lo guarda', async ({ page }) => {
 
   // Recarga: es lo que separa «se guardó» de «la pantalla lo muestra».
   await page.reload();
-  await page.getByRole('button', { name: 'Platillos', exact: true }).click();
+  await page.getByLabel('Catálogo').selectOption({ label: 'Platillos' });
   await expect(tarjeta()).toContainText(`$${nuevo}`, { timeout: 15_000 });
 
   // Se devuelve a su precio, para que la prueba pueda correrse otra vez igual.

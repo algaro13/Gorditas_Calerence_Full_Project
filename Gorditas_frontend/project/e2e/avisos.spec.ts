@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 
 test('un error provocado desde abajo se ve sin desplazar la pantalla', async ({ page }) => {
   await page.goto('/catalogos');
-  await page.getByRole('button', { name: 'Guisos', exact: true }).click();
+  await page.getByLabel('Catálogo').selectOption({ label: 'Guisos' });
   await page.getByRole('button', { name: /nuevo guiso/i }).click();
 
   const guardar = page.getByRole('button', { name: /guardar/i });

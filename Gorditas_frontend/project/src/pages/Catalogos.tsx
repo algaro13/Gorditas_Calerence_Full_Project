@@ -939,7 +939,27 @@ const Catalogos: React.FC = () => {
               <h2 className="text-titulo font-semibold text-gray-900 truncate">Catálogos</h2>
             </div>
             
-            <div className="space-y-1 sm:space-y-2">
+            {/* En el teléfono, un selector: la lista de once catálogos ocupaba la pantalla entera
+                antes de mostrar el contenido del elegido, y había que desplazarse para verlo. Son
+                opciones fijas, así que va nativo. En pantalla ancha sigue la lista lateral. */}
+            <label htmlFor="catalogo-elegido" className="sr-only">Catálogo</label>
+            <select
+              id="catalogo-elegido"
+              className="campo lg:hidden"
+              value={selectedModel.id}
+              onChange={(e) => {
+                const model = catalogModels.find((m) => m.id === e.target.value);
+                if (model) handleModelSelect(model);
+              }}
+            >
+              {catalogModels.map((model) => (
+                <option key={model.id} value={model.id}>
+                  {model.name}
+                </option>
+              ))}
+            </select>
+
+            <div className="hidden lg:block space-y-1 sm:space-y-2">
               {catalogModels.map((model) => (
                 <button
                   key={model.id}
