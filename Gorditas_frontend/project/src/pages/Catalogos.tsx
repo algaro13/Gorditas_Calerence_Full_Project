@@ -11,6 +11,7 @@ import {
   Filter
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { SelectorBuscable } from '../components/SelectorBuscable';
 import { useAuth } from '../context/AuthContext';
 import { BaseEntity } from '../types';
 import UsuariosPanel from '../components/UsuariosPanel';
@@ -530,46 +531,37 @@ const Catalogos: React.FC = () => {
       case 'idTipoPlatillo': {
         // Mostrar solo tipos de platillo existentes
         return (
-          <select
-            value={value || ''}
-            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="campo"
-          >
-            <option value="">Selecciona tipo de platillo</option>
-            {(Array.isArray(tiposPlatillo) ? tiposPlatillo : []).map(tipo => (
-              <option key={tipo._id} value={tipo._id}>{tipo.nombre}</option>
-            ))}
-          </select>
+          <SelectorBuscable
+            valor={value ? String(value) : ''}
+            onChange={(v) => setFormData({ ...formData, [field]: v })}
+            placeholder="Selecciona tipo de platillo"
+            aria-label="Selecciona tipo de platillo"
+            opciones={(Array.isArray(tiposPlatillo) ? tiposPlatillo : []).map((tipo) => ({ valor: String(tipo._id), etiqueta: tipo.nombre }))}
+          />
         );
       }
       case 'idTipoExtra': {
         // Mostrar solo tipos de extra existentes
         return (
-          <select
-            value={value || ''}
-            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="campo"
-          >
-            <option value="">Selecciona tipo de extra</option>
-            {(Array.isArray(tiposExtra) ? tiposExtra : []).map(tipo => (
-              <option key={tipo._id} value={tipo._id}>{tipo.nombre}</option>
-            ))}
-          </select>
+          <SelectorBuscable
+            valor={value ? String(value) : ''}
+            onChange={(v) => setFormData({ ...formData, [field]: v })}
+            placeholder="Selecciona tipo de extra"
+            aria-label="Selecciona tipo de extra"
+            opciones={(Array.isArray(tiposExtra) ? tiposExtra : []).map((tipo) => ({ valor: String(tipo._id), etiqueta: tipo.nombre }))}
+          />
         );
       }
       case 'idTipoProducto': {
         // Mostrar solo tipos de producto existentes
         return (
-          <select
-            value={value || ''}
-            onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
-            className="campo"
-          >
-            <option value="">Selecciona tipo de producto</option>
-            {(Array.isArray(tiposProducto) ? tiposProducto : []).map(tipo => (
-              <option key={tipo._id} value={tipo._id}>{tipo.nombre}</option>
-            ))}
-          </select>
+          <SelectorBuscable
+            valor={value ? String(value) : ''}
+            onChange={(v) => setFormData({ ...formData, [field]: v })}
+            placeholder="Selecciona tipo de producto"
+            aria-label="Selecciona tipo de producto"
+            opciones={(Array.isArray(tiposProducto) ? tiposProducto : []).map((tipo) => ({ valor: String(tipo._id), etiqueta: tipo.nombre }))}
+          />
         );
       }
       case 'activo':

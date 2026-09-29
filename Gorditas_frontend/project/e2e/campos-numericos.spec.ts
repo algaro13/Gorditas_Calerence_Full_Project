@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { periodoAmplio } from './periodo';
+import { elegirEn } from './selector';
 
 /**
  * Los campos numéricos se vacían con el teclado, y vacío no se guarda como cero.
@@ -28,7 +29,7 @@ test('recibir producto: la existencia se vacía, vacía no se guarda, y un 0 sí
   // El alta: cantidad y costo arrancan en 0 y se pueden borrar para escribir encima.
   await page.getByRole('button', { name: /nuevo producto/i }).first().click();
   await page.getByPlaceholder('Nombre del producto').fill(nombre);
-  await page.locator('select').last().selectOption({ index: 1 });
+  await elegirEn(page.getByRole('combobox', { name: 'Tipo de producto' }));
   const [cantidadAlta, costoAlta] = [page.locator('input[type="number"]').nth(-2), page.locator('input[type="number"]').last()];
   await borrar(cantidadAlta);
   await expect(cantidadAlta).toHaveValue('');

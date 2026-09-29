@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Tag, X } from 'lucide-react';
 import { Aviso } from '../components/Aviso';
+import { SelectorBuscable } from '../components/SelectorBuscable';
 import { apiService } from '../services/api';
 import { numeroDeCampo } from '../utils/campos';
 import type { FormaPromocion, Promocion, PromocionItem } from '../types';
@@ -346,18 +347,13 @@ const Promociones: React.FC = () => {
             {form.forma !== 'combo' && (
               <div>
                 <label className="etiqueta">Sobre qué categoría</label>
-                <select
-                  className="campo"
-                  value={form.idTipoPlatillo ?? ''}
-                  onChange={(e) => setForm({ ...form, idTipoPlatillo: e.target.value ? Number(e.target.value) : null })}
-                >
-                  <option value="">Toda la orden</option>
-                  {tipos.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.nombre}
-                    </option>
-                  ))}
-                </select>
+                <SelectorBuscable
+                  aria-label="Sobre qué categoría"
+                  valor={form.idTipoPlatillo != null ? String(form.idTipoPlatillo) : ''}
+                  onChange={(v) => setForm({ ...form, idTipoPlatillo: v ? Number(v) : null })}
+                  opcionVacia="Toda la orden"
+                  opciones={tipos.map((t) => ({ valor: String(t._id), etiqueta: t.nombre }))}
+                />
               </div>
             )}
 
@@ -380,26 +376,21 @@ const Promociones: React.FC = () => {
                     </button>
                   </div>
                 ))}
-                <select
-                  className="campo"
-                  value=""
-                  onChange={(e) => {
-                    const [tipo, id] = e.target.value.split(':');
+                {/* Una acción, no un valor: al elegir se agrega y queda listo para el siguiente. */}
+                <SelectorBuscable
+                  accion
+                  aria-label="Agregar artículo"
+                  placeholder="Agregar artículo…"
+                  valor=""
+                  onChange={(v) => {
+                    const [tipo, id] = v.split(':');
                     agregarItem(tipo === 'p' ? Number(id) : null, tipo === 'r' ? Number(id) : null);
                   }}
-                >
-                  <option value="">Agregar artículo…</option>
-                  {platillos.map((p) => (
-                    <option key={`p${p._id}`} value={`p:${p._id}`}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                  {productos.map((p) => (
-                    <option key={`r${p._id}`} value={`r:${p._id}`}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                </select>
+                  opciones={[
+                    ...platillos.map((p) => ({ valor: `p:${p._id}`, etiqueta: p.nombre, grupo: 'Platillos' })),
+                    ...productos.map((p) => ({ valor: `r:${p._id}`, etiqueta: p.nombre, grupo: 'Productos' })),
+                  ]}
+                />
               </div>
             )}
 

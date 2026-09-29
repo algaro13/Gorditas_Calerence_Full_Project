@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { cliente, llevarACaja, tomarOrden } from './ordenes';
+import { elegirEn } from './selector';
 
 /**
  * Una promoción, de punta a punta: se crea en su pantalla, una orden la gana sola, y la caja
@@ -120,9 +121,9 @@ test('un combo entra en la orden como lo que lleva, y la caja cobra su precio', 
     // Se elige el combo y el guiso de cada gordita; nada más.
     await page.getByRole('button', { name: /combo/i }).first().click();
     await page.getByRole('button', { name: new RegExp(nombre) }).click();
-    const guisos = page.locator('select');
+    const guisos = page.getByRole('combobox', { name: /^Guiso de/ });
     await expect(guisos).toHaveCount(2);
-    for (let i = 0; i < 2; i++) await guisos.nth(i).selectOption({ index: 1 });
+    for (let i = 0; i < 2; i++) await elegirEn(guisos.nth(i));
     await page.getByRole('button', { name: /^Agregar combo$/ }).click();
 
     // Entra como sus artículos: las dos gorditas y la bebida, no una línea que diga «combo».
@@ -165,8 +166,7 @@ test('el precio y la cantidad de un combo se pueden borrar y reescribir', async 
   await page.getByRole('button', { name: /^Combo/ }).click();
 
   // Un artículo: la cantidad nace en 1.
-  const agregar = page.locator('select').filter({ hasText: /Agregar artículo/ });
-  await agregar.selectOption({ index: 1 });
+  await elegirEn(page.getByRole('combobox', { name: 'Agregar artículo' }));
 
   const precio = page.locator('input[type="number"]').first();
   const cantidad = page.locator('input[type="number"]').nth(1);

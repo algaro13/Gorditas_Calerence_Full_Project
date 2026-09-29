@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Aviso } from '../components/Aviso';
+import { SelectorBuscable } from '../components/SelectorBuscable';
 import {
   Plus,
   Minus,
@@ -2049,23 +2050,19 @@ const NuevaOrden: React.FC = () => {
                     <span className="text-cuerpo font-medium text-gray-900">
                       {platillo?.nombre} {unidadesDePlatillo(comboEnArmado.combo).length > 1 ? `#${idx + 1}` : ''}
                     </span>
-                    <select
-                      value={comboEnArmado.guisos[idx]?._id ?? ''}
-                      onChange={(e) => {
-                        const guiso = guisos.find((g) => String(g._id) === e.target.value) ?? null;
+                    <SelectorBuscable
+                      className="mt-1"
+                      aria-label={`Guiso de ${platillo?.nombre ?? 'la gordita'}${unidadesDePlatillo(comboEnArmado.combo).length > 1 ? ` #${idx + 1}` : ''}`}
+                      placeholder="Elige el guiso…"
+                      valor={comboEnArmado.guisos[idx]?._id != null ? String(comboEnArmado.guisos[idx]!._id) : ''}
+                      onChange={(v) => {
+                        const guiso = guisos.find((g) => String(g._id) === v) ?? null;
                         setComboEnArmado((prev) =>
                           prev ? { ...prev, guisos: prev.guisos.map((g, i) => (i === idx ? guiso : g)) } : prev,
                         );
                       }}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 p-2 text-cuerpo"
-                    >
-                      <option value="">Elige el guiso…</option>
-                      {guisos.filter((g) => g.activo !== false).map((g) => (
-                        <option key={g._id} value={g._id}>
-                          {g.nombre}
-                        </option>
-                      ))}
-                    </select>
+                      opciones={guisos.filter((g) => g.activo !== false).map((g) => ({ valor: String(g._id), etiqueta: g.nombre }))}
+                    />
                   </label>
                 ))}
                 <p className="text-meta text-gray-500">

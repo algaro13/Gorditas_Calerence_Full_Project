@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Aviso } from '../components/Aviso';
+import { SelectorBuscable } from '../components/SelectorBuscable';
 import { 
   Package, 
   Search, 
@@ -525,16 +526,13 @@ const RecibirProductos: React.FC = () => {
                 <label className="block text-cuerpo font-medium text-gray-700 mb-2 truncate">
                   Tipo de Producto*
                 </label>
-                <select
-                  value={nuevoProducto.idTipoProducto}
-                  onChange={(e) => setNuevoProducto({...nuevoProducto, idTipoProducto: e.target.value})}
-                  className="campo"
-                >
-                  <option value="">Selecciona tipo</option>
-                  {tiposProducto.map(tipo => (
-                    <option key={tipo._id} value={tipo._id}>{tipo.nombre}</option>
-                  ))}
-                </select>
+                <SelectorBuscable
+                  aria-label="Tipo de producto"
+                  placeholder="Selecciona tipo"
+                  valor={nuevoProducto.idTipoProducto ? String(nuevoProducto.idTipoProducto) : ''}
+                  onChange={(v) => setNuevoProducto({ ...nuevoProducto, idTipoProducto: v })}
+                  opciones={tiposProducto.map((tipo) => ({ valor: String(tipo._id), etiqueta: tipo.nombre }))}
+                />
               </div>
 
               <div>

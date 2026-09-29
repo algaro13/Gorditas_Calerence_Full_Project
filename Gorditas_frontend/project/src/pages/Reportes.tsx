@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Aviso } from '../components/Aviso';
+import { SelectorBuscable } from '../components/SelectorBuscable';
 import type { LineaDescuento } from '../types';
 import { 
   BarChart3, 
@@ -1900,18 +1901,13 @@ const Reportes: React.FC = () => {
                 <label className="block text-cuerpo font-medium text-gray-700 mb-2">
                   Tipo de Gasto
                 </label>
-                <select
-                  value={nuevoGasto.idTipoGasto}
-                  onChange={(e) => setNuevoGasto({ ...nuevoGasto, idTipoGasto: e.target.value })}
-                  className="campo"
-                >
-                  <option value="">Selecciona un tipo</option>
-                  {tiposGasto.map((tipo) => (
-                    <option key={tipo._id} value={tipo._id}>
-                      {tipo.nombre}
-                    </option>
-                  ))}
-                </select>
+                <SelectorBuscable
+                  aria-label="Tipo de gasto"
+                  placeholder="Selecciona un tipo"
+                  valor={nuevoGasto.idTipoGasto ? String(nuevoGasto.idTipoGasto) : ''}
+                  onChange={(v) => setNuevoGasto({ ...nuevoGasto, idTipoGasto: v })}
+                  opciones={tiposGasto.map((tipo) => ({ valor: String(tipo._id), etiqueta: tipo.nombre }))}
+                />
               </div>
 
               <div>
