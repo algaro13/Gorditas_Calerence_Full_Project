@@ -11,6 +11,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { etiquetaDeEstatus } from '../utils/estatus';
 import { Orden, Mesa, OrdenDetalleProducto, OrdenDetallePlatillo } from '../types';
 
 interface OrdenConDetalles extends Orden {
@@ -717,7 +718,12 @@ const Despachar: React.FC = () => {
                             {mesa.nombreMesa || `Mesa ${mesa.idMesa}`}
                           </h3>
                           <p className="text-cuerpo text-gray-600 truncate">
-                            {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'} surtida{mesa.totalOrdenes === 1 ? '' : 's'}
+                            {mesa.totalOrdenes} {mesa.totalOrdenes === 1 ? 'orden' : 'órdenes'}
+                          </p>
+                          {/* Para quién: con varios «Pedido 1» abiertos, el nombre de la mesa no basta para
+                              saber cuál se entrega sin abrir cada tarjeta. */}
+                          <p className="text-meta text-gray-500 truncate">
+                            {[...new Set(mesa.ordenes.map((o) => o.nombreCliente || 'Sin nombre'))].join(', ')}
                           </p>
                         </div>
                       </div>
@@ -802,7 +808,7 @@ const Despachar: React.FC = () => {
                                             ? 'bg-blue-100 text-blue-800' 
                                             : 'bg-green-100 text-green-800'
                                         }`}>
-                                          {orden.estatus}
+                                          {etiquetaDeEstatus(orden.estatus)}
                                         </span>
                                       </div>
                                       {orden.notas && (
@@ -929,7 +935,7 @@ const Despachar: React.FC = () => {
                   </div>
                   <div className="flex justify-between sm:block">
                     <span className="text-gray-600">Estado:</span>
-                    <span className="ml-2 font-medium break-words">{selectedOrden.estatus}</span>
+                    <span className="ml-2 font-medium break-words">{etiquetaDeEstatus(selectedOrden.estatus)}</span>
                   </div>
                 </div>
               </div>

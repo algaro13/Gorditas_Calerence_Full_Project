@@ -12,6 +12,7 @@ import {
   Tag
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { etiquetaDeEstatus } from '../utils/estatus';
 import { precioVenta } from '../utils/precios';
 import { Mesa, Platillo, Guiso, OrderStep, ApiResponse, Extra, TipoExtra, ComboVendible } from '../types';
 
@@ -269,6 +270,17 @@ const NuevaOrden: React.FC = () => {
     const nombreLower = mesa.nombre.trim().toLowerCase();
     return nombreLower.startsWith('pedido') || nombreLower.startsWith('nuevo pedido');
   };
+
+  /**
+   * Una mesa «Pedido N» que ya no tiene órdenes: sobra en la rejilla.
+   *
+   * Cada «Nuevo pedido» crea una mesa temporal con ese nombre, y el número se reinicia cada día.
+   * Nadie las desactivaba al cobrar, así que la rejilla crecía una casilla por cada pedido para
+   * llevar —con nombres repetidos de un día a otro— hasta tapar las mesas de verdad. Se esconden
+   * las libres; las ocupadas siguen, porque a un pedido abierto se le puede sumar otro cliente.
+   */
+  const esPedidoLibre = (mesa: Mesa): boolean =>
+    /^pedido \d+$/i.test(mesa.nombre?.trim() ?? '') && !mesasOcupadas.has(String(mesa._id));
 
   const getTipoMesaLabel = (): string => {
     return esPedido(selectedMesa) ? 'Pedido' : 'Mesa';
@@ -1001,16 +1013,16 @@ const NuevaOrden: React.FC = () => {
               <div className="flex items-center space-x-3 sm:space-x-4 text-meta">
                 <div className="flex items-center">
                   <div className="w-3 h-3 bg-green-100 border border-green-300 rounded mr-2"></div>
-                  <span className="text-gray-600">Disponible</span>
+                  <span className="text-gray-600">Libre</span>
                 </div>
-                <div className="hidden sm:flex items-center">
+                <div className="flex items-center">
                   <div className="w-3 h-3 bg-orange-100 border border-orange-300 rounded mr-2"></div>
                   <span className="text-gray-600">Con órdenes activas</span>
                 </div>
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-              {mesas.filter(mesa => mesa.activo !== false).map((mesa) => {
+              {mesas.filter((mesa) => mesa.activo !== false && !esPedidoLibre(mesa)).map((mesa) => {
                 const mesaInfo = getMesaInfo(mesa._id);
                 const isSelected = selectedMesa?._id === mesa._id;
                 
@@ -1053,7 +1065,7 @@ const NuevaOrden: React.FC = () => {
                       ? `${mesaInfo.totalOrdenes} orden${mesaInfo.totalOrdenes !== 1 ? 'es' : ''}`
                       : (
                         <span>
-                          <span className="sm:hidden">Disp</span>
+                          <span className="sm:hidden">Libre</span>
                           <span className="hidden sm:inline">Disponible</span>
                         </span>
                         )
@@ -1081,7 +1093,7 @@ const NuevaOrden: React.FC = () => {
                         {mesaInfo.ordenes.map((orden: any, index: number) => (
                           <div key={index} className="text-meta sm:text-meta text-blue-700 bg-blue-100 px-2 py-1 rounded break-words">
                             <span className="block truncate">Folio #{orden.folio || 'N/A'} - Cliente: {orden.nombreCliente || 'Sin nombre'}</span>
-                            <span className="block truncate">Estado: {orden.estatus} - Total: ${orden.total?.toFixed(2) || '0.00'}</span>
+                            <span className="block truncate">Estado: {etiquetaDeEstatus(orden.estatus)} - Total: ${orden.total?.toFixed(2) || '0.00'}</span>
                           </div>
                         ))}
                       </div>

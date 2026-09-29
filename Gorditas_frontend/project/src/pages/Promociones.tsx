@@ -65,6 +65,7 @@ function vigenciaEnPalabras(p: Promocion): string | null {
 
 const Promociones: React.FC = () => {
   const [promociones, setPromociones] = useState<Promocion[]>([]);
+  const [verInactivas, setVerInactivas] = useState(false);
   const [platillos, setPlatillos] = useState<ArticuloDeCatalogo[]>([]);
   const [productos, setProductos] = useState<ArticuloDeCatalogo[]>([]);
   const [tipos, setTipos] = useState<ArticuloDeCatalogo[]>([]);
@@ -176,6 +177,50 @@ const Promociones: React.FC = () => {
     });
   };
 
+  /** Una promoción en la lista. */
+  const tarjeta = (p: Promocion) => (
+    <div
+      key={p.id}
+      className={`rounded-xl border p-sp-3 space-y-sp-2 ${p.activo ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-50'}`}
+    >
+      <div className="flex items-start justify-between gap-sp-1">
+        <div className="min-w-0">
+          <h3 className="text-cuerpo font-semibold text-gray-900 break-words">{p.nombre}</h3>
+          <p className="text-meta text-gray-600 break-words">{enPalabras(p, nombreDe, categoriaDe(p))}</p>
+          {vigenciaEnPalabras(p) && (
+            <p className="text-meta text-gray-500 break-words">{vigenciaEnPalabras(p)}</p>
+          )}
+        </div>
+        <span
+          className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
+            p.activo ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'
+          }`}
+        >
+          {p.activo ? 'Activa' : 'Inactiva'}
+        </span>
+      </div>
+
+      {p.combinable && (
+        <p className="text-meta text-blue-600">Se acumula con otras promociones</p>
+      )}
+
+      <div className="flex gap-sp-1">
+        <button onClick={() => abrirEdicion(p)} className="btn btn-neutro flex-1">
+          Editar
+        </button>
+        {p.activo && (
+          <button onClick={() => desactivar(p)} className="btn btn-destructivo flex-1">
+            Desactivar
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Las vigentes primero y la más nueva arriba: es la que se acaba de crear o la que se busca.
+  const activas = promociones.filter((p) => p.activo).sort((a, b) => b.id - a.id);
+  const inactivas = promociones.filter((p) => !p.activo).sort((a, b) => b.id - a.id);
+
   if (cargando) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -201,44 +246,20 @@ const Promociones: React.FC = () => {
       </button>
 
       <div className="space-y-sp-2">
-        {promociones.map((p) => (
-          <div
-            key={p.id}
-            className={`rounded-xl border p-sp-3 space-y-sp-2 ${p.activo ? 'border-gray-200 bg-white' : 'border-gray-200 bg-gray-50'}`}
-          >
-            <div className="flex items-start justify-between gap-sp-1">
-              <div className="min-w-0">
-                <h3 className="text-cuerpo font-semibold text-gray-900 break-words">{p.nombre}</h3>
-                <p className="text-meta text-gray-600 break-words">{enPalabras(p, nombreDe, categoriaDe(p))}</p>
-                {vigenciaEnPalabras(p) && (
-                  <p className="text-meta text-gray-500 break-words">{vigenciaEnPalabras(p)}</p>
-                )}
-              </div>
-              <span
-                className={`px-2 py-1 text-meta font-medium rounded-full whitespace-nowrap ${
-                  p.activo ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                {p.activo ? 'Activa' : 'Inactiva'}
-              </span>
-            </div>
+        {activas.map(tarjeta)}
+        {activas.length === 0 && inactivas.length > 0 && (
+          <p className="text-cuerpo text-gray-500 text-center py-sp-2">Ninguna promoción activa ahora mismo.</p>
+        )}
 
-            {p.combinable && (
-              <p className="text-meta text-blue-600">Se acumula con otras promociones</p>
-            )}
-
-            <div className="flex gap-sp-1">
-              <button onClick={() => abrirEdicion(p)} className="btn btn-neutro flex-1">
-                Editar
-              </button>
-              {p.activo && (
-                <button onClick={() => desactivar(p)} className="btn btn-destructivo flex-1">
-                  Desactivar
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+        {/* Las desactivadas no se borran —siguen explicando los descuentos que dieron—, así que
+            se acumulan. Plegadas: sin esto, una promoción recién creada quedaba al final, debajo
+            de todas las que ya no aplican. */}
+        {inactivas.length > 0 && (
+          <button onClick={() => setVerInactivas((v) => !v)} className="btn btn-neutro w-full">
+            {verInactivas ? 'Ocultar inactivas' : `Ver inactivas (${inactivas.length})`}
+          </button>
+        )}
+        {verInactivas && inactivas.map(tarjeta)}
 
         {promociones.length === 0 && (
           <div className="text-center py-8">

@@ -137,7 +137,7 @@ const Configuracion: React.FC = () => {
         <button
           onClick={handleSave}
           disabled={saving || !canEdit}
-          className="btn gap-2 bg-gray-900 text-white hover:bg-gray-800"
+          className="btn btn-primario gap-2"
         >
           <Save className="w-4 h-4" />
           {saving ? 'Guardando...' : 'Guardar cambios'}

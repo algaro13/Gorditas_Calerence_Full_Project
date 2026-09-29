@@ -13,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { etiquetaDeEstatus } from '../utils/estatus';
 import { Orden, OrdenDetalleProducto, OrdenDetallePlatillo, MesaAgrupada } from '../types';
 
 interface OrdenConDetalles extends Orden {
@@ -728,7 +729,7 @@ const SurtirOrden: React.FC = () => {
                     Detalles de Orden - {getMostrarNombreMesaOrden(selectedOrden)}
                   </h2>
                   <p className="text-cuerpo text-gray-600 mt-1 break-words">
-                    Estado: {selectedOrden.estatus}
+                    Estado: {etiquetaDeEstatus(selectedOrden.estatus)}
                   </p>
                 </div>
                 <button

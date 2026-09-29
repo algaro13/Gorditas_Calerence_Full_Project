@@ -18,6 +18,7 @@ import {
   Check
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { etiquetaDeEstatus } from '../utils/estatus';
 import { precioVenta } from '../utils/precios';
 import { Orden, Suborden, OrdenDetallePlatillo, OrdenDetalleProducto, Platillo, Guiso, Producto, MesaAgrupada, Extra, TipoExtra, LineaDescuento } from '../types';
 
@@ -947,7 +948,7 @@ const EditarOrden: React.FC = () => {
           title="Actualizar"
         >
           <RefreshCw className={`w-5 h-5 sm:w-4 sm:h-4 sm:mr-2 flex-shrink-0 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline truncate">Actualizar</span>
+          <span className="truncate">Actualizar</span>
         </button>
       </div>
 
@@ -1121,7 +1122,7 @@ const EditarOrden: React.FC = () => {
                                     <div className="flex flex-col items-end justify-between gap-1">
                                       <div className="flex flex-col items-end gap-1 w-full">
                                         <span className="px-1.5 py-0.5 sm:px-2 sm:py-1 text-meta sm:text-meta font-medium rounded-full bg-blue-100 text-blue-800 whitespace-nowrap">
-                                          {orden.estatus}
+                                          {etiquetaDeEstatus(orden.estatus)}
                                         </span>
                                         {orden.estatus === 'Pendiente' && (
                                           <button
@@ -1383,7 +1384,7 @@ const EditarOrden: React.FC = () => {
                       selectedOrden.estatus === 'Entregada' ? 'bg-gray-100 text-gray-800' :
                       'bg-orange-100 text-orange-800'
                     }`}>
-                      {selectedOrden.estatus}
+                      {etiquetaDeEstatus(selectedOrden.estatus)}
                     </span>
                     <span className="text-cuerpo text-gray-500">
                       Total: <span className="font-semibold text-green-600">${(totalDetalle ?? selectedOrden.total).toFixed(2)}</span>

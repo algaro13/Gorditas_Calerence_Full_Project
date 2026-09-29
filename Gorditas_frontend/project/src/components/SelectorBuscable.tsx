@@ -140,9 +140,14 @@ export function SelectorBuscable({
     const marco = contenedorQueRecorta(el);
     const limites = () => {
       const r = el.getBoundingClientRect();
-      const m = marco ? marco.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
-      const arriba = Math.max(m.top, 0);
-      const abajo = Math.min(m.bottom, window.innerHeight);
+      // Lo visible de verdad: en un teléfono el teclado tapa la mitad de abajo, y
+      // `innerHeight` no lo descuenta (en iOS no cambia al abrirse). `visualViewport` sí.
+      const vista = window.visualViewport;
+      const vistaArriba = vista?.offsetTop ?? 0;
+      const vistaAbajo = vista ? vista.offsetTop + vista.height : window.innerHeight;
+      const m = marco ? marco.getBoundingClientRect() : { top: vistaArriba, bottom: vistaAbajo };
+      const arriba = Math.max(m.top, vistaArriba);
+      const abajo = Math.min(m.bottom, vistaAbajo);
       return { abajo: abajo - r.bottom, arriba: r.top - arriba };
     };
     if (limites().abajo < ALTO_LISTA) {
@@ -163,6 +168,16 @@ export function SelectorBuscable({
     onChange(o.valor);
     cerrar();
   };
+
+  // El teclado del teléfono sube después de abrir la lista, al enfocar el campo: el espacio
+  // medido al abrir deja de valer. Se vuelve a medir cuando cambia la parte visible.
+  useEffect(() => {
+    const vista = window.visualViewport;
+    if (!abierto || !vista) return;
+    const medir = () => hacerSitio();
+    vista.addEventListener('resize', medir);
+    return () => vista.removeEventListener('resize', medir);
+  }, [abierto]);
 
   useEffect(() => {
     if (!abierto) return;

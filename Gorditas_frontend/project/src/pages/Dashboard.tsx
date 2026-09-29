@@ -18,6 +18,7 @@ import {
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
+import { accionHacia, etiquetaDeEstatus } from '../utils/estatus';
 import { Orden } from '../types';
 
 // Subscription status banner
@@ -384,8 +385,7 @@ const Dashboard: React.FC = () => {
               title="Iniciar preparación"
             >
               {isUpdating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <ChefHat className="w-3 h-3" />}
-              <span className="hidden sm:inline">Preparar</span>
-              <span className="sm:hidden">Prep.</span>
+              <span>Preparar</span>
             </button>
           );
         }
@@ -465,15 +465,16 @@ const Dashboard: React.FC = () => {
       <button
         onClick={() => updateOrderStatus(orden._id, nextStatus)}
         disabled={isUpdating}
-        className="btn gap-1 bg-orange-100 text-orange-600 hover:bg-orange-200 sm:text-cuerpo whitespace-nowrap"
+        className="btn btn-avanzar gap-1 whitespace-nowrap"
+        title={`Pasar a ${etiquetaDeEstatus(nextStatus)}`}
       >
         {isUpdating ? (
-          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+          <RefreshCw className="w-4 h-4 animate-spin" />
         ) : (
           <>
-            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden md:inline">{nextStatus}</span>
-            <span className="md:hidden">{nextStatus.substring(0, 4)}.</span>
+            <ArrowRight className="w-4 h-4" />
+            {/* Un verbo y no el estatus recortado: «Prep.» o «Paga.» no decían qué pasaba al tocarlo. */}
+            <span>{accionHacia(nextStatus)}</span>
           </>
         )}
       </button>
@@ -576,7 +577,11 @@ const Dashboard: React.FC = () => {
                   {stats.productosLowStock}
                 </p>
                 <p className="text-meta text-gray-500 mt-1">
-                  {stats.productosLowStock === 0 ? 'Todo en orden' : `cuentas con ${stats.productosLowStock} producto(s) con${stats.productosLowStock !== 1 ? 's' : ''} menos de 10 items`}
+                  {stats.productosLowStock === 0
+                    ? 'Todo en orden'
+                    : stats.productosLowStock === 1
+                      ? '1 producto con menos de 10 piezas'
+                      : `${stats.productosLowStock} productos con menos de 10 piezas`}
                 </p>
               </div>
               <div className={`p-3 rounded-lg ${stats.productosLowStock > 0 ? 'bg-red-100' : 'bg-green-100'}`}>
@@ -608,7 +613,7 @@ const Dashboard: React.FC = () => {
               <span className="font-medium">Folio:</span> {selectedOrden.folio}<br />
               <span className="font-medium">Mesa:</span> {selectedOrden.mesa}<br />
               <span className="font-medium">Cliente:</span> {selectedOrden.cliente}<br />
-              <span className="font-medium">Estatus:</span> {selectedOrden.estatus}<br />
+              <span className="font-medium">Estatus:</span> {etiquetaDeEstatus(selectedOrden.estatus)}<br />
               <span className="font-medium">Total:</span> ${selectedOrden.total.toFixed(2)}<br />
               <span className="font-medium">Tiempo:</span> {selectedOrden.tiempoTranscurrido}
             </div>
@@ -625,7 +630,7 @@ const Dashboard: React.FC = () => {
             </div>
             <button
               onClick={loadDashboardData}
-              className="btn bg-orange-100 text-orange-600 hover:bg-orange-200"
+              className="btn btn-neutro"
             >
               Actualizar
             </button>
@@ -639,7 +644,7 @@ const Dashboard: React.FC = () => {
                   {getStatusIcon(status)}
                   <span className="text-meta font-medium">{count}</span>
                 </div>
-                <p className="text-meta sm:text-meta text-gray-600 mt-1 truncate px-1">{status}</p>
+                <p className="text-meta sm:text-meta text-gray-600 mt-1 truncate px-1">{etiquetaDeEstatus(status)}</p>
               </div>
             ))}
           </div>
@@ -657,8 +662,10 @@ const Dashboard: React.FC = () => {
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors gap-3 sm:gap-4 cursor-pointer"
                     onClick={() => setSelectedOrden(orden)}
                   >
-                    <div className="flex items-center space-x-3 sm:space-x-4 w-full sm:w-auto min-w-0 flex-1">
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
+                    {/* En el teléfono el nombre va solo en su renglón: compartiéndolo con el estatus y
+                        el tiempo se cortaba en «E2E 17…», y es lo que se busca en la tarjeta. */}
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-x-sp-2 gap-y-1 w-full sm:w-auto min-w-0 flex-1">
+                      <div className="flex items-center space-x-2 min-w-0 basis-full sm:basis-auto flex-1">
                         <div className="flex-shrink-0">
                           {getStatusIcon(orden.estatus)}
                         </div>
@@ -670,7 +677,7 @@ const Dashboard: React.FC = () => {
                       </div>
                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 flex-shrink-0">
                         <span className={`px-2 py-0.5 text-meta sm:text-meta font-medium rounded-full ${getStatusColor(orden.estatus)} whitespace-nowrap`}>
-                          {orden.estatus}
+                          {etiquetaDeEstatus(orden.estatus)}
                         </span>
                         <span className="text-meta sm:text-meta text-gray-500 whitespace-nowrap">
                           {orden.tiempoTranscurrido}
@@ -678,7 +685,7 @@ const Dashboard: React.FC = () => {
                         {/* Order modification indicator */}
                         {orden.estatus === 'Pendiente' && (
                           <span className="px-1.5 sm:px-2 py-0.5 text-meta sm:text-meta bg-orange-100 text-orange-600 rounded whitespace-nowrap">
-                            Val.
+                            Validar
                           </span>
                         )}
                       </div>
@@ -727,14 +734,14 @@ const Dashboard: React.FC = () => {
                     {/* Cliente primero, luego total, luego mesa */}
                     <p className="font-bold text-gray-900 text-cuerpo">{orden.nombreCliente || 'Sin nombre'}</p>
                     <p className="text-cuerpo text-gray-600">Total: ${orden.total.toFixed(2)}</p>
-                    <p className="text-meta text-blue-600 font-medium">Tipo: {orden.nombreMesa}</p>
+                    <p className="text-meta text-blue-600 font-medium">Mesa: {orden.nombreMesa}</p>
                   </div>
                   <span
                     className={`px-3 py-1 text-meta font-medium rounded-full ${getStatusColor(
                       orden.estatus
                     )}`}
                   >
-                    {orden.estatus}
+                    {etiquetaDeEstatus(orden.estatus)}
                   </span>
                 </div>
               ))
