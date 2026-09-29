@@ -272,15 +272,14 @@ const NuevaOrden: React.FC = () => {
   };
 
   /**
-   * Una mesa «Pedido N» que ya no tiene órdenes: sobra en la rejilla.
+   * La mesa temporal de un pedido para llevar que ya no tiene órdenes: sobra en la rejilla.
    *
-   * Cada «Nuevo pedido» crea una mesa temporal con ese nombre, y el número se reinicia cada día.
-   * Nadie las desactivaba al cobrar, así que la rejilla crecía una casilla por cada pedido para
-   * llevar —con nombres repetidos de un día a otro— hasta tapar las mesas de verdad. Se esconden
-   * las libres; las ocupadas siguen, porque a un pedido abierto se le puede sumar otro cliente.
+   * Cada «Nuevo pedido» crea una mesa «Pedido N», y la rejilla crecía una casilla por pedido hasta
+   * tapar las mesas de verdad. El servidor ya la desactiva al cerrarse su última orden; esto cubre
+   * el rato entre que se cobra y se vuelve a cargar la lista. Se decide por la marca y no por el
+   * nombre, como en el servidor: una mesa de verdad llamada «Pedido 3» no se esconde.
    */
-  const esPedidoLibre = (mesa: Mesa): boolean =>
-    /^pedido \d+$/i.test(mesa.nombre?.trim() ?? '') && !mesasOcupadas.has(String(mesa._id));
+  const esPedidoLibre = (mesa: Mesa): boolean => !!mesa.temporal && !mesasOcupadas.has(String(mesa._id));
 
   const getTipoMesaLabel = (): string => {
     return esPedido(selectedMesa) ? 'Pedido' : 'Mesa';

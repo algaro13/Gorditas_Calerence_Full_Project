@@ -72,6 +72,8 @@ export class EliminarOrden {
       const orden = await this.ordenes.findById(id);
       if (!orden) throw new NotFoundError('Orden no encontrada', 'ORDEN_NOT_FOUND');
       await this.ordenes.delete(orden.id); // cascade en la base
+      // Borrar la única orden de un pedido para llevar deja su mesa sin uso, igual que cobrarla.
+      if (orden.idMesa !== null) await this.ordenes.retirarMesaTemporal(orden.idMesa);
     });
   }
 }

@@ -337,6 +337,8 @@ model Mesa {
   tenantId  String   @default(dbgenerated("current_tenant_id()")) @map("tenant_id") @db.Uuid
   nombre    String
   activo    Boolean  @default(true)
+  /// La de un pedido para llevar: se desactiva sola cuando su última orden se cierra.
+  temporal  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
 

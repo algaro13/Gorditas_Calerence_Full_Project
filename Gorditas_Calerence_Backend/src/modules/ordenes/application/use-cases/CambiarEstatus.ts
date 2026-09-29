@@ -22,10 +22,16 @@ export class CambiarEstatus {
         throw new ForbiddenError('Transición de estatus no permitida para su rol', 'TRANSICION_NO_PERMITIDA');
       }
       if (nuevo === 'Surtida') await this.ordenes.marcarTodoListo(orden.id);
-      return this.ordenes.update(orden.id, {
+      const actualizada = await this.ordenes.update(orden.id, {
         estatus: nuevo,
         ...(nuevo === 'Pagada' ? { fechaPago: this.clock.now() } : {}),
       });
+      // La mesa de un pedido para llevar se usa una vez: cerrada su última orden, sobra. Sin esto
+      // la rejilla y el catálogo de mesas crecían una fila por cada pedido.
+      if ((nuevo === 'Pagada' || nuevo === 'Cancelado') && orden.idMesa !== null) {
+        await this.ordenes.retirarMesaTemporal(orden.idMesa);
+      }
+      return actualizada;
     });
   }
 }

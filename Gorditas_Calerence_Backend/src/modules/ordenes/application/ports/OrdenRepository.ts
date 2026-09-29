@@ -31,4 +31,9 @@ export interface OrdenRepository {
   recalcularTotal(id: string): Promise<number>;
   /** Marca `listo = true` en todas las líneas de la orden. */
   marcarTodoListo(id: string): Promise<void>;
+  /**
+   * Desactiva la mesa si es la temporal de un pedido para llevar y ya no le queda ninguna orden
+   * abierta. Una mesa de verdad no se toca nunca.
+   */
+  retirarMesaTemporal(idMesa: number): Promise<void>;
 }

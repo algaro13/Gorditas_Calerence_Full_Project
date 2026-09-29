@@ -269,6 +269,60 @@ describe('Módulo ordenes', () => {
     expect(restos).toEqual({ sub: 0, plat: 0, ext: 0, prod: 0 });
   });
 
+  describe('la mesa de un pedido para llevar se retira sola', () => {
+    /** Lo que hace «Nuevo pedido»: una mesa temporal con el número del día. */
+    async function mesaDePedido() {
+      const res = await api().post('/api/catalogos/mesa').set(auth(mesero)).send({ nombre: `Pedido ${Date.now() % 1000}`, temporal: true, activo: true });
+      expect(res.status).toBe(201);
+      return res.body.data._id as number;
+    }
+    const activa = async (idMesa: number) => {
+      const res = await api().get('/api/catalogos/mesa?limit=500').set(auth(admin));
+      return res.body.data.items.find((m: { _id: number }) => m._id === idMesa)?.activo as boolean;
+    };
+    const estatus = (id: string, e: string) => api().put(`/api/ordenes/${id}/estatus`).set(auth(admin)).send({ estatus: e });
+
+    it('al cobrar su última orden la mesa temporal se desactiva', async () => {
+      const idMesa = await mesaDePedido();
+      const orden = await crearOrden({ idMesa });
+      expect(await activa(idMesa)).toBe(true);
+      expect((await estatus(orden._id, 'Pagada')).status).toBe(200);
+      // Sin esto la rejilla y el catálogo crecían una casilla por cada pedido para llevar.
+      expect(await activa(idMesa)).toBe(false);
+    });
+
+    it('mientras le quede una orden abierta, sigue', async () => {
+      const idMesa = await mesaDePedido();
+      const primera = await crearOrden({ idMesa });
+      const segunda = await crearOrden({ idMesa });
+      await estatus(primera._id, 'Pagada');
+      // Al pedido abierto se le puede sumar otro cliente: retirarla ahora lo impediría.
+      expect(await activa(idMesa)).toBe(true);
+      await estatus(segunda._id, 'Cancelado');
+      expect(await activa(idMesa)).toBe(false);
+    });
+
+    it('borrar la única orden también la retira', async () => {
+      const idMesa = await mesaDePedido();
+      const orden = await crearOrden({ idMesa });
+      expect((await api().delete(`/api/ordenes/${orden._id}`).set(auth(admin))).status).toBe(200);
+      expect(await activa(idMesa)).toBe(false);
+    });
+
+    it('una mesa de verdad no se desactiva nunca, aunque se llame «Pedido»', async () => {
+      // Se decide por la marca, no por el nombre: el nombre lo escribe cualquiera.
+      const real = await api().post('/api/catalogos/mesa').set(auth(admin)).send({ nombre: 'Pedido 99' });
+      const idMesa = real.body.data._id as number;
+      const orden = await crearOrden({ idMesa });
+      await estatus(orden._id, 'Pagada');
+      expect(await activa(idMesa)).toBe(true);
+
+      const otra = await crearOrden();
+      await estatus(otra._id, 'Pagada');
+      expect(await activa(cat.mesa.id)).toBe(true);
+    });
+  });
+
   it('otro tenant no ve ni puede tocar la orden', async () => {
     const orden = await crearOrden();
     const otro = await createTestTenant(t.container.prisma);

@@ -125,6 +125,19 @@ export class PrismaOrdenRepository implements OrdenRepository {
     return toOrden(row);
   }
 
+  async retirarMesaTemporal(idMesa: number): Promise<void> {
+    // Una sola sentencia: comprobar y desactivar a la vez, para que otra orden que entre en la
+    // misma mesa entre medias no la deje retirada con una cuenta abierta.
+    await currentDb().$executeRaw(Prisma.sql`
+      UPDATE mesas m SET activo = false, updated_at = now()
+      WHERE m.id = ${idMesa} AND m.temporal AND m.activo
+        AND NOT EXISTS (
+          SELECT 1 FROM ordenes o
+          WHERE o.id_mesa = m.id AND o.estatus NOT IN ('Pagada', 'Cancelado')
+        )
+    `);
+  }
+
   async delete(id: string): Promise<void> {
     await currentDb().orden.delete({ where: { id } });
   }

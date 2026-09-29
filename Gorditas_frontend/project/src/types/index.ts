@@ -81,6 +81,8 @@ export interface Mesa extends BaseEntity {
   numero?: number;
   capacidad?: number;
   ubicacion?: string;
+  /** La de un pedido para llevar: el servidor la desactiva cuando su última orden se cierra. */
+  temporal?: boolean;
 }
 
 export interface TipoGasto extends BaseEntity {

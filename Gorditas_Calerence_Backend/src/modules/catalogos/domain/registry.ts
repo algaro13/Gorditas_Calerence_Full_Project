@@ -72,7 +72,14 @@ const DEFS: Record<string, CatalogoDef> = {
     orderBy: 'nombre',
   },
   tipoorden: { modelo: 'tipoOrden', searchable: ['nombre'], createSchema: Joi.object({ nombre: base.nombre, activo: base.activo }), orderBy: 'nombre' },
-  mesa: { modelo: 'mesa', searchable: ['nombre'], createSchema: Joi.object({ nombre: base.nombre, activo: base.activo }), orderBy: 'nombre' },
+  mesa: {
+    modelo: 'mesa',
+    searchable: ['nombre'],
+    // `temporal` lo manda «Nuevo pedido»: la mesa del pedido para llevar, que se retira sola al
+    // cerrarse su última orden (ver RetirarMesaTemporal en órdenes).
+    createSchema: Joi.object({ nombre: base.nombre, activo: base.activo, temporal: Joi.boolean().optional() }),
+    orderBy: 'nombre',
+  },
   tipogasto: { modelo: 'tipoGasto', searchable: ['nombre'], createSchema: Joi.object({ nombre: base.nombre, activo: base.activo }), orderBy: 'nombre' },
   gasto: {
     modelo: 'gasto',
