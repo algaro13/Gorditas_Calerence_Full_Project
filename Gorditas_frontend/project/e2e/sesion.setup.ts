@@ -24,14 +24,15 @@ setup('iniciar sesión', async ({ page }) => {
 
   await page.getByRole('button', { name: /iniciar sesión/i }).click();
 
-  // Formulario de Zitadel, en su propio dominio. Los rótulos son los suyos, en inglés:
-  // «Loginname» y «Password», no «usuario» ni «contraseña».
+  // Formulario de Zitadel, en su propio dominio, con sus propios rótulos. Salía en inglés
+  // —«Loginname», «Password»— y ahora el arranque lo fija en español; se aceptan los dos para que
+  // la prueba sirva también contra una instancia que aún no pasó por `zitadel-bootstrap`.
   await page.waitForURL(/8080|auth/, { timeout: 30_000 });
-  await page.getByRole('textbox', { name: /loginname/i }).fill(CORREO);
-  await page.getByRole('button', { name: /continue/i }).click();
+  await page.getByRole('textbox', { name: /loginname|nombre de inicio de sesi[oó]n/i }).fill(CORREO);
+  await page.getByRole('button', { name: /continue|continuar/i }).click();
 
-  await page.getByRole('textbox', { name: /password/i }).fill(CLAVE);
-  await page.getByRole('button', { name: /continue|sign in/i }).click();
+  await page.getByRole('textbox', { name: /password|contraseña/i }).fill(CLAVE);
+  await page.getByRole('button', { name: /continue|sign in|continuar|iniciar sesi[oó]n/i }).click();
 
   // De vuelta en la app, con sesión. Se afirma un enlace concreto de la navegación: basta uno
   // y es inequívoco, mientras que `nav` encuentra varios y rompe el modo estricto.

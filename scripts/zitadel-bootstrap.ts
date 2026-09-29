@@ -322,6 +322,50 @@ async function ensureLoginPolicy(pat: string): Promise<void> {
   log(`Política de login: sin registro público, destino tras aceptar invitaciones ${destino}`);
 }
 
+/**
+ * La pantalla de acceso, en español y con la marca del POS.
+ *
+ * Salía en inglés y en tema oscuro: el idioma por omisión ya era `es`, pero el login v2 le da
+ * prioridad al idioma del navegador, y su tema seguía al del dispositivo. Para alguien que abre el
+ * POS en español y con fondo claro, «Welcome back!» sobre negro parecía otro sitio. Se restringe a
+ * español —así no hay navegador que lo cambie— y se fija el tema claro con el naranja del POS.
+ *
+ * El login v2 guarda estos ajustes en memoria: tras cambiarlos hay que reiniciar su contenedor
+ * (`zitadel-login`) para verlos.
+ */
+async function ensureIdiomaYMarca(pat: string): Promise<void> {
+  const restricciones = await api<{ allowedLanguages?: string[] }>(pat, 'GET', '/admin/v1/restrictions');
+  if (JSON.stringify(restricciones.allowedLanguages ?? []) !== JSON.stringify(['es'])) {
+    await api(pat, 'PUT', '/admin/v1/restrictions', { allowedLanguages: { list: ['es'] } });
+    log('Idioma de Zitadel restringido a español');
+  }
+
+  const marca = {
+    primaryColor: '#ea580c',
+    backgroundColor: '#fff7ed',
+    warnColor: '#dc2626',
+    fontColor: '#111827',
+    // Iguales a los claros: con el tema fijado en claro, un dispositivo en modo oscuro no debe
+    // ver otros colores.
+    primaryColorDark: '#ea580c',
+    backgroundColorDark: '#fff7ed',
+    warnColorDark: '#dc2626',
+    fontColorDark: '#111827',
+    hideLoginNameSuffix: true,
+    disableWatermark: true,
+    themeMode: 'THEME_MODE_LIGHT',
+  };
+  const actual = await api<{ policy: Record<string, unknown> }>(pat, 'GET', '/admin/v1/policies/label');
+  const igual = Object.entries(marca).every(([k, v]) => actual.policy[k] === v);
+  if (igual) {
+    log('Marca de la pantalla de acceso ya configurada');
+    return;
+  }
+  await api(pat, 'PUT', '/admin/v1/policies/label', marca);
+  await api(pat, 'POST', '/admin/v1/policies/label/_activate', {});
+  log('Pantalla de acceso: tema claro con el naranja del POS. Reinicia zitadel-login para verla.');
+}
+
 // ---------- escritura de .env ----------
 function upsertEnvFile(path: string, values: Record<string, string>): void {
   mkdirSync(dirname(path), { recursive: true });
@@ -354,6 +398,7 @@ async function main(): Promise<void> {
   await ensureSmtp(pat);
   await ensureInviteText(pat);
   await ensureLoginPolicy(pat);
+  await ensureIdiomaYMarca(pat);
 
   const envSuffix = IS_PROD ? 'production' : 'development';
   const apiOrigin = IS_PROD ? `${APP_SCHEME}://api.${APP_DOMAIN}` : 'http://localhost:5000';
