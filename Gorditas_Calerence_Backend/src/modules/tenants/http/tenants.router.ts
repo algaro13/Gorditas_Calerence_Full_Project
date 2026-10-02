@@ -89,6 +89,8 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           plan: tenant.plan,
           planStatus: tenant.planStatus,
           trialEndsAt: tenant.trialEndsAt,
+          currentPeriodEnd: tenant.currentPeriodEnd,
+          cancelAt: tenant.cancelAt,
           maxUsuarios: tenant.maxUsuarios,
           activo: tenant.activo,
           config: tenant.config,

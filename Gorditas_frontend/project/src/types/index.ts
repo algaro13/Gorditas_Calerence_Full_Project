@@ -233,6 +233,19 @@ export interface AuthUser {
 export type PlanId = 'trial' | 'basico' | 'profesional' | 'empresarial';
 export type PlanStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'expired';
 
+/** Lo que devuelve `GET /api/billing/status`. */
+export interface EstadoSuscripcion {
+  plan: PlanId;
+  planStatus: PlanStatus;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  cancelAt: string | null;
+  maxUsuarios: number;
+  usuariosActivos: number;
+  /** Sin cliente en Stripe el portal no se puede abrir. */
+  tieneClienteStripe: boolean;
+}
+
 export interface TenantConfig {
   paleta?: string;
   imagen?: string | null;
@@ -245,6 +258,10 @@ export interface TenantInfo {
   plan: PlanId;
   planStatus: PlanStatus;
   trialEndsAt: string | null;
+  /** Fin del periodo pagado: cuándo se renueva. */
+  currentPeriodEnd: string | null;
+  /** Cuándo termina una suscripción con cancelación programada. */
+  cancelAt: string | null;
   maxUsuarios: number;
   activo: boolean;
   config: TenantConfig;

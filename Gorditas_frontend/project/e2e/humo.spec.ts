@@ -19,6 +19,7 @@ const PANTALLAS = [
   { ruta: '/catalogos', contiene: /catálogos/i },
   { ruta: '/reportes', contiene: /reportes/i },
   { ruta: '/configuracion', contiene: /configuración/i },
+  { ruta: '/suscripcion', contiene: /plan actual/i },
 ];
 
 for (const { ruta, contiene } of PANTALLAS) {

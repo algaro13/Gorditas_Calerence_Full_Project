@@ -13,60 +13,91 @@ import {
   ArrowRight,
   Eye,
   Edit,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle,
+  CalendarClock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { accionHacia, etiquetaDeEstatus } from '../utils/estatus';
 import { Orden } from '../types';
+import { diasHasta, fechaLarga, nombreDePlan } from '../utils/plan';
 
-// Subscription status banner
+// Aviso del estado de la suscripción, arriba del panel.
+//
+// Lleva a `/suscripcion`, que solo abre el Admin: al Encargado se le dice a quién avisar en vez de
+// darle un enlace que lo rebota. Un pago fallido no detiene el restaurante, así que este aviso es
+// lo único que lo revela antes de que Stripe deje de reintentar y el punto de venta se pause.
 const SubscriptionBanner: React.FC = () => {
-  const { tenant } = useAuth();
+  const { tenant, hasPermission } = useAuth();
+  const esAdmin = hasPermission(['Admin']);
   const plan = tenant?.plan || 'trial';
   const planStatus = tenant?.planStatus || 'trial';
   const trialEndsAt = tenant?.trialEndsAt || null;
+  const cancelAt = tenant?.cancelAt || null;
 
-  if (planStatus === 'active') {
-    const planName = plan === 'basico' ? 'Básico' : plan === 'profesional' ? 'Profesional' : plan === 'empresarial' ? 'Empresarial' : plan;
+  const enlace = (texto: string, color: string) =>
+    esAdmin ? (
+      <Link to="/suscripcion" className={`inline-flex min-h-control-min items-center text-cuerpo font-medium whitespace-nowrap ${color}`}>{texto} →</Link>
+    ) : null;
+
+  if (planStatus === 'past_due') {
     return (
-      <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center justify-between">
+      <div role="alert" className="bg-red-50 border border-red-300 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <span className="text-cuerpo text-green-800 font-medium">Plan {planName} activo</span>
+          <AlertTriangle className="w-5 h-5 flex-shrink-0 text-red-600" />
+          <span className="text-cuerpo text-red-800 font-medium">
+            {esAdmin
+              ? 'No pudimos cobrar tu último pago. Actualiza tu método de pago para no perder el acceso.'
+              : 'Hay un pago pendiente de la suscripción. Avisa al administrador.'}
+          </span>
         </div>
-        <Link to="/planes" className="text-cuerpo text-green-700 hover:text-green-900 font-medium">Gestionar →</Link>
+        {enlace('Actualizar pago', 'text-red-700 hover:text-red-900')}
       </div>
     );
   }
 
-  if (planStatus === 'trial' && trialEndsAt) {
-    const daysLeft = Math.max(0, Math.ceil((new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-    const urgent = daysLeft <= 3;
+  if (planStatus === 'active' && cancelAt) {
     return (
-      <div className={`${urgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg px-4 py-3 flex items-center justify-between`}>
+      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Clock className={`w-5 h-5 ${urgent ? 'text-red-600' : 'text-blue-600'}`} />
-          <span className={`text-cuerpo font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
-            Prueba gratuita — {daysLeft} {daysLeft === 1 ? 'día' : 'días'} restantes
+          <CalendarClock className="w-5 h-5 flex-shrink-0 text-amber-600" />
+          <span className="text-cuerpo text-amber-900 font-medium">
+            Plan {nombreDePlan(plan)} cancelado: funciona hasta el {fechaLarga(cancelAt)}
           </span>
         </div>
-        <Link to="/planes" className={`text-cuerpo font-medium ${urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900'}`}>
-          Elegir plan →
-        </Link>
+        {enlace('Ver', 'text-amber-800 hover:text-amber-950')}
+      </div>
+    );
+  }
+
+  if (planStatus === 'active') {
+    return (
+      <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-5 h-5 flex-shrink-0 text-green-600" />
+          <span className="text-cuerpo text-green-800 font-medium">Plan {nombreDePlan(plan)} activo</span>
+        </div>
+        {enlace('Gestionar', 'text-green-700 hover:text-green-900')}
       </div>
     );
   }
 
   if (planStatus === 'trial') {
+    const daysLeft = trialEndsAt ? diasHasta(trialEndsAt) : null;
+    const urgent = daysLeft !== null && daysLeft <= 3;
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-center justify-between">
+      <div className={`${urgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg px-4 py-3 flex items-center justify-between gap-3`}>
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-blue-600" />
-          <span className="text-cuerpo text-blue-800 font-medium">Prueba gratuita activa — 14 días</span>
+          <Clock className={`w-5 h-5 flex-shrink-0 ${urgent ? 'text-red-600' : 'text-blue-600'}`} />
+          <span className={`text-cuerpo font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
+            {daysLeft === null
+              ? 'Prueba gratuita activa — 14 días'
+              : `Prueba gratuita — ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} restantes`}
+          </span>
         </div>
-        <Link to="/planes" className="text-cuerpo text-blue-700 hover:text-blue-900 font-medium">Ver planes →</Link>
+        {enlace('Elegir plan', urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900')}
       </div>
     );
   }

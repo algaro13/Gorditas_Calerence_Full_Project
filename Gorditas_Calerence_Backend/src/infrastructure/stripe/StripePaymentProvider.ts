@@ -47,7 +47,15 @@ export class StripePaymentProvider implements PaymentProvider {
 }
 
 export function snapshotOf(sub: Stripe.Subscription): SubscriptionSnapshot {
+  // La API actual reporta el periodo en cada artículo, no en la suscripción.
+  const periodEnd = sub.items?.data?.[0]?.current_period_end ?? null;
+  const currentPeriodEnd = periodEnd ? new Date(periodEnd * 1000) : null;
+  // El portal programa la cancelación con `cancel_at` o con `cancel_at_period_end` según su
+  // configuración: las dos significan «termina en tal fecha».
+  const cancelAt = sub.cancel_at ? new Date(sub.cancel_at * 1000) : sub.cancel_at_period_end ? currentPeriodEnd : null;
   return {
+    currentPeriodEnd,
+    cancelAt,
     id: sub.id,
     status: sub.status,
     customerId: typeof sub.customer === 'string' ? sub.customer : (sub.customer?.id ?? null),

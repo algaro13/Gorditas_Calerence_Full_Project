@@ -5,7 +5,7 @@ import type { PaymentProvider, WebhookVerifier } from '../../shared/application/
 import type { DomainUrls } from '../../shared/config/domain';
 import type { TenantInfo } from '../../shared/domain/Tenant';
 import type { TenantRepository } from '../../shared/application/ports/TenantRepository';
-import { CrearCheckout, CrearPortal, EstadoBilling, ProcesarWebhook, type BillingConfig } from './application/use-cases/Billing';
+import { CrearCheckout, CrearPortal, EstadoBilling, ProcesarWebhook, type BillingConfig, type ContarUsuariosActivos } from './application/use-cases/Billing';
 import { createBillingRouter, createBillingWebhookHandler, type BillingUseCases } from './http/billing.router';
 import { PrismaStripeEventStore } from './infrastructure/PrismaStripeEventStore';
 
@@ -20,6 +20,7 @@ export interface BillingModuleDeps {
   authenticate: RequestHandler;
   tenantContext: RequestHandler;
   onTenantChanged?: (tenant: TenantInfo) => void;
+  contarUsuariosActivos: ContarUsuariosActivos;
 }
 
 export function createBillingModule(deps: BillingModuleDeps): { router: Router; webhookHandler: RequestHandler; useCases: BillingUseCases } {
@@ -27,7 +28,7 @@ export function createBillingModule(deps: BillingModuleDeps): { router: Router; 
   const useCases: BillingUseCases = {
     crearCheckout: new CrearCheckout(deps.tenants, deps.payments, deps.urls, deps.config),
     crearPortal: new CrearPortal(deps.tenants, deps.payments, deps.urls),
-    estado: new EstadoBilling(deps.tenants),
+    estado: new EstadoBilling(deps.tenants, deps.contarUsuariosActivos),
     webhook: new ProcesarWebhook(deps.verifier, events, deps.tenants, deps.payments, deps.config, deps.logger, deps.onTenantChanged),
   };
   return {

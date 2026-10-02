@@ -54,7 +54,8 @@ describe('Billing', () => {
     expect(plans.body.data.map((p: { id: string }) => p.id)).toEqual(['basico', 'profesional', 'empresarial']);
     const status = await api().get('/api/billing/status').set(auth(admin));
     expect(status.status).toBe(200);
-    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3 });
+    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false });
+    expect(typeof status.body.data.usuariosActivos).toBe('number');
     // el guard de plan no aplica a billing aunque el trial esté vencido
     expect((await api().get('/api/ordenes').set(auth(admin))).status).toBe(403);
   });
@@ -83,11 +84,15 @@ describe('Billing', () => {
     const portal = await api().post('/api/billing/create-portal').set(auth(admin));
     expect(portal.status).toBe(200);
     expect(portal.body.data.url).toContain(customerId);
+    // vuelve a la pantalla de la suscripción, no al panel
+    expect(portal.body.data.url).toContain(encodeURIComponent(`${base}/suscripcion`));
+    expect((await api().get('/api/billing/status').set(auth(admin))).body.data.tieneClienteStripe).toBe(true);
   });
 
   it('webhook: firma inválida, checkout completado idempotente y ciclo de la suscripción', async () => {
     const customerId = await t.container.tenants.getStripeCustomerId(tenant.id);
-    fake.setSubscription({ id: SUB, status: 'active', customerId, priceId: PRICES.profesional, metadata: { tenantId: tenant.id } });
+    const finDePeriodo = new Date('2026-11-02T12:00:00Z');
+    fake.setSubscription({ id: SUB, status: 'active', customerId, priceId: PRICES.profesional, metadata: { tenantId: tenant.id }, currentPeriodEnd: finDePeriodo });
 
     const bad = await api().post('/api/billing/webhook').set('stripe-signature', 't=1,v1=abc').set('Content-Type', 'application/json').send('{}');
     expect(bad.status).toBe(400);
@@ -103,7 +108,7 @@ describe('Billing', () => {
     expect(first.body).toEqual({ received: true, handled: true });
     const after = await t.container.tenants.findById(tenant.id);
     // el plan sale del price id real (profesional), no del metadata (basico)
-    expect(after).toMatchObject({ plan: 'profesional', planStatus: 'active', maxUsuarios: 10, trialEndsAt: null });
+    expect(after).toMatchObject({ plan: 'profesional', planStatus: 'active', maxUsuarios: 10, trialEndsAt: null, currentPeriodEnd: finDePeriodo, cancelAt: null });
 
     const dup = await signed(completed);
     expect(dup.status).toBe(200);
@@ -127,11 +132,18 @@ describe('Billing', () => {
     await signed({ id: evt('sub_upd'), type: 'customer.subscription.updated', data: { object: { id: SUB } } });
     expect(await t.container.tenants.findById(tenant.id)).toMatchObject({ plan: 'basico', maxUsuarios: 3, planStatus: 'active' });
 
+    // Cancelación programada desde el portal: sigue activa hasta el fin del periodo
+    fake.setSubscription({ id: SUB, status: 'active', customerId, priceId: PRICES.basico, metadata: { tenantId: tenant.id }, currentPeriodEnd: finDePeriodo, cancelAt: finDePeriodo });
+    await signed({ id: evt('sub_cancel_prog'), type: 'customer.subscription.updated', data: { object: { id: SUB } } });
+    const programada = await api().get('/api/billing/status').set(auth(admin));
+    expect(programada.body.data).toMatchObject({ planStatus: 'active', currentPeriodEnd: finDePeriodo.toISOString(), cancelAt: finDePeriodo.toISOString() });
+
     // Cancelación
     await signed({ id: evt('sub_del'), type: 'customer.subscription.deleted', data: { object: { id: SUB } } });
     expect((await t.container.tenants.findById(tenant.id))!.planStatus).toBe('canceled');
     const status = await api().get('/api/billing/status').set(auth(admin));
-    expect(status.body.data).toMatchObject({ plan: 'basico', planStatus: 'canceled' });
+    // ya ocurrió: deja de ser una cancelación por venir
+    expect(status.body.data).toMatchObject({ plan: 'basico', planStatus: 'canceled', cancelAt: null });
     expect((await api().get('/api/ordenes').set(auth(admin))).status).toBe(403);
 
     // Evento desconocido se registra y no falla

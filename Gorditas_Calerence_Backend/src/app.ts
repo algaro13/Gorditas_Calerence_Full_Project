@@ -70,6 +70,7 @@ export function createApp(c: Container): Express {
     authenticate,
     tenantContext,
     onTenantChanged: invalidateTenant,
+    contarUsuariosActivos: c.contarUsuariosActivos,
   });
 
   // El webhook de Stripe necesita el body crudo: se monta ANTES de express.json.

@@ -12,7 +12,8 @@ import {
   ChefHat,
   PlusCircle,
   Settings,
-  Tag
+  Tag,
+  Wallet
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { MENU } from './menu';
@@ -32,6 +33,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   PlusCircle,
   Settings,
   Tag,
+  Wallet,
 };
 
 

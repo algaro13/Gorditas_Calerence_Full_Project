@@ -5,6 +5,7 @@ import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import type { PlanId } from '../types';
+import { etiquetaDeEstadoDePlan, nombreDePlan } from '../utils/plan';
 
 const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; features: string[]; popular: boolean }[] = [
   {
@@ -93,7 +94,7 @@ const Plans: React.FC = () => {
           )}
           {tenant && (
             <p className="text-cuerpo text-gray-500 mt-2">
-              Plan actual: <span className="font-medium">{tenant.plan}</span> ({tenant.planStatus})
+              Plan actual: <span className="font-medium">{nombreDePlan(tenant.plan)}</span> · {etiquetaDeEstadoDePlan(tenant.planStatus)}
             </p>
           )}
           <div className="mt-4 flex justify-center gap-4 text-cuerpo">

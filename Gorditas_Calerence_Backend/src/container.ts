@@ -67,6 +67,8 @@ export interface Container {
   billingConfig: BillingConfig;
   tenants: TenantRepository;
   evaluarCupo: EvaluarCupo;
+  /** Personal activo de un restaurante: los mismos que cuenta el cupo. */
+  contarUsuariosActivos: (tenantId: string) => Promise<number>;
   middlewares: {
     authenticate: RequestHandler;
     tenantContext: TenantContextMiddleware;
@@ -163,9 +165,11 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const emailVerificado = createEmailVerificadoGuard(verificadorDeCorreo);
   // Lo usan la pantalla de personal (consultar) y el trabajo diario (aplicar). Se construye
   // aqui para que ambos partan del mismo objeto y no haya dos ensamblados que puedan divergir.
+  const tenantScope = new PrismaTenantScope(prisma);
+  const staffRepo = new PrismaStaffRepository();
   const evaluarCupo = new EvaluarCupo(
-    new PrismaTenantScope(prisma),
-    new PrismaStaffRepository(),
+    tenantScope,
+    staffRepo,
     tenants,
     identityProvider,
     clock,
@@ -190,6 +194,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     billingConfig,
     tenants,
     evaluarCupo,
+    contarUsuariosActivos: (tenantId) => tenantScope.run(tenantId, async () => (await staffRepo.list()).filter((m) => m.activo).length),
     middlewares: { authenticate, tenantContext, planGuard, emailVerificado, errorHandler },
     shutdown: async () => {
       await prisma.$disconnect();

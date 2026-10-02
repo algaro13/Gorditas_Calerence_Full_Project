@@ -29,7 +29,7 @@ export class FakePaymentProvider implements PaymentProvider {
   }
 
   /** Helper de pruebas: registra una suscripción viva. */
-  setSubscription(sub: SubscriptionSnapshot): void {
-    this.subscriptions.set(sub.id, sub);
+  setSubscription(sub: Omit<SubscriptionSnapshot, 'currentPeriodEnd' | 'cancelAt'> & Partial<Pick<SubscriptionSnapshot, 'currentPeriodEnd' | 'cancelAt'>>): void {
+    this.subscriptions.set(sub.id, { currentPeriodEnd: null, cancelAt: null, ...sub });
   }
 }

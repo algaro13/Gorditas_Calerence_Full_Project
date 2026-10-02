@@ -16,6 +16,8 @@ export interface BillingUpdate {
   stripeSubscriptionId?: string | null;
   maxUsuarios?: number;
   trialEndsAt?: Date | null;
+  currentPeriodEnd?: Date | null;
+  cancelAt?: Date | null;
 }
 
 /** Tabla de plataforma `tenants` (sin RLS). */

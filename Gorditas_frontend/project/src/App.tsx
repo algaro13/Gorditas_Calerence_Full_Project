@@ -12,6 +12,7 @@ import BillingSuccess from './pages/BillingSuccess';
 import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
 import Configuracion from './pages/Configuracion';
+import Suscripcion from './pages/Suscripcion';
 import Dashboard from './pages/Dashboard';
 import NuevaOrden from './pages/NuevaOrden';
 import SurtirOrden from './pages/SurtirOrden';
@@ -160,6 +161,16 @@ const AuthenticatedApp: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['Admin', 'Encargado']}>
               <Configuracion />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Suscripción - solo Admin: es quien puede pagar */}
+        <Route
+          path="/suscripcion"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <Suscripcion />
             </ProtectedRoute>
           }
         />

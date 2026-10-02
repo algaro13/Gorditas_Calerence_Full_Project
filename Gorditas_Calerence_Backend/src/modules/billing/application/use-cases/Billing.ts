@@ -52,15 +52,33 @@ export class CrearPortal {
   async execute(tenant: TenantInfo): Promise<{ url: string }> {
     const customerId = await this.tenants.getStripeCustomerId(tenant.id);
     if (!customerId) throw new ValidationError('No hay suscripción activa', 'SIN_SUSCRIPCION');
-    return this.payments.createPortalSession({ customerId, returnUrl: `${this.urls.tenantUrl(tenant.slug)}/` });
+    // Vuelve a la pantalla desde la que se abrió, no al panel.
+    return this.payments.createPortalSession({ customerId, returnUrl: `${this.urls.tenantUrl(tenant.slug)}/suscripcion` });
   }
 }
 
+/** Personal activo del restaurante: los mismos que cuenta el cupo. */
+export type ContarUsuariosActivos = (tenantId: string) => Promise<number>;
+
 export class EstadoBilling {
-  constructor(private readonly tenants: TenantRepository) {}
+  constructor(
+    private readonly tenants: TenantRepository,
+    private readonly contarUsuariosActivos: ContarUsuariosActivos,
+  ) {}
   async execute(tenant: TenantInfo) {
     const fresh = (await this.tenants.findById(tenant.id)) ?? tenant;
-    return { plan: fresh.plan, planStatus: fresh.planStatus, trialEndsAt: fresh.trialEndsAt, maxUsuarios: fresh.maxUsuarios };
+    const [usuariosActivos, customerId] = await Promise.all([this.contarUsuariosActivos(tenant.id), this.tenants.getStripeCustomerId(tenant.id)]);
+    return {
+      plan: fresh.plan,
+      planStatus: fresh.planStatus,
+      trialEndsAt: fresh.trialEndsAt,
+      maxUsuarios: fresh.maxUsuarios,
+      currentPeriodEnd: fresh.currentPeriodEnd,
+      cancelAt: fresh.cancelAt,
+      usuariosActivos,
+      // Sin cliente el portal contesta 400: la pantalla no ofrece un botón que falla.
+      tieneClienteStripe: customerId !== null,
+    };
   }
 }
 
@@ -119,6 +137,8 @@ export class ProcesarWebhook {
       planStatus,
       stripeSubscriptionId: sub.id,
       trialEndsAt: null,
+      currentPeriodEnd: sub.currentPeriodEnd,
+      cancelAt: sub.cancelAt,
     });
     this.onTenantChanged?.(updated);
     this.logger.info('Suscripción aplicada al tenant', { tenantId: tenant.id, plan: plan ?? tenant.plan, planStatus, subscriptionId: sub.id });
@@ -155,7 +175,8 @@ export class ProcesarWebhook {
     const obj = event.data.object as { id: string; metadata?: Record<string, string> };
     const tenant = (await this.tenants.findByStripeSubscriptionId(obj.id)) ?? (obj.metadata?.tenantId ? await this.tenants.findById(obj.metadata.tenantId) : null);
     if (!tenant) return;
-    const updated = await this.tenants.updateBilling(tenant.id, { planStatus: 'canceled' });
+    // La cancelación programada ya ocurrió: deja de ser una fecha por venir.
+    const updated = await this.tenants.updateBilling(tenant.id, { planStatus: 'canceled', cancelAt: null });
     this.onTenantChanged?.(updated);
   }
 

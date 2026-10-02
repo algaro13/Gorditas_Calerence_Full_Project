@@ -5,6 +5,10 @@ export interface SubscriptionSnapshot {
   customerId: string | null;
   priceId: string | null;
   metadata: Record<string, string>;
+  /** Fin del periodo pagado. */
+  currentPeriodEnd: Date | null;
+  /** Cuándo termina por una cancelación programada; null si no hay. */
+  cancelAt: Date | null;
 }
 
 export interface CheckoutSessionInput {

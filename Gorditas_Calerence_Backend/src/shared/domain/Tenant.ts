@@ -17,6 +17,10 @@ export interface TenantInfo {
   plan: PlanId;
   planStatus: PlanStatus;
   trialEndsAt: Date | null;
+  /** Fin del periodo pagado de la suscripción; null en prueba. */
+  currentPeriodEnd: Date | null;
+  /** Cuándo termina una suscripción con cancelación programada; null si no hay. */
+  cancelAt: Date | null;
   maxUsuarios: number;
   /** Desde cuándo excede su cupo. Null si cabe. Arranca el plazo de `DIAS_SOBRE_CUPO`. */
   sobreCupoDesde: Date | null;

@@ -87,6 +87,10 @@ model Tenant {
   sobreCupoDesde        DateTime?          @map("sobre_cupo_desde") @db.Timestamptz(3)
   stripeCustomerId      String?            @unique @map("stripe_customer_id")
   stripeSubscriptionId  String?            @unique @map("stripe_subscription_id")
+  /// Fin del periodo pagado: cuándo se renueva o, si hay cancelación programada, hasta cuándo sirve.
+  currentPeriodEnd      DateTime?          @map("current_period_end") @db.Timestamptz(3)
+  /// Cuándo termina una suscripción que se canceló desde el portal. Null si no hay cancelación.
+  cancelAt              DateTime?          @map("cancel_at") @db.Timestamptz(3)
   config                Json               @default("{}")
   activo                Boolean            @default(true)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)

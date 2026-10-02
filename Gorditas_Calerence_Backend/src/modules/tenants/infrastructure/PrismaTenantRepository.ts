@@ -12,6 +12,8 @@ export function toTenantInfo(row: TenantRow): TenantInfo {
     plan: row.plan,
     planStatus: row.planStatus,
     trialEndsAt: row.trialEndsAt,
+    currentPeriodEnd: row.currentPeriodEnd,
+    cancelAt: row.cancelAt,
     maxUsuarios: row.maxUsuarios,
     sobreCupoDesde: row.sobreCupoDesde,
     config: (row.config ?? {}) as TenantConfig,
