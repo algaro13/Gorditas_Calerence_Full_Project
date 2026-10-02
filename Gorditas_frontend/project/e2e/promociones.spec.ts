@@ -1,6 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { cliente, llevarACaja, tomarOrden } from './ordenes';
 import { elegirEn } from './selector';
+import { llamarApi } from './api';
 
 /**
  * Una promoción, de punta a punta: se crea en su pantalla, una orden la gana sola, y la caja
@@ -12,21 +13,7 @@ import { elegirEn } from './selector';
  */
 
 /** La API con el token que ya tiene la sesión, para preparar y limpiar sin pasar por la pantalla. */
-async function api(page: Page, metodo: string, ruta: string, cuerpo?: unknown) {
-  return page.evaluate(
-    async ([m, r, c]) => {
-      const llave = Object.keys(localStorage).find((k) => k.startsWith('oidc.user'));
-      const token = llave ? JSON.parse(localStorage.getItem(llave)!).access_token : null;
-      const res = await fetch(`http://localhost:5000/api${r}`, {
-        method: m as string,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: c === null ? undefined : JSON.stringify(c),
-      });
-      return { estado: res.status, cuerpo: await res.json() };
-    },
-    [metodo, ruta, cuerpo ?? null] as const,
-  );
-}
+const api = llamarApi;
 
 /**
  * Deja el restaurante sin promociones activas.

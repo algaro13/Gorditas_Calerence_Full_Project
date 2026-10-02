@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { llamarApi } from './api';
 import { periodoAmplio } from './periodo';
 
 /**
@@ -276,24 +277,10 @@ test('lo que había anotado en el navegador se sube una vez', async ({ page }) =
   // Se comprueba preguntandole al servidor y no mirando la pantalla, porque el resumen solo
   // lista los dias con ventas: un dia con caja y sin ventas —como este de 2019— no tiene tarjeta
   // donde aparecer. Eso es un hueco de la pantalla, no de lo que esta prueba afirma.
-  const caja = async (metodo: 'GET' | 'PUT', d: string, monto?: number) =>
-    page.evaluate(
-      async ([m, dia, valor]) => {
-        // El token lo guarda react-oidc-context en `localStorage`, bajo una llave que lleva el
-        // emisor y el cliente.
-        const llave = Object.keys(localStorage).find((k) => k.startsWith('oidc.user'));
-        const token = llave ? JSON.parse(localStorage.getItem(llave)!).access_token : null;
-        const base = 'http://localhost:5000/api/reportes/caja';
-        const url = m === 'GET' ? `${base}?fechaInicio=${dia}&fechaFin=${dia}` : `${base}/${dia}`;
-        const res = await fetch(url, {
-          method: m as string,
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: m === 'PUT' ? JSON.stringify({ monto: valor }) : undefined,
-        });
-        return { estado: res.status, cuerpo: await res.json() };
-      },
-      [metodo, d, monto ?? 0] as const
-    );
+  const caja = (metodo: 'GET' | 'PUT', d: string, monto?: number) =>
+    metodo === 'GET'
+      ? llamarApi(page, 'GET', `/reportes/caja?fechaInicio=${d}&fechaFin=${d}`)
+      : llamarApi(page, 'PUT', `/reportes/caja/${d}`, { monto: monto ?? 0 });
 
   const enServidor = await caja('GET', dia);
   expect(enServidor.cuerpo.data.caja, 'lo anotado en el navegador no llego al servidor').toEqual([
@@ -321,20 +308,7 @@ test('un día sin ventas pero con gastos o caja aparece y cuenta', async ({ page
   const gasto = 2000;
   const caja = 500;
 
-  const api = (metodo: string, ruta: string, cuerpo?: unknown) =>
-    page.evaluate(
-      async ([m, r, c]) => {
-        const llave = Object.keys(localStorage).find((k) => k.startsWith('oidc.user'));
-        const token = llave ? JSON.parse(localStorage.getItem(llave)!).access_token : null;
-        const res = await fetch(`http://localhost:5000/api${r}`, {
-          method: m as string,
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: c === null ? undefined : JSON.stringify(c),
-        });
-        return { estado: res.status, cuerpo: await res.json() };
-      },
-      [metodo, ruta, cuerpo ?? null] as const
-    );
+  const api = (metodo: string, ruta: string, cuerpo?: unknown) => llamarApi(page, metodo, ruta, cuerpo ?? undefined);
 
   // Hace falta un tipo de gasto cualquiera de los que ya existen.
   const tipos = await api('GET', '/catalogos/tipoGasto?limit=1', null);

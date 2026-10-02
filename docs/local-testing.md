@@ -93,6 +93,17 @@ Necesitan levantado lo mismo que el desarrollo normal: Docker (Postgres y Zitade
 en el 5000 y el frontend en el 5173. Inician sesión una vez con el restaurante `demo` y
 reutilizan el estado.
 
+Las pruebas que preparan datos llamando a la API directamente toman la dirección igual que la app
+(`e2e/api.ts`): `VITE_API_URL` del entorno o de `.env.development`. Si el 5000 está ocupado y el
+backend corre en otro puerto, basta con definir `VITE_API_URL` al levantar el frontend y al correr
+las pruebas (o `E2E_API_URL` solo para las pruebas):
+
+```bash
+PORT=5001 npm run dev:backend
+VITE_API_URL=http://localhost:5001/api npm run dev:frontend
+cd Gorditas_frontend/project && VITE_API_URL=http://localhost:5001/api npm run test:e2e
+```
+
 Tres suites, en `Gorditas_frontend/project/e2e/`:
 
 - **humo**: cada ruta carga, con contenido y sin errores de consola.
