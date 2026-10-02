@@ -77,3 +77,49 @@ test('sin cliente en Stripe no se ofrece un portal que falla', async ({ page }) 
   await expect(page.getByText('Plan actual')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('button', { name: /administrar pago|actualizar método/i })).toHaveCount(0);
 });
+
+// ---- Lo que salió de recorrerla en el navegador ----
+
+test('una prueba que termina hoy lo dice así, sin «queda 1 día»', async ({ page }) => {
+  const hoy = new Date();
+  hoy.setHours(23, 59, 0, 0);
+  test.skip(hoy.getTime() - Date.now() < 60_000, 'a un minuto de medianoche «hoy» ya no se puede afirmar');
+  await conSuscripcion(page, { plan: 'trial', planStatus: 'trial', trialEndsAt: hoy.toISOString(), currentPeriodEnd: null, cancelAt: null });
+
+  await page.goto('/');
+  await expect(page.getByText('Prueba gratuita — termina hoy')).toBeVisible({ timeout: 15_000 });
+
+  await page.goto('/suscripcion');
+  await expect(page.getByText('Tu prueba termina hoy.')).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator('main')).not.toContainText(/queda 1 día/);
+});
+
+test('pago pendiente manda sobre una cancelación programada', async ({ page }) => {
+  await conSuscripcion(page, { plan: 'basico', planStatus: 'past_due', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: RENUEVA, tieneClienteStripe: true });
+
+  await page.goto('/suscripcion');
+  await expect(page.getByText('Pago pendiente')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Cancelación programada')).toHaveCount(0);
+  // La fecha de la cancelación se sigue diciendo.
+  await expect(page.getByText(/sigue funcionando hasta el 2 de noviembre de 2026/i)).toBeVisible();
+});
+
+test('con la prueba vencida, /planes no dice «En prueba» y deja cerrar sesión', async ({ page }) => {
+  const ayer = new Date(Date.now() - 86_400_000).toISOString();
+  await page.route('**/api/tenants/me', async (ruta) => {
+    const respuesta = await ruta.fetch();
+    const cuerpo = await respuesta.json();
+    if (cuerpo?.data) {
+      cuerpo.data.accesoBloqueado = 'TRIAL_EXPIRED';
+      Object.assign(cuerpo.data.tenant, { plan: 'trial', planStatus: 'trial', trialEndsAt: ayer });
+    }
+    await ruta.fulfill({ response: respuesta, body: JSON.stringify(cuerpo) });
+  });
+
+  await page.goto('/suscripcion');
+  await expect(page).toHaveURL(/\/planes$/, { timeout: 15_000 });
+  await expect(page.getByText(/Prueba vencida/)).toBeVisible();
+  await expect(page.getByText(/· En prueba/)).toHaveCount(0);
+  // Esta pantalla no tiene menú: sin este botón no hay salida.
+  await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+});

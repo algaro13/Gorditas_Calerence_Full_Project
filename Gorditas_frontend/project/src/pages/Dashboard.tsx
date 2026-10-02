@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import { accionHacia, etiquetaDeEstatus } from '../utils/estatus';
 import { Orden } from '../types';
-import { diasHasta, fechaLarga, nombreDePlan } from '../utils/plan';
+import { diasDeCalendarioHasta, fechaLarga, nombreDePlan } from '../utils/plan';
 
 // Aviso del estado de la suscripción, arriba del panel.
 //
@@ -85,7 +85,8 @@ const SubscriptionBanner: React.FC = () => {
   }
 
   if (planStatus === 'trial') {
-    const daysLeft = trialEndsAt ? diasHasta(trialEndsAt) : null;
+    // Días de calendario, como en /suscripcion: «hoy» y «mañana» en palabras, sin «1 día restantes».
+    const daysLeft = trialEndsAt ? Math.max(0, diasDeCalendarioHasta(trialEndsAt)) : null;
     const urgent = daysLeft !== null && daysLeft <= 3;
     return (
       <div className={`${urgent ? 'bg-red-50 border-red-200' : 'bg-blue-50 border-blue-200'} border rounded-lg px-4 py-3 flex items-center justify-between gap-3`}>
@@ -94,7 +95,11 @@ const SubscriptionBanner: React.FC = () => {
           <span className={`text-cuerpo font-medium ${urgent ? 'text-red-800' : 'text-blue-800'}`}>
             {daysLeft === null
               ? 'Prueba gratuita activa — 14 días'
-              : `Prueba gratuita — ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'} restantes`}
+              : daysLeft === 0
+                ? 'Prueba gratuita — termina hoy'
+                : daysLeft === 1
+                  ? 'Prueba gratuita — termina mañana'
+                  : `Prueba gratuita — ${daysLeft} días restantes`}
           </span>
         </div>
         {enlace('Elegir plan', urgent ? 'text-red-700 hover:text-red-900' : 'text-blue-700 hover:text-blue-900')}

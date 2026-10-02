@@ -4,7 +4,7 @@ import { AlertTriangle, CalendarClock, CreditCard, ExternalLink, Users, Wallet }
 import { Aviso } from '../components/Aviso';
 import { apiService } from '../services/api';
 import type { EstadoSuscripcion, PlanStatus } from '../types';
-import { LIMITE_SIN_TOPE, diasHasta, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan } from '../utils/plan';
+import { LIMITE_SIN_TOPE, cuandoTerminaLaPrueba, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan, pruebaVencida } from '../utils/plan';
 
 const PASTILLA: Record<PlanStatus, string> = {
   trial: 'bg-blue-100 text-blue-800',
@@ -17,8 +17,8 @@ const PASTILLA: Record<PlanStatus, string> = {
 /** Qué pasa con la suscripción y cuándo, en una frase. */
 function cuandoPasaAlgo(s: EstadoSuscripcion): string | null {
   if (s.planStatus === 'trial' && s.trialEndsAt) {
-    const dias = diasHasta(s.trialEndsAt);
-    return `Tu prueba termina el ${fechaLarga(s.trialEndsAt)} (${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}).`;
+    if (pruebaVencida(s.planStatus, s.trialEndsAt)) return `Tu prueba terminó el ${fechaLarga(s.trialEndsAt)}.`;
+    return `Tu prueba ${cuandoTerminaLaPrueba(s.trialEndsAt)}.`;
   }
   if (s.cancelAt) return `Cancelaste la suscripción: sigue funcionando hasta el ${fechaLarga(s.cancelAt)}.`;
   if (s.planStatus === 'active' && s.currentPeriodEnd) return `Se renueva el ${fechaLarga(s.currentPeriodEnd)}.`;
@@ -93,7 +93,9 @@ const Suscripcion: React.FC = () => {
             <div className="flex flex-wrap items-center gap-sp-2 mt-1">
               <h2 id="plan-actual" className="text-titulo font-bold text-gray-900">{nombreDePlan(estado.plan)}</h2>
               <span className={`rounded-full px-3 py-1 text-meta font-medium ${PASTILLA[estado.planStatus] ?? PASTILLA.canceled}`}>
-                {estado.cancelAt ? 'Cancelación programada' : etiquetaDeEstadoDePlan(estado.planStatus)}
+                {/* El pago pendiente manda: sin cobro, el restaurante puede pausarse antes de la
+                    fecha de cancelación. La fecha se sigue diciendo debajo. */}
+                {estado.cancelAt && estado.planStatus === 'active' ? 'Cancelación programada' : etiquetaDeEstadoDePlan(estado.planStatus, estado.trialEndsAt)}
               </span>
             </div>
             {cuandoPasaAlgo(estado) && (
@@ -121,7 +123,9 @@ const Suscripcion: React.FC = () => {
             )}
             {lleno && (
               <p className="text-meta text-gray-500 mt-sp-2">
-                Llegaste al límite de tu plan. Para invitar a más personas, cambia a un plan mayor.
+                {estado.planStatus === 'trial'
+                  ? 'Llegaste al límite de la prueba. Para invitar a más personas, elige un plan con más usuarios.'
+                  : 'Llegaste al límite de tu plan. Para invitar a más personas, cambia a un plan mayor.'}
               </p>
             )}
             <Link to="/catalogos" className="mt-sp-1 inline-flex min-h-control-min items-center text-cuerpo text-orange-700 underline hover:text-orange-900">

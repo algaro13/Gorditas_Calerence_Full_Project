@@ -40,7 +40,7 @@ const plans: { id: PlanId; name: string; price: number; period: string; maxUsers
 const Plans: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const { tenant, hasPermission, accesoBloqueado } = useAuth();
+  const { tenant, hasPermission, accesoBloqueado, logout } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasPermission(['Admin']);
 
@@ -85,8 +85,12 @@ const Plans: React.FC = () => {
                   : 'Tu suscripción no está activa, así que el punto de venta está en pausa.'}
               </p>
               <p className="text-cuerpo text-orange-900 mt-2">
-                <strong>Tus datos están intactos.</strong> Elige un plan abajo y todo vuelve a
-                donde estaba: tus mesas, tus platillos, tus órdenes y tus reportes.
+                <strong>Tus datos están intactos.</strong>{' '}
+                {/* Quien no es Admin no puede contratar: pedirle que elija un plan lo dejaba
+                    frente a tres botones apagados sin saber qué hacer. */}
+                {isAdmin
+                  ? 'Elige un plan abajo y todo vuelve a donde estaba: tus mesas, tus platillos, tus órdenes y tus reportes.'
+                  : 'Avisa al administrador del restaurante para que elija un plan; en cuanto lo haga, todo vuelve a donde estaba.'}
               </p>
             </div>
           ) : (
@@ -94,7 +98,7 @@ const Plans: React.FC = () => {
           )}
           {tenant && (
             <p className="text-cuerpo text-gray-500 mt-2">
-              Plan actual: <span className="font-medium">{nombreDePlan(tenant.plan)}</span> · {etiquetaDeEstadoDePlan(tenant.planStatus)}
+              Plan actual: <span className="font-medium">{nombreDePlan(tenant.plan)}</span> · {etiquetaDeEstadoDePlan(tenant.planStatus, tenant.trialEndsAt)}
             </p>
           )}
           <div className="mt-4 flex justify-center gap-4 text-cuerpo">
@@ -109,8 +113,15 @@ const Plans: React.FC = () => {
                 Gestionar suscripción
               </button>
             )}
+            {/* Esta pantalla no tiene menú: con el acceso en pausa, este botón es la única salida.
+                Sin él, un mesero quedaba atrapado aquí. */}
+            {accesoBloqueado && (
+              <button onClick={() => logout()} className="text-gray-600 hover:text-gray-900 underline">
+                Cerrar sesión
+              </button>
+            )}
           </div>
-          {!isAdmin && <p className="text-cuerpo text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
+          {!isAdmin && !accesoBloqueado && <p className="text-cuerpo text-yellow-700 mt-3">Solo un administrador puede contratar un plan.</p>}
           <Aviso error={error} />
         </div>
 
