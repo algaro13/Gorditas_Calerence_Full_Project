@@ -246,6 +246,8 @@ export interface EstadoSuscripcion {
   tieneClienteStripe: boolean;
   /** Días de plazo al quedar por encima del cupo (`DIAS_SOBRE_CUPO` del backend). */
   diasSobreCupo: number;
+  /** Si hay una suscripción de Stripe que sigue cobrando. Decide entre contratar y cambiar de plan. */
+  suscripcionViva: boolean;
 }
 
 export interface TenantConfig {

@@ -131,7 +131,11 @@ export class EstadoBilling {
   ) {}
   async execute(tenant: TenantInfo) {
     const fresh = (await this.tenants.findById(tenant.id)) ?? tenant;
-    const [usuariosActivos, customerId] = await Promise.all([this.contarUsuariosActivos(tenant.id), this.tenants.getStripeCustomerId(tenant.id)]);
+    const [usuariosActivos, customerId, viva] = await Promise.all([
+      this.contarUsuariosActivos(tenant.id),
+      this.tenants.getStripeCustomerId(tenant.id),
+      suscripcionViva(this.tenants, fresh),
+    ]);
     return {
       plan: fresh.plan,
       planStatus: fresh.planStatus,
@@ -142,6 +146,10 @@ export class EstadoBilling {
       usuariosActivos,
       // Sin cliente el portal contesta 400: la pantalla no ofrece un botón que falla.
       tieneClienteStripe: customerId !== null,
+      // La misma regla que hace a `create-checkout` responder 409 y a `change-plan` responder 400.
+      // La pantalla la usaba adivinada por el nombre del plan, y un plan dado sin pasar por Stripe
+      // (la siembra, soporte) le ofrecía cambiar una suscripción que no existe.
+      suscripcionViva: viva !== null,
       // Lo que dura el plazo al quedar por encima del cupo. Lo necesita la pantalla para advertir
       // al bajar de plan; si lo escribiera ella, dejaría de coincidir el día que cambie aquí.
       diasSobreCupo: DIAS_SOBRE_CUPO,

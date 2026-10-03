@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
-import type { PlanId } from '../types';
+import type { EstadoSuscripcion, PlanId } from '../types';
 import { etiquetaDeEstadoDePlan, nombreDePlan } from '../utils/plan';
 
 const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; limite: number; features: string[]; popular: boolean }[] = [
@@ -46,19 +46,27 @@ const Plans: React.FC = () => {
   const { tenant, hasPermission, accesoBloqueado, logout, refreshTenant } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasPermission(['Admin']);
+  const [confirmando, setConfirmando] = useState<PlanId | null>(null);
+  // Lo que dice el backend de la suscripción: si sigue cobrando, cuántos usuarios hay activos y
+  // cuántos días de plazo da el sistema si quedan de más.
+  const [estado, setEstado] = useState<EstadoSuscripcion | null>(null);
+  const [estadoListo, setEstadoListo] = useState(false);
+  useEffect(() => {
+    if (!isAdmin) return;
+    apiService.getBillingStatus().then((res) => {
+      if (res.success && res.data) setEstado(res.data);
+      // Si falla, se deja contratar: el backend responde 409 si ya hay una suscripción.
+      setEstadoListo(true);
+    });
+  }, [isAdmin]);
   // Con una suscripción que sigue cobrando, elegir otro plan cambia esa misma suscripción. Antes
   // abría un Checkout nuevo: una segunda suscripción que cobraba junto a la primera.
-  const suscripcionViva = tenant?.plan !== 'trial' && (tenant?.planStatus === 'active' || tenant?.planStatus === 'past_due');
-  const [confirmando, setConfirmando] = useState<PlanId | null>(null);
-  // Para advertir al bajar de plan: cuántos usuarios hay activos y cuántos días de plazo da el
-  // sistema si quedan de más. Los dos salen del backend.
-  const [uso, setUso] = useState<{ activos: number; dias: number } | null>(null);
-  useEffect(() => {
-    if (!suscripcionViva || !isAdmin) return;
-    apiService.getBillingStatus().then((res) => {
-      if (res.success && res.data) setUso({ activos: res.data.usuariosActivos, dias: res.data.diasSobreCupo });
-    });
-  }, [suscripcionViva, isAdmin]);
+  //
+  // Lo dice el backend, con la misma regla que protege `create-checkout` y `change-plan`. Se
+  // adivinaba por el nombre del plan, y a un restaurante con plan pero sin Stripe (la siembra,
+  // soporte) se le ofrecía cambiar una suscripción que no existe.
+  const suscripcionViva = estado?.suscripcionViva ?? false;
+  const uso = estado ? { activos: estado.usuariosActivos, dias: estado.diasSobreCupo } : null;
 
   const handleChangePlan = async (planId: PlanId) => {
     setLoading(planId);
@@ -82,7 +90,12 @@ const Plans: React.FC = () => {
       window.location.href = res.data.url;
       return;
     }
-    setError(res.error || 'Error al crear sesión de pago');
+    // Una pestaña abierta desde antes de pagar todavía ofrece contratar.
+    setError(
+      res.code === 'YA_SUSCRITO'
+        ? 'Ya tienes una suscripción activa. Recarga la página para cambiar de plan en lugar de contratar otro.'
+        : res.error || 'Error al crear sesión de pago',
+    );
     setLoading(null);
   };
 
@@ -138,7 +151,8 @@ const Plans: React.FC = () => {
                 Volver al panel
               </button>
             )}
-            {tenant?.planStatus !== 'trial' && isAdmin && (
+            {/* Sin cliente en Stripe el portal responde error: lo dice el backend, no el plan. */}
+            {estado?.tieneClienteStripe && isAdmin && (
               <button onClick={handlePortal} disabled={loading !== null} className="text-orange-700 hover:text-orange-900 underline disabled:opacity-50">
                 Gestionar suscripción
               </button>
@@ -225,7 +239,8 @@ const Plans: React.FC = () => {
               ) : (
                 <button
                   onClick={() => (suscripcionViva ? setConfirmando(plan.id) : handleSelectPlan(plan.id))}
-                  disabled={loading !== null || !isAdmin}
+                  // Hasta saber si hay suscripción no se ofrece ni contratar ni cambiar.
+                  disabled={loading !== null || !isAdmin || !estadoListo}
                   className={`w-full py-3 rounded-lg font-medium transition-colors ${
                     plan.popular
                       ? 'bg-orange-600 text-white hover:bg-orange-700'

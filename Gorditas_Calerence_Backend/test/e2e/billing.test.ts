@@ -55,7 +55,7 @@ describe('Billing', () => {
     expect(plans.body.data.map((p: { id: string }) => p.id)).toEqual(['basico', 'profesional', 'empresarial']);
     const status = await api().get('/api/billing/status').set(auth(admin));
     expect(status.status).toBe(200);
-    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false, diasSobreCupo: 15 });
+    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false, diasSobreCupo: 15, suscripcionViva: false });
     expect(typeof status.body.data.usuariosActivos).toBe('number');
     // el guard de plan no aplica a billing aunque el trial esté vencido
     expect((await api().get('/api/ordenes').set(auth(admin))).status).toBe(403);
@@ -198,6 +198,7 @@ describe('Billing', () => {
       fake.setSubscription({ id: SUB2, status: 'active', customerId, priceId: PRICES.basico, metadata: { tenantId: otro.id } });
       await signed({ id: evt('cambio_checkout'), type: 'checkout.session.completed', data: { object: { id: 'cs_c', customer: customerId, subscription: SUB2, metadata: { tenantId: otro.id } } } });
       expect(await t.container.tenants.findById(otro.id)).toMatchObject({ plan: 'basico', planStatus: 'active' });
+      expect((await api().get('/api/billing/status').set(auth(duena))).body.data.suscripcionViva).toBe(true);
 
       const checkoutsAntes = fake.checkouts.length;
       const otraVez = await api().post('/api/billing/create-checkout').set(auth(duena)).send({ plan: 'profesional' });

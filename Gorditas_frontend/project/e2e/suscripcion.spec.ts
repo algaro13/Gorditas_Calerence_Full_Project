@@ -125,7 +125,7 @@ test('con la prueba vencida, /planes no dice «En prueba» y deja cerrar sesión
 });
 
 test('con una suscripción viva, elegir otro plan la cambia en vez de abrir otro Checkout', async ({ page }) => {
-  await conSuscripcion(page, { plan: 'basico', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true });
+  await conSuscripcion(page, { plan: 'basico', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true, suscripcionViva: true });
   let checkouts = 0;
   let cambio: unknown = null;
   await page.route('**/api/billing/create-checkout', async (ruta) => {
@@ -156,7 +156,7 @@ test('con una suscripción viva, elegir otro plan la cambia en vez de abrir otro
 });
 
 test('bajar de plan con usuarios de más lo advierte antes de confirmar; subir no', async ({ page }) => {
-  await conSuscripcion(page, { plan: 'profesional', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true, usuariosActivos: 5, diasSobreCupo: 15 });
+  await conSuscripcion(page, { plan: 'profesional', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true, usuariosActivos: 5, diasSobreCupo: 15, suscripcionViva: true });
 
   await page.goto('/planes');
   await expect(page.getByRole('button', { name: 'Tu plan actual' })).toBeVisible({ timeout: 15_000 });
@@ -204,4 +204,22 @@ test('por encima del cupo, la suscripción dice el plazo y a quién se desactiva
   await expect(usuarios).toContainText('Ana Prueba');
   await expect(usuarios).toContainText('Beto Prueba');
   await expect(usuarios).toContainText('Catálogos → Usuarios');
+});
+
+test('un plan dado sin Stripe se contrata, no se «cambia»', async ({ page }) => {
+  // Como `taqueria-lupita` en el VPS: la siembra le puso Profesional activo, sin suscripción.
+  await conSuscripcion(page, { plan: 'profesional', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false, suscripcionViva: false });
+  let cambios = 0;
+  await page.route('**/api/billing/change-plan', async (ruta) => {
+    cambios++;
+    await ruta.abort();
+  });
+
+  await page.goto('/planes');
+  await expect(page.getByRole('button', { name: 'Seleccionar' })).toHaveCount(3, { timeout: 15_000 });
+  await expect(page.getByRole('button', { name: /Tu plan actual|Cambiar a este plan/ })).toHaveCount(0);
+  // Sin cliente en Stripe no hay portal que abrir.
+  await expect(page.getByRole('button', { name: 'Gestionar suscripción' })).toHaveCount(0);
+  for (const boton of await page.getByRole('button', { name: 'Seleccionar' }).all()) await expect(boton).toBeEnabled();
+  expect(cambios).toBe(0);
 });
