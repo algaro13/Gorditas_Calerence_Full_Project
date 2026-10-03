@@ -18,6 +18,18 @@ async function main(): Promise<void> {
     });
   });
 
+  // Lo que se anuncia (el catálogo) contra lo que se cobra (Stripe). Solo avisa: un precio mal
+  // puesto no debe impedir que los restaurantes operen.
+  if (env.PAYMENT_PROVIDER === 'stripe') {
+    container.verificarPrecios
+      .ejecutar()
+      .then((diferencias) => {
+        if (diferencias.length === 0) logger.info('Precios de Stripe verificados contra el catálogo');
+        for (const d of diferencias) logger.error('El precio de Stripe no coincide con el catálogo', { ...d });
+      })
+      .catch((err) => logger.warn('No se pudieron verificar los precios de Stripe', { err: err instanceof Error ? err.message : String(err) }));
+  }
+
   // El backend se programa sus propios trabajos: así levantar el stack basta, en producción y
   // en un servidor restaurado, sin cron que instalar ni recordar.
   const trabajos = programarTrabajos(container);

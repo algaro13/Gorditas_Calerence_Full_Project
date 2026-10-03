@@ -28,10 +28,17 @@ export interface TenantInfo {
   activo: boolean;
 }
 
+/**
+ * Cupo que significa «sin límite». Se guarda como número porque `max_usuarios` es una columna
+ * entera y el cupo se compara siempre igual; las pantallas no lo adivinan: reciben
+ * `usuariosIlimitados`.
+ */
+export const USUARIOS_ILIMITADOS = 999;
+
 export const PLAN_LIMITS: Record<Exclude<PlanId, 'trial'>, { maxUsuarios: number; precioMxn: number }> = {
   basico: { maxUsuarios: 3, precioMxn: 299 },
   profesional: { maxUsuarios: 10, precioMxn: 599 },
-  empresarial: { maxUsuarios: 999, precioMxn: 999 },
+  empresarial: { maxUsuarios: USUARIOS_ILIMITADOS, precioMxn: 999 },
 };
 
 export const TRIAL_DAYS = 14;

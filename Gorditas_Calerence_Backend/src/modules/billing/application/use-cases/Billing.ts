@@ -3,7 +3,7 @@ import type { PaymentProvider, SubscriptionSnapshot, WebhookEvent, WebhookVerifi
 import type { DomainUrls } from '../../../../shared/config/domain';
 import type { AuthInfo } from '../../../../shared/domain/Auth';
 import { ConflictError, ValidationError } from '../../../../shared/domain/DomainError';
-import { DIAS_SOBRE_CUPO, PLAN_LIMITS, type TenantInfo } from '../../../../shared/domain/Tenant';
+import { DIAS_SOBRE_CUPO, PLAN_LIMITS, USUARIOS_ILIMITADOS, type TenantInfo } from '../../../../shared/domain/Tenant';
 import type { BillingUpdate, TenantRepository } from '../../../../shared/application/ports/TenantRepository';
 import { isPaidPlan, planFromPriceId, planStatusFromStripe, type PaidPlanId, type PriceToPlan } from '../../domain/plans';
 import type { StripeEventStore } from '../ports/StripeEventStore';
@@ -141,6 +141,7 @@ export class EstadoBilling {
       planStatus: fresh.planStatus,
       trialEndsAt: fresh.trialEndsAt,
       maxUsuarios: fresh.maxUsuarios,
+      usuariosIlimitados: fresh.maxUsuarios >= USUARIOS_ILIMITADOS,
       currentPeriodEnd: fresh.currentPeriodEnd,
       cancelAt: fresh.cancelAt,
       usuariosActivos,

@@ -233,6 +233,19 @@ export interface AuthUser {
 export type PlanId = 'trial' | 'basico' | 'profesional' | 'empresarial';
 export type PlanStatus = 'trial' | 'active' | 'past_due' | 'canceled' | 'expired';
 
+/** Un plan del catálogo (`GET /api/billing/plans`): la única fuente de precios y características. */
+export interface PlanCatalogo {
+  id: Exclude<PlanId, 'trial'>;
+  name: string;
+  /** Precio mensual. */
+  price: number;
+  currency: 'MXN';
+  maxUsuarios: number;
+  usuariosIlimitados: boolean;
+  popular: boolean;
+  features: string[];
+}
+
 /** Lo que devuelve `GET /api/billing/status`. */
 export interface EstadoSuscripcion {
   plan: PlanId;
@@ -248,6 +261,8 @@ export interface EstadoSuscripcion {
   diasSobreCupo: number;
   /** Si hay una suscripción de Stripe que sigue cobrando. Decide entre contratar y cambiar de plan. */
   suscripcionViva: boolean;
+  /** El plan no limita el número de usuarios. */
+  usuariosIlimitados: boolean;
 }
 
 export interface TenantConfig {

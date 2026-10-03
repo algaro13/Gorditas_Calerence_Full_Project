@@ -34,9 +34,6 @@ export const pruebaVencida = (estado: PlanStatus | undefined | null, trialEndsAt
 export const etiquetaDeEstadoDePlan = (estado: PlanStatus | undefined | null, trialEndsAt?: string | null): string =>
   pruebaVencida(estado, trialEndsAt) ? 'Prueba vencida' : estado ? (ESTADOS[estado] ?? estado) : '';
 
-/** El plan Empresarial guarda 999 como «sin límite». */
-export const LIMITE_SIN_TOPE = 999;
-
 /** Días completos que faltan para `fecha`, nunca negativos. */
 export const diasHasta = (fecha: string | Date, ahora: number = Date.now()): number =>
   Math.max(0, Math.ceil((new Date(fecha).getTime() - ahora) / 86_400_000));

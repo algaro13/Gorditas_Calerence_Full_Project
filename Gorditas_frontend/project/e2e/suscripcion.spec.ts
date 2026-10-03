@@ -223,3 +223,23 @@ test('un plan dado sin Stripe se contrata, no se «cambia»', async ({ page }) =
   for (const boton of await page.getByRole('button', { name: 'Seleccionar' }).all()) await expect(boton).toBeEnabled();
   expect(cambios).toBe(0);
 });
+
+test('los precios salen del catálogo del backend, en /planes y en la landing', async ({ page }) => {
+  // Un catálogo con un precio que no está escrito en ningún sitio del frontend.
+  await page.route('**/api/billing/plans', async (ruta) => {
+    const respuesta = await ruta.fetch();
+    const cuerpo = await respuesta.json();
+    cuerpo.data[0].price = 777;
+    await ruta.fulfill({ response: respuesta, body: JSON.stringify(cuerpo) });
+  });
+
+  await page.goto('/planes');
+  await expect(page.getByText('$777')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Órdenes, cocina y despacho').first()).toBeVisible();
+  // Lo que no existe ya no se promete.
+  await expect(page.getByText(/sucursales|Dashboard avanzado/)).toHaveCount(0);
+
+  await page.goto('/landing');
+  await expect(page.getByText('$777')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/sucursales|Dashboard avanzado/)).toHaveCount(0);
+});

@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import type { CheckoutSessionInput, PaymentProvider, SubscriptionSnapshot, WebhookEvent, WebhookVerifier } from '../../shared/application/ports/PaymentProvider';
+import type { CheckoutSessionInput, PaymentProvider, PriceSnapshot, SubscriptionSnapshot, WebhookEvent, WebhookVerifier } from '../../shared/application/ports/PaymentProvider';
 import { ValidationError } from '../../shared/domain/DomainError';
 
 export function createStripeClient(secretKey: string): Stripe {
@@ -48,6 +48,16 @@ export class StripePaymentProvider implements PaymentProvider {
 
   changeSubscriptionPrice(subscriptionId: string, priceId: string): Promise<SubscriptionSnapshot> {
     return changeSubscriptionPrice(this.stripe, subscriptionId, priceId);
+  }
+
+  async retrievePrice(priceId: string): Promise<PriceSnapshot | null> {
+    try {
+      const p = await this.stripe.prices.retrieve(priceId);
+      return { amount: (p.unit_amount ?? 0) / 100, currency: p.currency, interval: p.recurring?.interval ?? null };
+    } catch (err) {
+      if (err instanceof Stripe.errors.StripeInvalidRequestError && err.statusCode === 404) return null;
+      throw err;
+    }
   }
 }
 

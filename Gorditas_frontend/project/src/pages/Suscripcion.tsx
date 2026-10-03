@@ -5,7 +5,7 @@ import { Aviso } from '../components/Aviso';
 import { AvisoSobreCupo } from '../components/AvisoSobreCupo';
 import { apiService } from '../services/api';
 import type { EstadoDeCupo, EstadoSuscripcion, PlanStatus } from '../types';
-import { LIMITE_SIN_TOPE, cuandoTerminaLaPrueba, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan, pruebaVencida } from '../utils/plan';
+import { cuandoTerminaLaPrueba, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan, pruebaVencida } from '../utils/plan';
 
 const PASTILLA: Record<PlanStatus, string> = {
   trial: 'bg-blue-100 text-blue-800',
@@ -66,7 +66,8 @@ const Suscripcion: React.FC = () => {
     setAbriendoPortal(false);
   };
 
-  const sinTope = (estado?.maxUsuarios ?? 0) >= LIMITE_SIN_TOPE;
+  // Lo dice el backend; antes se adivinaba comparando con un 999 escrito aquí.
+  const sinTope = estado?.usuariosIlimitados ?? false;
   const ocupacion = estado && !sinTope ? Math.min(100, Math.round((estado.usuariosActivos / estado.maxUsuarios) * 100)) : 0;
   const lleno = estado !== null && !sinTope && estado.usuariosActivos >= estado.maxUsuarios;
   const excedido = cupo !== null && estado !== null && estado.usuariosActivos > estado.maxUsuarios;

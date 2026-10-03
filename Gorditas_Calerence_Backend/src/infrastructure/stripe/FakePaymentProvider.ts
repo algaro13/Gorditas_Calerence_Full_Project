@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import type { CheckoutSessionInput, PaymentProvider, SubscriptionSnapshot } from '../../shared/application/ports/PaymentProvider';
+import type { CheckoutSessionInput, PaymentProvider, PriceSnapshot, SubscriptionSnapshot } from '../../shared/application/ports/PaymentProvider';
 
 /** Proveedor de cobros en memoria para pruebas y desarrollo sin Stripe. */
 export class FakePaymentProvider implements PaymentProvider {
   readonly customers = new Map<string, { email: string; name: string }>();
   readonly checkouts: Array<CheckoutSessionInput & { id: string }> = [];
   readonly subscriptions = new Map<string, SubscriptionSnapshot>();
+  readonly prices = new Map<string, PriceSnapshot>();
 
   async ensureCustomer(input: { existingId: string | null; email: string; name: string }): Promise<string> {
     if (input.existingId) return input.existingId;
@@ -34,6 +35,10 @@ export class FakePaymentProvider implements PaymentProvider {
     const updated = { ...sub, priceId };
     this.subscriptions.set(subscriptionId, updated);
     return updated;
+  }
+
+  async retrievePrice(priceId: string): Promise<PriceSnapshot | null> {
+    return this.prices.get(priceId) ?? null;
   }
 
   /** Helper de pruebas: registra una suscripción viva. */

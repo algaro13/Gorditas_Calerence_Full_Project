@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app-config';
-import type { ApiResponse, ComboVendible, EstadoDeCupo, EstadoSuscripcion, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
+import type { ApiResponse, ComboVendible, EstadoDeCupo, EstadoSuscripcion, PlanCatalogo, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
 type TokenProvider = () => string | null | undefined;
 
@@ -147,7 +147,7 @@ class ApiService {
 
   // ---------- Billing ----------
   getPlans() {
-    return this.request('/billing/plans');
+    return this.request<PlanCatalogo[]>('/billing/plans');
   }
   createCheckout(plan: PlanId) {
     return this.request<{ url: string; sessionId: string }>('/billing/create-checkout', this.json('POST', { plan }));

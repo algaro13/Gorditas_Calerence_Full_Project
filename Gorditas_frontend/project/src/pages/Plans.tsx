@@ -6,39 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
 import type { EstadoSuscripcion, PlanId } from '../types';
 import { etiquetaDeEstadoDePlan, nombreDePlan } from '../utils/plan';
-
-const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; limite: number; features: string[]; popular: boolean }[] = [
-  {
-    id: 'basico',
-    name: 'Básico',
-    price: 299,
-    period: '/mes',
-    maxUsers: '3 usuarios',
-    limite: 3,
-    features: ['Gestión de órdenes', 'Cobro y pagos', 'Inventario básico', 'Soporte por email'],
-    popular: false,
-  },
-  {
-    id: 'profesional',
-    name: 'Profesional',
-    price: 599,
-    period: '/mes',
-    maxUsers: '10 usuarios',
-    limite: 10,
-    features: ['Todo en Básico', 'Reportes completos', 'Múltiples mesas', 'Extras y guisos', 'Despacho de órdenes', 'Soporte prioritario'],
-    popular: true,
-  },
-  {
-    id: 'empresarial',
-    name: 'Empresarial',
-    price: 999,
-    period: '/mes',
-    maxUsers: 'Usuarios ilimitados',
-    limite: 999,
-    features: ['Todo en Profesional', 'Múltiples sucursales', 'Exportación Excel', 'Dashboard avanzado', 'Soporte dedicado', 'Personalización de marca'],
-    popular: false,
-  },
-];
+import { textoDeUsuarios, usePlanes } from '../hooks/usePlanes';
 
 const Plans: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
@@ -46,6 +14,7 @@ const Plans: React.FC = () => {
   const { tenant, hasPermission, accesoBloqueado, logout, refreshTenant } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasPermission(['Admin']);
+  const { planes, error: errorPlanes, reintentar } = usePlanes();
   const [confirmando, setConfirmando] = useState<PlanId | null>(null);
   // Lo que dice el backend de la suscripción: si sigue cobrando, cuántos usuarios hay activos y
   // cuántos días de plazo da el sistema si quedan de más.
@@ -170,7 +139,17 @@ const Plans: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {plans.map((plan) => (
+          {/* El catálogo sale del backend: mientras llega, o si no llega, se dice. */}
+          {!planes && !errorPlanes && <p className="md:col-span-3 text-center text-cuerpo text-gray-600">Cargando planes…</p>}
+          {errorPlanes && (
+            <div className="md:col-span-3 text-center">
+              <p className="text-cuerpo text-gray-700">No pudimos cargar los planes.</p>
+              <button onClick={reintentar} className="mt-sp-2 text-orange-700 underline hover:text-orange-900">
+                Intentar de nuevo
+              </button>
+            </div>
+          )}
+          {(planes ?? []).map((plan) => (
             <div
               key={plan.id}
               className={`bg-white rounded-2xl shadow-lg p-8 relative ${
@@ -184,11 +163,11 @@ const Plans: React.FC = () => {
               )}
 
               <h3 className="text-titulo font-bold text-gray-900 mb-2">{plan.name}</h3>
-              <p className="text-cuerpo text-gray-500 mb-4">{plan.maxUsers}</p>
+              <p className="text-cuerpo text-gray-500 mb-4">{textoDeUsuarios(plan)}</p>
 
               <div className="mb-6">
                 <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
-                <span className="text-gray-500 text-cuerpo"> MXN{plan.period}</span>
+                <span className="text-gray-500 text-cuerpo"> {plan.currency}/mes</span>
               </div>
 
               <ul className="space-y-3 mb-8">
@@ -212,12 +191,12 @@ const Plans: React.FC = () => {
                   </p>
                   {/* Bajar por debajo de los usuarios activos no expulsa a nadie al momento: abre
                       un plazo. Quien confirma tiene que saberlo antes, no descubrirlo después. */}
-                  {uso && uso.activos > plan.limite && (
+                  {uso && uso.activos > plan.maxUsuarios && (
                     <p className="rounded-lg border border-amber-300 bg-amber-50 p-sp-2 text-cuerpo text-amber-900">
-                      Tienes {uso.activos} usuarios activos y {plan.name} permite {plan.limite}:{' '}
-                      {uso.activos - plan.limite === 1 ? 'te sobraría 1' : `te sobrarían ${uso.activos - plan.limite}`}. Nadie
+                      Tienes {uso.activos} usuarios activos y {plan.name} permite {plan.maxUsuarios}:{' '}
+                      {uso.activos - plan.maxUsuarios === 1 ? 'te sobraría 1' : `te sobrarían ${uso.activos - plan.maxUsuarios}`}. Nadie
                       pierde el acceso al cambiar, pero tendrás {uso.dias} días para desactivar
-                      {uso.activos - plan.limite === 1 ? ' a uno' : ' a los que sobren'}. Si no, el sistema desactivará
+                      {uso.activos - plan.maxUsuarios === 1 ? ' a uno' : ' a los que sobren'}. Si no, el sistema desactivará
                       primero a quienes llevan más tiempo sin entrar.
                     </p>
                   )}

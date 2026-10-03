@@ -1,4 +1,4 @@
-import { PLAN_LIMITS, type TenantInfo } from '../../../shared/domain/Tenant';
+import { PLAN_LIMITS, USUARIOS_ILIMITADOS, type TenantInfo } from '../../../shared/domain/Tenant';
 
 export type TipoAvisoPrueba = 'prueba-por-vencer' | 'prueba-vencida';
 
@@ -47,14 +47,11 @@ const NOMBRES_PLAN: Record<keyof typeof PLAN_LIMITS, string> = {
   empresarial: 'Empresarial',
 };
 
-/** El plan Empresarial guarda 999 como «sin límite». */
-const SIN_TOPE = 999;
-
 /** «Básico: $299 MXN al mes, hasta 3 usuarios». Sale de `PLAN_LIMITS`, no se escribe a mano. */
 function lineasDePlanes(): string[] {
   return (Object.keys(PLAN_LIMITS) as (keyof typeof PLAN_LIMITS)[]).map((id) => {
     const { precioMxn, maxUsuarios } = PLAN_LIMITS[id];
-    const usuarios = maxUsuarios >= SIN_TOPE ? 'usuarios ilimitados' : `hasta ${maxUsuarios} usuarios`;
+    const usuarios = maxUsuarios >= USUARIOS_ILIMITADOS ? 'usuarios ilimitados' : `hasta ${maxUsuarios} usuarios`;
     return `${NOMBRES_PLAN[id]}: $${precioMxn} MXN al mes, ${usuarios}`;
   });
 }

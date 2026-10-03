@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChefHat, Check, ShieldCheck, Smartphone, BarChart3, Users, Clock, CreditCard, Star } from 'lucide-react';
+import { textoDeUsuarios, usePlanes } from '../hooks/usePlanes';
 
 const features = [
   { icon: ShieldCheck, title: 'Multi-usuario con roles', desc: 'Admin, Encargado, Mesero, Cocinero, Despachador — cada quien ve lo que necesita.' },
@@ -11,14 +12,10 @@ const features = [
   { icon: CreditCard, title: 'Cobro integrado', desc: 'Control de pagos, cuentas por mesa y resumen diario.' },
 ];
 
-const plans = [
-  { name: 'Básico', price: 299, users: '3 usuarios', features: ['Órdenes', 'Cobro', 'Inventario básico', 'Soporte por email'] },
-  { name: 'Profesional', price: 599, users: '10 usuarios', features: ['Todo en Básico', 'Reportes', 'Múltiples mesas', 'Extras y guisos', 'Soporte prioritario'], popular: true },
-  { name: 'Empresarial', price: 999, users: 'Ilimitados', features: ['Todo en Profesional', 'Múltiples sucursales', 'Dashboard avanzado', 'Soporte dedicado', 'Personalización'] },
-];
-
 const Landing: React.FC = () => {
   const navigate = useNavigate();
+  // Del backend, igual que la pantalla de planes: un solo catálogo.
+  const { planes, error: errorPlanes, reintentar } = usePlanes();
 
   /** Los botones de prueba llevan al registro; solo el del encabezado va al inicio de sesión. */
   const handleStart = () => {
@@ -132,9 +129,18 @@ const Landing: React.FC = () => {
           <p className="text-gray-600 text-center mb-12">14 días de prueba gratis en cualquier plan. Cancela cuando quieras.</p>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {plans.map((plan, i) => (
+            {!planes && !errorPlanes && <p className="md:col-span-3 text-center text-cuerpo text-gray-600">Cargando planes…</p>}
+            {errorPlanes && (
+              <div className="md:col-span-3 text-center">
+                <p className="text-cuerpo text-gray-700">No pudimos cargar los planes.</p>
+                <button onClick={reintentar} className="mt-sp-2 text-orange-700 underline hover:text-orange-900">
+                  Intentar de nuevo
+                </button>
+              </div>
+            )}
+            {(planes ?? []).map((plan) => (
               <div
-                key={i}
+                key={plan.id}
                 className={`bg-white rounded-2xl p-8 shadow-sm relative ${plan.popular ? 'ring-2 ring-orange-500 scale-105' : ''}`}
               >
                 {plan.popular && (
@@ -143,10 +149,10 @@ const Landing: React.FC = () => {
                   </div>
                 )}
                 <h3 className="text-titulo font-bold mb-1">{plan.name}</h3>
-                <p className="text-cuerpo text-gray-500 mb-4">{plan.users}</p>
+                <p className="text-cuerpo text-gray-500 mb-4">{textoDeUsuarios(plan)}</p>
                 <div className="mb-6">
                   <span className="text-4xl font-bold">${plan.price}</span>
-                  <span className="text-gray-500 text-cuerpo"> MXN/mes</span>
+                  <span className="text-gray-500 text-cuerpo"> {plan.currency}/mes</span>
                 </div>
                 <ul className="space-y-2 mb-8">
                   {plan.features.map((f, j) => (

@@ -33,6 +33,7 @@ import type { TenantRepository } from './shared/application/ports/TenantReposito
 import { touchMember } from './modules/usuarios/infrastructure/member-mirror';
 import { EvaluarCupo } from './modules/usuarios/application/use-cases/EvaluarCupo';
 import { AvisarFinDePrueba } from './modules/billing/application/use-cases/AvisarFinDePrueba';
+import { VerificarPrecios } from './modules/billing/application/use-cases/VerificarPrecios';
 import { PrismaAvisosEnviados } from './modules/billing/infrastructure/PrismaAvisosEnviados';
 import type { EnviadorDeCorreo } from './shared/application/ports/EnviadorDeCorreo';
 import { SmtpEnviador } from './infrastructure/correo/SmtpEnviador';
@@ -76,6 +77,8 @@ export interface Container {
   enviadorDeCorreo: EnviadorDeCorreo;
   /** Correo de fin de prueba. Lo corre el trabajo diario `avisar-pruebas`. */
   avisarFinDePrueba: AvisarFinDePrueba;
+  /** Compara los precios de Stripe con el catálogo. Lo corre `main.ts` al arrancar. */
+  verificarPrecios: VerificarPrecios;
   /** Personal activo de un restaurante: los mismos que cuenta el cupo. */
   contarUsuariosActivos: (tenantId: string) => Promise<number>;
   /** Correo guardado de un miembro del restaurante, para cuando el token no lo trae. */
@@ -236,6 +239,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     evaluarCupo,
     enviadorDeCorreo,
     avisarFinDePrueba,
+    verificarPrecios: new VerificarPrecios(paymentProvider, billingConfig),
     contarUsuariosActivos: (tenantId) => tenantScope.run(tenantId, async () => (await staffRepo.list()).filter((m) => m.activo).length),
     correoDelMiembro: (tenantId, userId) =>
       tenantScope.run(tenantId, async () => {
