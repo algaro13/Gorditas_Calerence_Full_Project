@@ -10,8 +10,8 @@
 
 - [x] 2.1 Local: plan activo sin suscripción → «Seleccionar»; con suscripción → «Cambiar a este plan»
 - [x] 2.2 Suites en verde
-- [ ] 2.3 VPS: desplegar y comprobar `taqueria-lupita`
+- [x] 2.3 VPS: desplegar y comprobar `taqueria-lupita`
 
 ## 3. Cierre
 
-- [ ] 3.1 Commit y `openspec archive`
+- [x] 3.1 Commit y `openspec archive`
