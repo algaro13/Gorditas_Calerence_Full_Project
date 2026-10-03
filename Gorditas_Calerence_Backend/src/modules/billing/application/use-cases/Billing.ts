@@ -3,7 +3,7 @@ import type { PaymentProvider, SubscriptionSnapshot, WebhookEvent, WebhookVerifi
 import type { DomainUrls } from '../../../../shared/config/domain';
 import type { AuthInfo } from '../../../../shared/domain/Auth';
 import { ConflictError, ValidationError } from '../../../../shared/domain/DomainError';
-import { PLAN_LIMITS, type TenantInfo } from '../../../../shared/domain/Tenant';
+import { DIAS_SOBRE_CUPO, PLAN_LIMITS, type TenantInfo } from '../../../../shared/domain/Tenant';
 import type { BillingUpdate, TenantRepository } from '../../../../shared/application/ports/TenantRepository';
 import { isPaidPlan, planFromPriceId, planStatusFromStripe, type PaidPlanId, type PriceToPlan } from '../../domain/plans';
 import type { StripeEventStore } from '../ports/StripeEventStore';
@@ -142,6 +142,9 @@ export class EstadoBilling {
       usuariosActivos,
       // Sin cliente el portal contesta 400: la pantalla no ofrece un botón que falla.
       tieneClienteStripe: customerId !== null,
+      // Lo que dura el plazo al quedar por encima del cupo. Lo necesita la pantalla para advertir
+      // al bajar de plan; si lo escribiera ella, dejaría de coincidir el día que cambie aquí.
+      diasSobreCupo: DIAS_SOBRE_CUPO,
     };
   }
 }

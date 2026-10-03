@@ -55,7 +55,7 @@ describe('Billing', () => {
     expect(plans.body.data.map((p: { id: string }) => p.id)).toEqual(['basico', 'profesional', 'empresarial']);
     const status = await api().get('/api/billing/status').set(auth(admin));
     expect(status.status).toBe(200);
-    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false });
+    expect(status.body.data).toMatchObject({ plan: 'trial', planStatus: 'trial', maxUsuarios: 3, currentPeriodEnd: null, cancelAt: null, tieneClienteStripe: false, diasSobreCupo: 15 });
     expect(typeof status.body.data.usuariosActivos).toBe('number');
     // el guard de plan no aplica a billing aunque el trial esté vencido
     expect((await api().get('/api/ordenes').set(auth(admin))).status).toBe(403);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Aviso } from '../components/Aviso';
 import { useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
@@ -7,13 +7,14 @@ import { apiService } from '../services/api';
 import type { PlanId } from '../types';
 import { etiquetaDeEstadoDePlan, nombreDePlan } from '../utils/plan';
 
-const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; features: string[]; popular: boolean }[] = [
+const plans: { id: PlanId; name: string; price: number; period: string; maxUsers: string; limite: number; features: string[]; popular: boolean }[] = [
   {
     id: 'basico',
     name: 'Básico',
     price: 299,
     period: '/mes',
     maxUsers: '3 usuarios',
+    limite: 3,
     features: ['Gestión de órdenes', 'Cobro y pagos', 'Inventario básico', 'Soporte por email'],
     popular: false,
   },
@@ -23,6 +24,7 @@ const plans: { id: PlanId; name: string; price: number; period: string; maxUsers
     price: 599,
     period: '/mes',
     maxUsers: '10 usuarios',
+    limite: 10,
     features: ['Todo en Básico', 'Reportes completos', 'Múltiples mesas', 'Extras y guisos', 'Despacho de órdenes', 'Soporte prioritario'],
     popular: true,
   },
@@ -32,6 +34,7 @@ const plans: { id: PlanId; name: string; price: number; period: string; maxUsers
     price: 999,
     period: '/mes',
     maxUsers: 'Usuarios ilimitados',
+    limite: 999,
     features: ['Todo en Profesional', 'Múltiples sucursales', 'Exportación Excel', 'Dashboard avanzado', 'Soporte dedicado', 'Personalización de marca'],
     popular: false,
   },
@@ -47,6 +50,15 @@ const Plans: React.FC = () => {
   // abría un Checkout nuevo: una segunda suscripción que cobraba junto a la primera.
   const suscripcionViva = tenant?.plan !== 'trial' && (tenant?.planStatus === 'active' || tenant?.planStatus === 'past_due');
   const [confirmando, setConfirmando] = useState<PlanId | null>(null);
+  // Para advertir al bajar de plan: cuántos usuarios hay activos y cuántos días de plazo da el
+  // sistema si quedan de más. Los dos salen del backend.
+  const [uso, setUso] = useState<{ activos: number; dias: number } | null>(null);
+  useEffect(() => {
+    if (!suscripcionViva || !isAdmin) return;
+    apiService.getBillingStatus().then((res) => {
+      if (res.success && res.data) setUso({ activos: res.data.usuariosActivos, dias: res.data.diasSobreCupo });
+    });
+  }, [suscripcionViva, isAdmin]);
 
   const handleChangePlan = async (planId: PlanId) => {
     setLoading(planId);
@@ -184,6 +196,17 @@ const Plans: React.FC = () => {
                     Cambias a {plan.name} en este momento. Stripe calcula la diferencia por los días
                     que faltan y la suma (o la descuenta) en tu próxima factura.
                   </p>
+                  {/* Bajar por debajo de los usuarios activos no expulsa a nadie al momento: abre
+                      un plazo. Quien confirma tiene que saberlo antes, no descubrirlo después. */}
+                  {uso && uso.activos > plan.limite && (
+                    <p className="rounded-lg border border-amber-300 bg-amber-50 p-sp-2 text-cuerpo text-amber-900">
+                      Tienes {uso.activos} usuarios activos y {plan.name} permite {plan.limite}:{' '}
+                      {uso.activos - plan.limite === 1 ? 'te sobraría 1' : `te sobrarían ${uso.activos - plan.limite}`}. Nadie
+                      pierde el acceso al cambiar, pero tendrás {uso.dias} días para desactivar
+                      {uso.activos - plan.limite === 1 ? ' a uno' : ' a los que sobren'}. Si no, el sistema desactivará
+                      primero a quienes llevan más tiempo sin entrar.
+                    </p>
+                  )}
                   <button
                     onClick={() => handleChangePlan(plan.id)}
                     disabled={loading !== null}

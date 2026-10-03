@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CalendarClock, CreditCard, ExternalLink, Users, Wallet } from 'lucide-react';
 import { Aviso } from '../components/Aviso';
+import { AvisoSobreCupo } from '../components/AvisoSobreCupo';
 import { apiService } from '../services/api';
-import type { EstadoSuscripcion, PlanStatus } from '../types';
+import type { EstadoDeCupo, EstadoSuscripcion, PlanStatus } from '../types';
 import { LIMITE_SIN_TOPE, cuandoTerminaLaPrueba, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan, pruebaVencida } from '../utils/plan';
 
 const PASTILLA: Record<PlanStatus, string> = {
@@ -34,14 +35,21 @@ function cuandoPasaAlgo(s: EstadoSuscripcion): string | null {
  */
 const Suscripcion: React.FC = () => {
   const [estado, setEstado] = useState<EstadoSuscripcion | null>(null);
+  // Solo si sobra gente: es lo que dice el plazo y los nombres, igual que en Catálogos.
+  const [cupo, setCupo] = useState<EstadoDeCupo | null>(null);
   const [cargando, setCargando] = useState(true);
   const [abriendoPortal, setAbriendoPortal] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiService.getBillingStatus().then((res) => {
-      if (res.success && res.data) setEstado(res.data);
-      else setError(res.error || 'No se pudo cargar la suscripción');
+    apiService.getBillingStatus().then(async (res) => {
+      if (res.success && res.data) {
+        setEstado(res.data);
+        if (res.data.usuariosActivos > res.data.maxUsuarios) {
+          const c = await apiService.getCupo();
+          if (c.success && c.data?.excedido) setCupo(c.data);
+        }
+      } else setError(res.error || 'No se pudo cargar la suscripción');
       setCargando(false);
     });
   }, []);
@@ -61,6 +69,7 @@ const Suscripcion: React.FC = () => {
   const sinTope = (estado?.maxUsuarios ?? 0) >= LIMITE_SIN_TOPE;
   const ocupacion = estado && !sinTope ? Math.min(100, Math.round((estado.usuariosActivos / estado.maxUsuarios) * 100)) : 0;
   const lleno = estado !== null && !sinTope && estado.usuariosActivos >= estado.maxUsuarios;
+  const excedido = cupo !== null && estado !== null && estado.usuariosActivos > estado.maxUsuarios;
 
   return (
     <div className="space-y-6">
@@ -121,7 +130,21 @@ const Suscripcion: React.FC = () => {
                 <div className={`h-2 rounded-full ${lleno ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${ocupacion}%` }} />
               </div>
             )}
-            {lleno && (
+            {excedido && cupo && (
+              <div className="mt-sp-2">
+                <AvisoSobreCupo
+                  cupo={cupo}
+                  activos={estado.usuariosActivos}
+                  comoAjustar={
+                    <>
+                      Para evitarlo: desactiva {cupo.sobran} usuario{cupo.sobran === 1 ? '' : 's'} en Catálogos → Usuarios, o
+                      cambia a un plan más grande.
+                    </>
+                  }
+                />
+              </div>
+            )}
+            {lleno && !excedido && (
               <p className="text-meta text-gray-500 mt-sp-2">
                 {estado.planStatus === 'trial'
                   ? 'Llegaste al límite de la prueba. Para invitar a más personas, elige un plan con más usuarios.'

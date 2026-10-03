@@ -244,6 +244,8 @@ export interface EstadoSuscripcion {
   usuariosActivos: number;
   /** Sin cliente en Stripe el portal no se puede abrir. */
   tieneClienteStripe: boolean;
+  /** Días de plazo al quedar por encima del cupo (`DIAS_SOBRE_CUPO` del backend). */
+  diasSobreCupo: number;
 }
 
 export interface TenantConfig {

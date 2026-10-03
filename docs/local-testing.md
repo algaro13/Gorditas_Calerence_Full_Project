@@ -63,6 +63,8 @@ npm test            # unit + integración (kustodela_test) + e2e (JWKS local, Zi
 
 ## Stripe en local
 
+Para cobrar de verdad en producción, ver `docs/stripe-produccion.md`.
+
 ```bash
 stripe listen --forward-to localhost:5000/api/billing/webhook
 stripe trigger checkout.session.completed

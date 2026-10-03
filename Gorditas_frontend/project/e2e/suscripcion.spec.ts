@@ -154,3 +154,54 @@ test('con una suscripción viva, elegir otro plan la cambia en vez de abrir otro
   expect(cambio).toEqual({ plan: 'profesional' });
   expect(checkouts, 'abrió un Checkout teniendo ya una suscripción').toBe(0);
 });
+
+test('bajar de plan con usuarios de más lo advierte antes de confirmar; subir no', async ({ page }) => {
+  await conSuscripcion(page, { plan: 'profesional', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true, usuariosActivos: 5, diasSobreCupo: 15 });
+
+  await page.goto('/planes');
+  await expect(page.getByRole('button', { name: 'Tu plan actual' })).toBeVisible({ timeout: 15_000 });
+
+  // Básico permite 3 y hay 5 activos.
+  await page.getByRole('button', { name: 'Cambiar a este plan' }).first().click();
+  const bajar = page.getByRole('group', { name: /Confirmar cambio a Básico/ });
+  await expect(bajar).toContainText('te sobrarían 2');
+  await expect(bajar).toContainText('15 días');
+  await bajar.getByRole('button', { name: 'Cancelar' }).click();
+
+  // Empresarial no tiene tope: nada que advertir.
+  await page.getByRole('button', { name: 'Cambiar a este plan' }).last().click();
+  const subir = page.getByRole('group', { name: /Confirmar cambio a Empresarial/ });
+  await expect(subir).toBeVisible();
+  await expect(subir).not.toContainText(/sobrar/);
+});
+
+test('por encima del cupo, la suscripción dice el plazo y a quién se desactivaría', async ({ page }) => {
+  await conSuscripcion(page, { plan: 'basico', planStatus: 'active', trialEndsAt: null, maxUsuarios: 3, usuariosActivos: 5, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true });
+  const limite = new Date(Date.now() + 10 * 86_400_000).toISOString();
+  await page.route('**/api/usuarios/cupo', (ruta) =>
+    ruta.fulfill({
+      json: {
+        success: true,
+        data: {
+          maxUsuarios: 3,
+          excedido: true,
+          sobran: 2,
+          fechaLimite: limite,
+          plazoEnMarcha: true,
+          enRiesgo: [
+            { _id: 'a', nombre: 'Ana Prueba', lastSeenAt: null },
+            { _id: 'b', nombre: 'Beto Prueba', lastSeenAt: null },
+          ],
+          desactivadosPorCupo: [],
+        },
+      },
+    }),
+  );
+
+  await page.goto('/suscripcion');
+  const usuarios = page.locator('section[aria-labelledby="usuarios-plan"]');
+  await expect(usuarios).toContainText('Tienes 2 usuarios por encima de tu plan', { timeout: 15_000 });
+  await expect(usuarios).toContainText('Ana Prueba');
+  await expect(usuarios).toContainText('Beto Prueba');
+  await expect(usuarios).toContainText('Catálogos → Usuarios');
+});
