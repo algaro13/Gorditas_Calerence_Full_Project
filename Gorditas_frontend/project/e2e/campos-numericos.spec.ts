@@ -40,29 +40,42 @@ test('recibir producto: la existencia se vacía, vacía no se guarda, y un 0 sí
   await page.getByRole('button', { name: /crear producto/i }).click();
 
   await page.getByPlaceholder('Buscar productos...').fill(nombre);
-  await expect(page.getByText(nombre).locator('visible=true').first()).toBeVisible({ timeout: 15_000 });
+
+  // Todo pasa dentro de la tarjeta (o la fila, en escritorio) de ESTE producto. Antes se pulsaba
+  // el primer «Editar» visible: si el buscador aún no había filtrado, era el de otro producto y
+  // la prueba leía su cantidad —«esperaba 5, recibió 3»—. Y la limpieza pulsaba el primer
+  // «Eliminar»: en esa misma carrera borraba un producto que la prueba no había creado.
+  //
+  // `.last()` porque las tarjetas están anidadas en contenedores que también contienen el nombre;
+  // en orden de documento el más interno, la tarjeta, es el último.
+  const tarjeta = page
+    .locator('div.border, tr')
+    .filter({ has: page.getByText(nombre, { exact: true }) })
+    .locator('visible=true')
+    .last();
+  await expect(tarjeta).toBeVisible({ timeout: 15_000 });
 
   try {
-    await visible(page, 'Editar').click();
-    const cantidad = page.getByLabel('Cantidad').locator('visible=true').first();
+    await tarjeta.getByRole('button', { name: 'Editar' }).click();
+    const cantidad = tarjeta.getByLabel('Cantidad');
     await expect(cantidad).toHaveValue('5');
 
     // Borrada queda en blanco: no vuelve el 5 de antes.
     await borrar(cantidad);
     await expect(cantidad).toHaveValue('');
-    await visible(page, 'Guardar').click();
+    await tarjeta.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.getByText(/no pueden quedar vacíos/i).first()).toBeVisible();
 
     // Un 0 escrito a propósito es «agotado», no «sin cambio»: se guarda como 0.
     await cantidad.pressSequentially('0');
-    await visible(page, 'Guardar').click();
-    await page.waitForLoadState('networkidle');
-    const fila = page.locator('tr, div').filter({ hasText: nombre }).locator('visible=true').last();
-    await expect(fila).toContainText('0');
-    await expect(fila).not.toContainText(/\b5\b/);
+    await tarjeta.getByRole('button', { name: 'Guardar' }).click();
+    // Guardado: la tarjeta vuelve a mostrar «Editar» en vez de los campos.
+    await expect(tarjeta.getByRole('button', { name: 'Editar' })).toBeVisible({ timeout: 15_000 });
+    await expect(tarjeta).toContainText('0');
+    await expect(tarjeta).not.toContainText(/\b5\b/);
   } finally {
     page.once('dialog', (d) => d.accept());
-    await page.getByRole('button', { name: /eliminar/i }).locator('visible=true').first().click().catch(() => {});
+    await tarjeta.getByRole('button', { name: 'Eliminar' }).click().catch(() => {});
   }
 });
 

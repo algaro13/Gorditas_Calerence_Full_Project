@@ -57,3 +57,12 @@ A test that measures too early fails now and then and passes on a retry, which t
 - **WHEN** a test opens a screen and measures the bottom navigation
 - **THEN** it waits for the bar to be visible before measuring, and passes the same way on every run
 
+### Requirement: Browser tests act only on what they created
+A browser test that creates a record SHALL locate that record by something unique to it and perform every action —editing, reading, saving and deleting— inside it. It SHALL NOT act on the first matching control on the screen.
+
+Acting on the first matching control works only while the list happens to show that record first. When it does not, the test measures the wrong record and fails at random, and a cleanup step deletes data the test never created.
+
+#### Scenario: The list has not filtered yet
+- **WHEN** a test searches for the record it just created and the list still shows other records
+- **THEN** the test still edits, checks and deletes its own record, and no other
+
