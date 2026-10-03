@@ -25,6 +25,8 @@ export interface PaymentProvider {
   createCheckoutSession(input: CheckoutSessionInput): Promise<{ id: string; url: string }>;
   createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }>;
   retrieveSubscription(subscriptionId: string): Promise<SubscriptionSnapshot | null>;
+  /** Cambia el precio de la suscripción existente, prorrateando en el momento. */
+  changeSubscriptionPrice(subscriptionId: string, priceId: string): Promise<SubscriptionSnapshot>;
 }
 
 export interface WebhookEvent {

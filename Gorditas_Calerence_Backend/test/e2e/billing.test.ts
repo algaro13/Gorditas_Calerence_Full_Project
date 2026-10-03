@@ -5,6 +5,7 @@ import { createTestApp, type TestApp } from '../helpers/app';
 import { tokenFor } from '../helpers/auth';
 import { adminPrisma, createTestTenant, deleteTestTenant, type TestTenant } from '../helpers/db';
 import { FakePaymentProvider } from '../../src/infrastructure/stripe/FakePaymentProvider';
+import { runAsTenant } from '../../src/shared/infrastructure/prisma/unit-of-work';
 
 const SECRET = 'whsec_test_kustodela';
 const RUN = Date.now().toString(36);
@@ -157,5 +158,65 @@ describe('Billing', () => {
     const ev = await t.container.prisma.stripeEvent.findUniqueOrThrow({ where: { id: evt('bad_sub') } });
     expect(ev.error).toContain('sub_inexistente');
     expect(ev.processedAt).toBeNull();
+  });
+
+  // Con Stripe de verdad, «Cambiar de plan» abría un Checkout nuevo: una segunda suscripción que
+  // seguía cobrando junto a la primera. Y el access token no trae correo, así que el cliente se
+  // creaba sin él.
+  describe('cambio de plan', () => {
+    const SUB2 = `sub_cambio_${RUN}`;
+    let otro: TestTenant;
+    let duena: string;
+    let mesera: string;
+
+    beforeAll(async () => {
+      otro = await createTestTenant(t.container.prisma);
+      // El espejo ya conoce el correo; el token, como los reales de Zitadel, no lo trae.
+      await runAsTenant(t.container.prisma, otro.id, (db) =>
+        db.tenantUser.create({ data: { zitadelUserId: 'duena', email: 'duena@test.local', nombre: 'Dueña', role: 'Admin' } }),
+      );
+      duena = await tokenFor(t.keys, { userId: 'duena', orgId: otro.orgId, roles: ['Admin'], email: null });
+      mesera = await tokenFor(t.keys, { userId: 'mesera', orgId: otro.orgId, roles: ['Mesero'] });
+    });
+
+    afterAll(async () => {
+      await deleteTestTenant(t.container.prisma, otro.id);
+    });
+
+    it('sin suscripción no hay plan que cambiar, y el cliente se crea con el correo guardado', async () => {
+      const sinSub = await api().post('/api/billing/change-plan').set(auth(duena)).send({ plan: 'profesional' });
+      expect(sinSub.status).toBe(400);
+      expect(sinSub.body.code ?? sinSub.body.error?.code).toBe('SIN_SUSCRIPCION');
+
+      expect((await api().post('/api/billing/create-checkout').set(auth(duena)).send({ plan: 'basico' })).status).toBe(200);
+      const customerId = await t.container.tenants.getStripeCustomerId(otro.id);
+      expect(fake.customers.get(customerId!)?.email).toBe('duena@test.local');
+    });
+
+    it('con una suscripción viva no se abre otro Checkout: se cambia la que hay', async () => {
+      const customerId = await t.container.tenants.getStripeCustomerId(otro.id);
+      fake.setSubscription({ id: SUB2, status: 'active', customerId, priceId: PRICES.basico, metadata: { tenantId: otro.id } });
+      await signed({ id: evt('cambio_checkout'), type: 'checkout.session.completed', data: { object: { id: 'cs_c', customer: customerId, subscription: SUB2, metadata: { tenantId: otro.id } } } });
+      expect(await t.container.tenants.findById(otro.id)).toMatchObject({ plan: 'basico', planStatus: 'active' });
+
+      const checkoutsAntes = fake.checkouts.length;
+      const otraVez = await api().post('/api/billing/create-checkout').set(auth(duena)).send({ plan: 'profesional' });
+      expect(otraVez.status).toBe(409);
+      expect(otraVez.body.code ?? otraVez.body.error?.code).toBe('YA_SUSCRITO');
+      expect(fake.checkouts.length).toBe(checkoutsAntes);
+
+      expect((await api().post('/api/billing/change-plan').set(auth(mesera)).send({ plan: 'profesional' })).status).toBe(403);
+      const mismo = await api().post('/api/billing/change-plan').set(auth(duena)).send({ plan: 'basico' });
+      expect(mismo.status).toBe(400);
+      expect(mismo.body.code ?? mismo.body.error?.code).toBe('MISMO_PLAN');
+
+      const cambio = await api().post('/api/billing/change-plan').set(auth(duena)).send({ plan: 'profesional' });
+      expect(cambio.status).toBe(200);
+      expect(cambio.body.data).toMatchObject({ plan: 'profesional', planStatus: 'active', maxUsuarios: 10 });
+      // La misma suscripción, con otro precio: no hay una segunda.
+      expect(fake.subscriptions.get(SUB2)?.priceId).toBe(PRICES.profesional);
+      expect(fake.checkouts.length).toBe(checkoutsAntes);
+      expect((await api().get('/api/billing/status').set(auth(duena))).body.data).toMatchObject({ plan: 'profesional', maxUsuarios: 10 });
+    });
   });
 });

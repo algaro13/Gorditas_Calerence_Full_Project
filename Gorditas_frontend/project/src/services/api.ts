@@ -152,6 +152,10 @@ class ApiService {
   createCheckout(plan: PlanId) {
     return this.request<{ url: string; sessionId: string }>('/billing/create-checkout', this.json('POST', { plan }));
   }
+  /** Cambia el plan de la suscripción que ya existe (prorrateo inmediato). */
+  changePlan(plan: PlanId) {
+    return this.request<{ plan: PlanId; planStatus: string; maxUsuarios: number }>('/billing/change-plan', this.json('POST', { plan }));
+  }
   createPortal() {
     return this.request<{ url: string }>('/billing/create-portal', { method: 'POST' });
   }

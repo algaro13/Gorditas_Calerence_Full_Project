@@ -55,6 +55,11 @@ export class PrismaTenantRepository implements TenantRepository {
     return row?.stripeCustomerId ?? null;
   }
 
+  async getStripeSubscriptionId(id: string): Promise<string | null> {
+    const row = await this.prisma.tenant.findUnique({ where: { id }, select: { stripeSubscriptionId: true } });
+    return row?.stripeSubscriptionId ?? null;
+  }
+
   async setStripeCustomerId(id: string, customerId: string): Promise<void> {
     await this.prisma.tenant.update({ where: { id }, data: { stripeCustomerId: customerId } });
   }

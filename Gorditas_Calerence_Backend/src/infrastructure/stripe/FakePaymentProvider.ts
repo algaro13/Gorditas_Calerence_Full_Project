@@ -28,6 +28,14 @@ export class FakePaymentProvider implements PaymentProvider {
     return this.subscriptions.get(subscriptionId) ?? null;
   }
 
+  async changeSubscriptionPrice(subscriptionId: string, priceId: string): Promise<SubscriptionSnapshot> {
+    const sub = this.subscriptions.get(subscriptionId);
+    if (!sub) throw new Error(`Suscripción ${subscriptionId} no encontrada`);
+    const updated = { ...sub, priceId };
+    this.subscriptions.set(subscriptionId, updated);
+    return updated;
+  }
+
   /** Helper de pruebas: registra una suscripción viva. */
   setSubscription(sub: Omit<SubscriptionSnapshot, 'currentPeriodEnd' | 'cancelAt'> & Partial<Pick<SubscriptionSnapshot, 'currentPeriodEnd' | 'cancelAt'>>): void {
     this.subscriptions.set(sub.id, { currentPeriodEnd: null, cancelAt: null, ...sub });

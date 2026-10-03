@@ -2,9 +2,9 @@ import type { Logger } from '../../../../shared/application/ports/Logger';
 import type { PaymentProvider, SubscriptionSnapshot, WebhookEvent, WebhookVerifier } from '../../../../shared/application/ports/PaymentProvider';
 import type { DomainUrls } from '../../../../shared/config/domain';
 import type { AuthInfo } from '../../../../shared/domain/Auth';
-import { ValidationError } from '../../../../shared/domain/DomainError';
+import { ConflictError, ValidationError } from '../../../../shared/domain/DomainError';
 import { PLAN_LIMITS, type TenantInfo } from '../../../../shared/domain/Tenant';
-import type { TenantRepository } from '../../../../shared/application/ports/TenantRepository';
+import type { BillingUpdate, TenantRepository } from '../../../../shared/application/ports/TenantRepository';
 import { isPaidPlan, planFromPriceId, planStatusFromStripe, type PaidPlanId, type PriceToPlan } from '../../domain/plans';
 import type { StripeEventStore } from '../ports/StripeEventStore';
 
@@ -13,21 +13,56 @@ export interface BillingConfig {
   priceToPlan: PriceToPlan;
 }
 
+/** Correo guardado de un miembro del restaurante; null si no se conoce. */
+export type CorreoDelMiembro = (tenantId: string, userId: string) => Promise<string | null>;
+
+/**
+ * Una suscripción viva es la que sigue cobrando: activa o con un pago pendiente. Una cancelada o
+ * una prueba no lo son, y para esas sí se contrata con Checkout.
+ */
+async function suscripcionViva(tenants: TenantRepository, tenant: TenantInfo): Promise<string | null> {
+  const fresh = (await tenants.findById(tenant.id)) ?? tenant;
+  if (fresh.planStatus !== 'active' && fresh.planStatus !== 'past_due') return null;
+  return tenants.getStripeSubscriptionId(tenant.id);
+}
+
+/** Lo que una suscripción dice del restaurante. Lo usan el webhook y el cambio de plan. */
+function actualizacionDesde(cfg: BillingConfig, sub: SubscriptionSnapshot): BillingUpdate & { plan?: PaidPlanId } {
+  const plan = planFromPriceId(cfg.priceToPlan, sub.priceId);
+  return {
+    ...(plan ? { plan, maxUsuarios: PLAN_LIMITS[plan].maxUsuarios } : {}),
+    planStatus: planStatusFromStripe(sub.status),
+    stripeSubscriptionId: sub.id,
+    trialEndsAt: null,
+    currentPeriodEnd: sub.currentPeriodEnd,
+    cancelAt: sub.cancelAt,
+  };
+}
+
 export class CrearCheckout {
   constructor(
     private readonly tenants: TenantRepository,
     private readonly payments: PaymentProvider,
     private readonly urls: DomainUrls,
     private readonly cfg: BillingConfig,
+    private readonly correoDelMiembro: CorreoDelMiembro = async () => null,
   ) {}
 
   async execute(tenant: TenantInfo, auth: AuthInfo, plan: unknown): Promise<{ url: string; sessionId: string }> {
     if (!isPaidPlan(plan)) throw new ValidationError('Plan no válido', 'PLAN_INVALIDO');
     const priceId = this.cfg.priceIds[plan];
     if (!priceId) throw new ValidationError('Plan no configurado en el proveedor de pagos', 'PLAN_NO_CONFIGURADO');
+    // Un segundo Checkout abre una segunda suscripción, que sigue cobrando junto a la primera
+    // sin aparecer en ningún sitio. Quien ya tiene una cambia de plan con `change-plan`.
+    if (await suscripcionViva(this.tenants, tenant)) {
+      throw new ConflictError('Ya tienes una suscripción activa; cambia de plan en lugar de contratar otra', 'YA_SUSCRITO');
+    }
 
     const existing = await this.tenants.getStripeCustomerId(tenant.id);
-    const customerId = await this.payments.ensureCustomer({ existingId: existing, email: auth.email, name: tenant.nombre, metadata: { tenantId: tenant.id, slug: tenant.slug } });
+    // El access token de Zitadel no trae `email`: sin el respaldo, el cliente de Stripe se creaba
+    // sin correo y el primer Checkout lo pedía a mano.
+    const email = auth.email || (existing ? '' : ((await this.correoDelMiembro(tenant.id, auth.userId)) ?? ''));
+    const customerId = await this.payments.ensureCustomer({ existingId: existing, email, name: tenant.nombre, metadata: { tenantId: tenant.id, slug: tenant.slug } });
     if (customerId !== existing) await this.tenants.setStripeCustomerId(tenant.id, customerId);
 
     const base = this.urls.tenantUrl(tenant.slug);
@@ -54,6 +89,35 @@ export class CrearPortal {
     if (!customerId) throw new ValidationError('No hay suscripción activa', 'SIN_SUSCRIPCION');
     // Vuelve a la pantalla desde la que se abrió, no al panel.
     return this.payments.createPortalSession({ customerId, returnUrl: `${this.urls.tenantUrl(tenant.slug)}/suscripcion` });
+  }
+}
+
+/** Cambia el plan de la suscripción que ya existe, con prorrateo inmediato. */
+export class CambiarPlan {
+  constructor(
+    private readonly tenants: TenantRepository,
+    private readonly payments: PaymentProvider,
+    private readonly cfg: BillingConfig,
+    private readonly logger: Logger,
+    private readonly onTenantChanged?: (tenant: TenantInfo) => void,
+  ) {}
+
+  async execute(tenant: TenantInfo, plan: unknown): Promise<TenantInfo> {
+    if (!isPaidPlan(plan)) throw new ValidationError('Plan no válido', 'PLAN_INVALIDO');
+    const priceId = this.cfg.priceIds[plan];
+    if (!priceId) throw new ValidationError('Plan no configurado en el proveedor de pagos', 'PLAN_NO_CONFIGURADO');
+    const subscriptionId = await suscripcionViva(this.tenants, tenant);
+    if (!subscriptionId) throw new ValidationError('No hay una suscripción activa que cambiar', 'SIN_SUSCRIPCION');
+    const actual = (await this.tenants.findById(tenant.id)) ?? tenant;
+    if (actual.plan === plan) throw new ValidationError('Ya estás en ese plan', 'MISMO_PLAN');
+
+    const sub = await this.payments.changeSubscriptionPrice(subscriptionId, priceId);
+    // Se aplica ya, sin esperar el webhook: quien cambia de plan espera ver el cambio al volver a
+    // la pantalla. El webhook llegará después con lo mismo y no cambiará nada.
+    const updated = await this.tenants.updateBilling(tenant.id, actualizacionDesde(this.cfg, sub));
+    this.onTenantChanged?.(updated);
+    this.logger.info('Plan cambiado', { tenantId: tenant.id, de: actual.plan, a: updated.plan, subscriptionId });
+    return updated;
   }
 }
 
@@ -130,18 +194,10 @@ export class ProcesarWebhook {
   }
 
   private async applySubscription(tenant: TenantInfo, sub: SubscriptionSnapshot): Promise<void> {
-    const plan = planFromPriceId(this.cfg.priceToPlan, sub.priceId);
-    const planStatus = planStatusFromStripe(sub.status);
-    const updated = await this.tenants.updateBilling(tenant.id, {
-      ...(plan ? { plan, maxUsuarios: PLAN_LIMITS[plan].maxUsuarios } : {}),
-      planStatus,
-      stripeSubscriptionId: sub.id,
-      trialEndsAt: null,
-      currentPeriodEnd: sub.currentPeriodEnd,
-      cancelAt: sub.cancelAt,
-    });
+    const cambios = actualizacionDesde(this.cfg, sub);
+    const updated = await this.tenants.updateBilling(tenant.id, cambios);
     this.onTenantChanged?.(updated);
-    this.logger.info('Suscripción aplicada al tenant', { tenantId: tenant.id, plan: plan ?? tenant.plan, planStatus, subscriptionId: sub.id });
+    this.logger.info('Suscripción aplicada al tenant', { tenantId: tenant.id, plan: cambios.plan ?? tenant.plan, planStatus: cambios.planStatus, subscriptionId: sub.id });
   }
 
   private async onCheckoutCompleted(event: WebhookEvent): Promise<void> {

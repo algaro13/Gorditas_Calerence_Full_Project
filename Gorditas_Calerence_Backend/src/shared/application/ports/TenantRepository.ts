@@ -30,6 +30,8 @@ export interface TenantRepository {
   /** Id del cliente de Stripe (no viaja en TenantInfo). */
   getStripeCustomerId(id: string): Promise<string | null>;
   setStripeCustomerId(id: string, customerId: string): Promise<void>;
+  /** Id de la suscripción de Stripe (no viaja en TenantInfo). */
+  getStripeSubscriptionId(id: string): Promise<string | null>;
   create(data: NuevoTenant): Promise<TenantInfo>;
   delete(id: string): Promise<void>;
   setProvisioningStatus(id: string, status: 'pending' | 'ready' | 'failed'): Promise<void>;

@@ -123,3 +123,34 @@ test('con la prueba vencida, /planes no dice «En prueba» y deja cerrar sesión
   // Esta pantalla no tiene menú: sin este botón no hay salida.
   await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
 });
+
+test('con una suscripción viva, elegir otro plan la cambia en vez de abrir otro Checkout', async ({ page }) => {
+  await conSuscripcion(page, { plan: 'basico', planStatus: 'active', trialEndsAt: null, currentPeriodEnd: RENUEVA, cancelAt: null, tieneClienteStripe: true });
+  let checkouts = 0;
+  let cambio: unknown = null;
+  await page.route('**/api/billing/create-checkout', async (ruta) => {
+    checkouts++;
+    await ruta.abort();
+  });
+  await page.route('**/api/billing/change-plan', async (ruta) => {
+    cambio = ruta.request().postDataJSON();
+    await ruta.fulfill({ json: { success: true, data: { plan: 'profesional', planStatus: 'active', maxUsuarios: 10 } } });
+  });
+
+  await page.goto('/planes');
+  await expect(page.getByRole('button', { name: 'Tu plan actual' })).toBeDisabled({ timeout: 15_000 });
+
+  // Pide confirmación y explica el prorrateo antes de tocar nada.
+  await page.getByRole('button', { name: 'Cambiar a este plan' }).first().click();
+  const confirmacion = page.getByRole('group', { name: /Confirmar cambio a Profesional/ });
+  await expect(confirmacion).toContainText(/próxima factura/);
+  await confirmacion.getByRole('button', { name: 'Confirmar cambio' }).click();
+
+  await expect(page).toHaveURL(/\/suscripcion$/);
+  // Se espera a que la pantalla cargue: si la prueba termina con sus llamadas en vuelo, Playwright
+  // corta las respuestas interceptadas y falla por eso, no por lo que se afirma.
+  await expect(page.getByRole('heading', { name: 'Suscripción', level: 1 })).toBeVisible({ timeout: 15_000 });
+  await page.waitForLoadState('networkidle');
+  expect(cambio).toEqual({ plan: 'profesional' });
+  expect(checkouts, 'abrió un Checkout teniendo ya una suscripción').toBe(0);
+});

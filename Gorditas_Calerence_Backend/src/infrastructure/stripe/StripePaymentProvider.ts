@@ -31,7 +31,8 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   async createPortalSession(input: { customerId: string; returnUrl: string }): Promise<{ url: string }> {
-    const session = await this.stripe.billingPortal.sessions.create({ customer: input.customerId, return_url: input.returnUrl });
+    // En español, como el Checkout: sin esto el portal sale en inglés.
+    const session = await this.stripe.billingPortal.sessions.create({ customer: input.customerId, return_url: input.returnUrl, locale: 'es-419' });
     return { url: session.url };
   }
 
@@ -44,6 +45,24 @@ export class StripePaymentProvider implements PaymentProvider {
       throw err;
     }
   }
+
+  changeSubscriptionPrice(subscriptionId: string, priceId: string): Promise<SubscriptionSnapshot> {
+    return changeSubscriptionPrice(this.stripe, subscriptionId, priceId);
+  }
+}
+
+/** Cambia el precio del único artículo de la suscripción. */
+export async function changeSubscriptionPrice(stripe: Stripe, subscriptionId: string, priceId: string): Promise<SubscriptionSnapshot> {
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const item = sub.items.data[0];
+  if (!item) throw new Error(`La suscripción ${subscriptionId} no tiene artículos`);
+  // Prorrateo inmediato: el plan y el cupo cambian ya, y la diferencia (a cobrar o a favor) va en
+  // la siguiente factura.
+  const updated = await stripe.subscriptions.update(subscriptionId, {
+    items: [{ id: item.id, price: priceId }],
+    proration_behavior: 'create_prorations',
+  });
+  return snapshotOf(updated);
 }
 
 export function snapshotOf(sub: Stripe.Subscription): SubscriptionSnapshot {

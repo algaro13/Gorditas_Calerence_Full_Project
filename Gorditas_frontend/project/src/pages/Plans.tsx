@@ -40,9 +40,27 @@ const plans: { id: PlanId; name: string; price: number; period: string; maxUsers
 const Plans: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState('');
-  const { tenant, hasPermission, accesoBloqueado, logout } = useAuth();
+  const { tenant, hasPermission, accesoBloqueado, logout, refreshTenant } = useAuth();
   const navigate = useNavigate();
   const isAdmin = hasPermission(['Admin']);
+  // Con una suscripción que sigue cobrando, elegir otro plan cambia esa misma suscripción. Antes
+  // abría un Checkout nuevo: una segunda suscripción que cobraba junto a la primera.
+  const suscripcionViva = tenant?.plan !== 'trial' && (tenant?.planStatus === 'active' || tenant?.planStatus === 'past_due');
+  const [confirmando, setConfirmando] = useState<PlanId | null>(null);
+
+  const handleChangePlan = async (planId: PlanId) => {
+    setLoading(planId);
+    setError('');
+    const res = await apiService.changePlan(planId);
+    if (res.success) {
+      await refreshTenant();
+      navigate('/suscripcion');
+      return;
+    }
+    setError(res.error || 'No se pudo cambiar de plan');
+    setLoading(null);
+    setConfirmando(null);
+  };
 
   const handleSelectPlan = async (planId: PlanId) => {
     setLoading(planId);
@@ -156,17 +174,44 @@ const Plans: React.FC = () => {
                 ))}
               </ul>
 
-              <button
-                onClick={() => handleSelectPlan(plan.id)}
-                disabled={loading !== null || !isAdmin}
-                className={`w-full py-3 rounded-lg font-medium transition-colors ${
-                  plan.popular
-                    ? 'bg-orange-600 text-white hover:bg-orange-700'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-                } disabled:opacity-50`}
-              >
-                {loading === plan.id ? 'Redirigiendo...' : 'Seleccionar'}
-              </button>
+              {suscripcionViva && plan.id === tenant?.plan ? (
+                <button disabled className="w-full py-3 rounded-lg font-medium bg-green-50 text-green-800 border border-green-200">
+                  Tu plan actual
+                </button>
+              ) : suscripcionViva && confirmando === plan.id ? (
+                <div className="space-y-sp-2" role="group" aria-label={`Confirmar cambio a ${plan.name}`}>
+                  <p className="text-cuerpo text-gray-700">
+                    Cambias a {plan.name} en este momento. Stripe calcula la diferencia por los días
+                    que faltan y la suma (o la descuenta) en tu próxima factura.
+                  </p>
+                  <button
+                    onClick={() => handleChangePlan(plan.id)}
+                    disabled={loading !== null}
+                    className="w-full py-3 rounded-lg font-medium bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {loading === plan.id ? 'Cambiando…' : 'Confirmar cambio'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmando(null)}
+                    disabled={loading !== null}
+                    className="w-full py-3 rounded-lg font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => (suscripcionViva ? setConfirmando(plan.id) : handleSelectPlan(plan.id))}
+                  disabled={loading !== null || !isAdmin}
+                  className={`w-full py-3 rounded-lg font-medium transition-colors ${
+                    plan.popular
+                      ? 'bg-orange-600 text-white hover:bg-orange-700'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  } disabled:opacity-50`}
+                >
+                  {loading === plan.id ? 'Redirigiendo...' : suscripcionViva ? 'Cambiar a este plan' : 'Seleccionar'}
+                </button>
+              )}
             </div>
           ))}
         </div>

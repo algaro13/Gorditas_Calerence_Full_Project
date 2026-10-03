@@ -69,6 +69,8 @@ export interface Container {
   evaluarCupo: EvaluarCupo;
   /** Personal activo de un restaurante: los mismos que cuenta el cupo. */
   contarUsuariosActivos: (tenantId: string) => Promise<number>;
+  /** Correo guardado de un miembro del restaurante, para cuando el token no lo trae. */
+  correoDelMiembro: (tenantId: string, userId: string) => Promise<string | null>;
   middlewares: {
     authenticate: RequestHandler;
     tenantContext: TenantContextMiddleware;
@@ -195,6 +197,12 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     tenants,
     evaluarCupo,
     contarUsuariosActivos: (tenantId) => tenantScope.run(tenantId, async () => (await staffRepo.list()).filter((m) => m.activo).length),
+    correoDelMiembro: (tenantId, userId) =>
+      tenantScope.run(tenantId, async () => {
+        const email = (await staffRepo.list()).find((m) => m.zitadelUserId === userId)?.email;
+        // El espejo guarda un correo de relleno cuando no conoce el real: ese no le sirve a Stripe.
+        return email && !email.endsWith('@sin-correo.local') ? email : null;
+      }),
     middlewares: { authenticate, tenantContext, planGuard, emailVerificado, errorHandler },
     shutdown: async () => {
       await prisma.$disconnect();
