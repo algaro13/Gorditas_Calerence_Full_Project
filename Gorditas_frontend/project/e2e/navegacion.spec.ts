@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 /**
  * Que la navegación esté donde llega el pulgar y diga adónde lleva.
@@ -61,9 +61,23 @@ test('la barra lleva las tareas del servicio, no el panel', async ({ page }) => 
   });
 });
 
-test('la barra no tapa el último control de la pantalla', async ({ page }) => {
+/**
+ * Abre Catálogos y espera a que esté dibujada antes de medir nada.
+ *
+ * `networkidle` solo dice que la red se calmó, no que React terminó: medir en seguida a veces no
+ * encontraba la barra («no hay barra que comprobar») y al repetir pasaba. Se espera con `expect`,
+ * que reintenta, y no con un tiempo fijo.
+ */
+async function abrirCatalogos(page: Page) {
   await page.goto('/catalogos');
+  await expect(page.locator(BARRA)).toBeVisible({ timeout: 15_000 });
+  // El título de la pantalla y el de la tarjeta del selector se llaman igual; basta el primero.
+  await expect(page.getByRole('heading', { name: 'Catálogos' }).first()).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState('networkidle');
+}
+
+test('la barra no tapa el último control de la pantalla', async ({ page }) => {
+  await abrirCatalogos(page);
 
   const tapados = await page.evaluate((sel) => {
     const barra = document.querySelector(sel) as HTMLElement | null;
@@ -131,8 +145,7 @@ test('en escritorio no hay barra de abajo y vuelve el menú lateral', async ({ p
  * y porque no depende de que una pantalla tenga datos para provocar un mensaje.
  */
 test('el hueco de abajo cubre la altura real de la barra', async ({ page }) => {
-  await page.goto('/catalogos');
-  await page.waitForLoadState('networkidle');
+  await abrirCatalogos(page);
 
   const medidas = await page.evaluate((sel) => {
     const barra = document.querySelector(sel) as HTMLElement;
