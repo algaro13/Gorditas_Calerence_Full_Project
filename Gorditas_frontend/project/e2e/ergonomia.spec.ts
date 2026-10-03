@@ -23,6 +23,7 @@ const RUTAS = [
   '/reportes',
   '/configuracion',
   '/suscripcion',
+  '/landing',
 ];
 
 const MINIMO_TACTIL = 44;
