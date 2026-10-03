@@ -37,7 +37,7 @@ docker compose -f docker-compose.behind-proxy.yaml exec -T postgres   psql -U po
 - **Aislamiento**: entrar como `admin@demo` y como `admin@taqueria-lupita` en dos navegadores; ninguno ve datos del otro. Un usuario de un restaurante no puede iniciar sesión en el subdominio de otro (Zitadel lo rechaza).
 - **Roles**: cada rol entra a su pantalla por omisión y solo ve su menú (Mesero a Nueva Orden, Despachador y Cocinero a Surtir Orden, Admin y Encargado al panel).
 - **Personal**: en Catálogos → Usuarios se invita gente; el correo de invitación aparece en Mailpit. El límite del plan devuelve un error visible.
-- **Planes**: `prueba-vencida` responde 403 al operar. El cobro usa un proveedor falso (sin claves de Stripe), así que "Elegir plan" avisa que el plan no está configurado.
+- **Planes**: `prueba-vencida` responde 403 al operar. El cobro usa Stripe en **modo test** (el sandbox «Entorno de prueba de Alfredo»): «Elegir plan» abre el Checkout de Stripe, se paga con la tarjeta de prueba `4242 4242 4242 4242` (vencimiento futuro, cualquier CVC) y los webhooks llegan al endpoint `we_1UML123…` del sandbox. No se cobra nada real. Desde **Suscripción** se cambia de plan y se abre el portal de Stripe para cancelar o cambiar la tarjeta.
 - **Marca**: subir logo y cambiar paleta en Configuración cambia el aspecto solo de ese restaurante.
 
 ## Operación
@@ -86,8 +86,8 @@ Zitadel siempre envía a Mailpit, que guarda copia de cada mensaje y lo retransm
 ## Diferencias con producción
 
 - Los correos de los restaurantes de prueba se quedan en Mailpit y no salen a internet.
-- El proveedor de cobros es falso: no hay cargos reales ni webhooks de Stripe.
+- Stripe está en modo test: hay webhooks reales del sandbox, pero ningún cargo real. Las claves están en `Gorditas_Calerence_Backend/.env.production` del servidor.
 - La contraseña del administrador de Zitadel no obliga a cambiarse al primer acceso.
 - Las cuentas sembradas tienen contraseñas conocidas y correos sin verificar.
 
-Para convertirlo en producción: borrar los restaurantes de prueba, poner claves reales de Stripe con su webhook, configurar el SMTP real en la consola de Zitadel y activar el cambio de contraseña del administrador.
+Para convertirlo en producción: borrar los restaurantes de prueba, pasar Stripe a modo live siguiendo `docs/stripe-produccion.md`, configurar el SMTP real en la consola de Zitadel y activar el cambio de contraseña del administrador.
