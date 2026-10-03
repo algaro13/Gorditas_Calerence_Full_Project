@@ -21,6 +21,8 @@ export interface TokenInput {
   /** roles por organización: { Admin: { [orgId]: 'dominio' } }; por defecto se asignan a `orgId`. */
   roles?: Role[];
   rolesForOtherOrg?: { orgId: string; roles: Role[] };
+  /** Roles que no son del POS, como «Plataforma», en la organización indicada. */
+  rolesExtra?: { orgId: string; roles: string[] };
   /** `null` omite el claim, como hacen los tokens de acceso reales de Zitadel. */
   email?: string | null;
   name?: string | null;
@@ -41,6 +43,12 @@ export async function tokenFor(keys: TestKeys, input: TokenInput): Promise<strin
   if (input.rolesForOtherOrg) {
     for (const r of input.rolesForOtherOrg.roles) {
       rolesClaim[r] = { ...(rolesClaim[r] ?? {}), [input.rolesForOtherOrg.orgId]: `${input.rolesForOtherOrg.orgId}.test` };
+    }
+  }
+
+  if (input.rolesExtra) {
+    for (const r of input.rolesExtra.roles) {
+      rolesClaim[r] = { ...(rolesClaim[r] ?? {}), [input.rolesExtra.orgId]: `${input.rolesExtra.orgId}.test` };
     }
   }
 

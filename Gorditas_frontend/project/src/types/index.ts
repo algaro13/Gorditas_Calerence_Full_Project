@@ -246,6 +246,42 @@ export interface PlanCatalogo {
   features: string[];
 }
 
+/** Consola de plataforma (`GET /api/plataforma/resumen`). */
+export type SituacionRestaurante = 'prueba' | 'prueba-vencida' | 'pago' | 'pago-pendiente' | 'cancelado' | 'plan-sin-stripe';
+export type TramoActividad = 'hasta-7' | 'de-8-a-30' | 'de-31-a-90' | 'mas-de-90';
+
+export interface FilaConsola {
+  id: string;
+  slug: string;
+  nombre: string;
+  plan: PlanId;
+  planStatus: PlanStatus;
+  creadoEl: string;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
+  cancelAt: string | null;
+  tieneSuscripcionStripe: boolean;
+  activo: boolean;
+  usuariosActivos: number;
+  ultimoAcceso: string | null;
+  ultimaOrden: string | null;
+  ordenes30d: number;
+  situacion: SituacionRestaurante;
+  diasSinUso: number;
+  tramo: TramoActividad;
+}
+
+export interface ResumenConsola {
+  generadoEl: string;
+  total: number;
+  porSituacion: Record<SituacionRestaurante, number>;
+  pagoPorPlan: Record<'basico' | 'profesional' | 'empresarial', number>;
+  ingresoMensual: number;
+  conversion: { terminaronPrueba: number; pagaron: number; porcentaje: number | null };
+  porTramo: Record<TramoActividad, number>;
+  restaurantes: FilaConsola[];
+}
+
 /** Lo que devuelve `GET /api/billing/status`. */
 export interface EstadoSuscripcion {
   plan: PlanId;

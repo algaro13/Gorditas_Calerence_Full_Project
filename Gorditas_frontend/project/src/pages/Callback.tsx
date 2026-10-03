@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
+import { useAuth as useOidc } from 'react-oidc-context';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { saltoAlRestaurante } from '../utils/salto-tenant';
@@ -7,6 +8,10 @@ import { saltoAlRestaurante } from '../utils/salto-tenant';
 /** Retorno de Zitadel: espera a que la sesión y el restaurante estén listos y redirige. */
 const Callback: React.FC = () => {
   const { user, tenant, loading, error, tenantMissing, isAuthenticated, getDefaultRoute } = useAuth();
+  // Quien entró como operador vuelve a la consola: no tiene restaurante y sin esto acabaría en
+  // «sin restaurante».
+  const oidc = useOidc();
+  const destinoPedido = (oidc.user?.state as { destino?: string } | undefined)?.destino;
 
   // Si el acceso fue por el dominio principal, se lleva a la persona a su restaurante.
   const destino = saltoAlRestaurante(tenant?.url);
@@ -15,6 +20,8 @@ const Callback: React.FC = () => {
   useEffect(() => {
     if (!loading && user && destino) window.location.replace(destino);
   }, [loading, user, destino]);
+
+  if (destinoPedido === '/plataforma' && oidc.user) return <Navigate to="/plataforma" replace />;
 
   if (error && !loading) {
     return (

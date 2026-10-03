@@ -16,6 +16,11 @@ import { createReportesModule } from './modules/reportes';
 import { createPromocionesModule } from './modules/promociones';
 import { createOnboardingModule } from './modules/onboarding';
 import { createBillingModule } from './modules/billing';
+import { PLAN_CATALOG } from './modules/billing/domain/plans';
+import { ResumenPlataforma } from './modules/plataforma/application/ResumenPlataforma';
+import { createPlataformaRouter } from './modules/plataforma/http/plataforma.router';
+import { PrismaBitacora } from './modules/plataforma/infrastructure/PrismaBitacora';
+import { PrismaLecturaPlataforma } from './modules/plataforma/infrastructure/PrismaLecturaPlataforma';
 
 export function createApp(c: Container): Express {
   const app = express();
@@ -113,6 +118,20 @@ export function createApp(c: Container): Express {
   });
   app.use('/api/onboarding', onboarding.router);
   app.use('/api/billing', billing.router);
+  app.use(
+    '/api/plataforma',
+    createPlataformaRouter({
+      resumen: new ResumenPlataforma(
+        new PrismaLecturaPlataforma(c.prisma),
+        new PrismaBitacora(c.prisma),
+        c.clock,
+        Object.fromEntries(PLAN_CATALOG.map((p) => [p.id, p.price])),
+        async (userId) => (await c.identityProvider.getUserProfile(userId))?.email ?? null,
+      ),
+      authenticate,
+      platformOrgId: c.env.ZITADEL_DEFAULT_ORG_ID,
+    }),
+  );
 
   const promociones = createPromocionesModule({ uow: c.uow, clock: c.clock, timeZone });
   // El adaptador vive aquí porque es el único sitio que conoce los dos módulos. La orden pide

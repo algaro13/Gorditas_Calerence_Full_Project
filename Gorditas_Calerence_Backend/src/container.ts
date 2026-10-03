@@ -164,6 +164,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
       : createRemoteJWKSet(new URL(env.ZITADEL_JWKS_URL));
 
   const authenticate = createAuthenticate({
+    platformOrgId: env.ZITADEL_DEFAULT_ORG_ID,
     issuer: env.ZITADEL_ISSUER,
     audience: env.ZITADEL_AUDIENCE,
     projectId: env.ZITADEL_PROJECT_ID,

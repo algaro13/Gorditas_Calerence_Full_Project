@@ -54,6 +54,18 @@ En producción el restaurante se identifica por el subdominio `<slug>.<APP_DOMAI
 5. Los correos de verificación e invitación llegan a Mailpit (http://localhost:8025). También los del backend —el aviso de fin de prueba—, por `SMTP_HOST=localhost` y `SMTP_PORT=1025`, que escribe el bootstrap. Para forzar el trabajo diario: `npx dotenv -e .env.development -- npx tsx scripts/avisar-pruebas.ts` desde `Gorditas_Calerence_Backend`. La política de contraseñas de Zitadel exige 8+ caracteres con mayúscula, minúscula, número y símbolo.
 6. Sin claves de Stripe, "Elegir plan" responde `PLAN_NO_CONFIGURADO`; para probar cobros usa Stripe en modo test (sección siguiente) y define `STRIPE_PRICE_*`.
 
+## Consola de plataforma
+
+`http://localhost:5173/plataforma` muestra todos los restaurantes, sus planes y su actividad. Solo
+entra un operador: un usuario de la organización de la plataforma con el rol «Plataforma».
+
+```bash
+npm run plataforma:operador -- --email operador@kustodela.local --nombre "Operador Local" --password '<contraseña de prueba>'
+```
+
+Es idempotente. Sin `--password`, Zitadel manda a Mailpit un enlace para crear la contraseña. Cada
+consulta queda en la tabla `bitacora_plataforma`.
+
 ## Pruebas
 
 ```bash

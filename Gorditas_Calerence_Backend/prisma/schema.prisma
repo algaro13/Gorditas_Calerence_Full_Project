@@ -141,6 +141,19 @@ model AvisoEnviado {
   @@map("avisos_enviados")
 }
 
+/// Quién consultó la consola de plataforma, qué y cuándo. Tabla de plataforma (sin RLS).
+model BitacoraPlataforma {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  operadorId    String   @map("operador_id")
+  operadorEmail String   @map("operador_email")
+  accion        String
+  detalle       Json     @default("{}")
+  creadoAt      DateTime @default(now()) @map("creado_at") @db.Timestamptz(3)
+
+  @@index([creadoAt(sort: Desc)])
+  @@map("bitacora_plataforma")
+}
+
 model StripeEvent {
   id          String    @id
   type        String

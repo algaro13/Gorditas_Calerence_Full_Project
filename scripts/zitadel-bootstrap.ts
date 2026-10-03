@@ -58,7 +58,9 @@ const SMTP_MODE = args.includes('--smtp') ? args[args.indexOf('--smtp') + 1] : I
 const SMTP_HOST = rootEnv.SMTP_HOST ?? 'mailpit:1025';
 
 const PROJECT_NAME = 'Kustodela POS';
-const ROLES = ['Admin', 'Encargado', 'Mesero', 'Despachador', 'Cocinero'];
+// «Plataforma» es el rol de quien opera la consola de todos los restaurantes. Los restaurantes no
+// lo reciben del proyecto (su grant lista solo los cinco del POS); se concede con crear-operador.ts.
+const ROLES = ['Admin', 'Encargado', 'Mesero', 'Despachador', 'Cocinero', 'Plataforma'];
 /** Subdominio de la plataforma (landing y registro). Configurable si `app` ya está ocupado. */
 const PLATFORM_HOST = (rootEnv.APP_PLATFORM_HOST ?? 'app').toLowerCase();
 const FRONTEND_ORIGIN = IS_PROD ? `${APP_SCHEME}://${PLATFORM_HOST}.${APP_DOMAIN}` : 'http://localhost:5173';

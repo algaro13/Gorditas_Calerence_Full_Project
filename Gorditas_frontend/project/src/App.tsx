@@ -13,6 +13,7 @@ import Onboarding from './pages/Onboarding';
 import Landing from './pages/Landing';
 import Configuracion from './pages/Configuracion';
 import Suscripcion from './pages/Suscripcion';
+import Plataforma from './pages/Plataforma';
 import Dashboard from './pages/Dashboard';
 import NuevaOrden from './pages/NuevaOrden';
 import SurtirOrden from './pages/SurtirOrden';
@@ -200,6 +201,8 @@ function App() {
           <Route path="/sin-restaurante" element={<SinRestaurante />} />
           <Route path="/verificar-correo" element={<VerificarCorreo />} />
           <Route path="/landing" element={<Landing />} />
+          {/* La consola de plataforma no pertenece a ningún restaurante: va fuera de las rutas que lo exigen. */}
+          <Route path="/plataforma" element={<Plataforma />} />
           {/* En el host de la plataforma (o el dominio a secas) la raíz es la página de venta.
               En el subdominio de un restaurante la raíz sigue siendo el POS. */}
           {getTenantSlug() === null && <Route path="/" element={<Landing />} />}

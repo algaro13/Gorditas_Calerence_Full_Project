@@ -13,6 +13,12 @@ export function primaryRoleOf(roles: readonly Role[]): Role | null {
   return ROLE_PRECEDENCE.find((r) => roles.includes(r)) ?? null;
 }
 
+/**
+ * Rol de quien opera la plataforma (la consola con todos los restaurantes). No es un rol del POS:
+ * no está en `ROLES` y los restaurantes no lo reciben del proyecto, así que no pueden concederlo.
+ */
+export const ROL_PLATAFORMA = 'Plataforma';
+
 /** Principal autenticado, derivado del access token de Zitadel. */
 export interface AuthInfo {
   userId: string;
@@ -21,4 +27,6 @@ export interface AuthInfo {
   primaryRole: Role | null;
   email: string;
   name: string;
+  /** Opera la plataforma: rol «Plataforma» en la organización de la plataforma. */
+  plataforma: boolean;
 }

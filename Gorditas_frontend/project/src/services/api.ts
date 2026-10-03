@@ -1,5 +1,5 @@
 import { appConfig } from '../config/app-config';
-import type { ApiResponse, ComboVendible, EstadoDeCupo, EstadoSuscripcion, PlanCatalogo, PlanId, Promocion, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
+import type { ApiResponse, ComboVendible, EstadoDeCupo, EstadoSuscripcion, PlanCatalogo, PlanId, Promocion, ResumenConsola, TenantConfig, TenantInfo, TenantPublicInfo, UserRole, Usuario } from '../types';
 
 type TokenProvider = () => string | null | undefined;
 
@@ -161,6 +161,15 @@ class ApiService {
   }
   getBillingStatus() {
     return this.request<EstadoSuscripcion>('/billing/status');
+  }
+
+  // ---------- Consola de plataforma ----------
+  /** La organización con la que se entra como operador. Público. */
+  getPlataformaAcceso() {
+    return this.request<{ orgId: string }>('/plataforma/acceso');
+  }
+  getPlataformaResumen() {
+    return this.request<ResumenConsola>('/plataforma/resumen');
   }
 
   // ---------- Usuarios (personal) ----------

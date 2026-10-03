@@ -10,6 +10,7 @@
     "dev:reset": "docker compose -f docker-compose.dev.yaml down -v && rimraf .local",
     "dev:logs": "docker compose -f docker-compose.dev.yaml logs -f --tail=100",
     "dev:seed": "tsx scripts/dev-seed.ts",
+    "plataforma:operador": "tsx scripts/crear-operador.ts",
     "dev:backend": "npm --prefix Gorditas_Calerence_Backend run dev",
     "dev:frontend": "npm --prefix Gorditas_frontend/project run dev",
     "test": "npm --prefix Gorditas_Calerence_Backend test",
