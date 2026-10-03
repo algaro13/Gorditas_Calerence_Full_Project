@@ -86,6 +86,19 @@ Luego `npm run prod:up`. El contenedor del backend aplica las migraciones al arr
 (`prisma migrate deploy`), incluida la `0007_periodo_suscripcion` que guarda la fecha de renovación
 y la de cancelación.
 
+Para el aviso por correo de fin de prueba, el backend necesita también su SMTP (el mismo proveedor
+que usa Zitadel):
+
+```bash
+SMTP_HOST=smtp.proveedor.com
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+SMTP_FROM=Kustodela POS <no-reply@<APP_DOMAIN>>
+```
+
+Sin `SMTP_HOST` el aviso solo se escribe en el registro del backend.
+
 Si `PAYMENT_PROVIDER=stripe` pero falta `STRIPE_WEBHOOK_SECRET`, el backend no arranca: es a
 propósito, para no aceptar webhooks sin verificar su firma.
 

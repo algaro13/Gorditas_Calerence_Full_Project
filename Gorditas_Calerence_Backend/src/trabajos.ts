@@ -1,5 +1,6 @@
 import type { Container } from './container';
 import { TrabajoPeriodico } from './shared/infrastructure/scheduler/TrabajoPeriodico';
+import type { ResumenDeAvisos } from './modules/billing/application/use-cases/AvisarFinDePrueba';
 
 const UN_DIA = 24 * 60 * 60 * 1000;
 /** Margen tras el arranque: deja que el servidor termine de levantar antes de la primera corrida. */
@@ -55,6 +56,17 @@ export async function evaluarCupos(c: Container): Promise<ResumenDeCupos> {
 }
 
 /**
+ * Manda los correos de fin de prueba que toquen hoy.
+ *
+ * La usan el programador del backend y `scripts/avisar-pruebas.ts`, igual que `evaluarCupos`.
+ */
+export async function avisarPruebas(c: Container): Promise<ResumenDeAvisos> {
+  const resumen = await c.avisarFinDePrueba.ejecutar();
+  c.logger.child({ component: 'avisos' }).info('Avisos de prueba revisados', { ...resumen });
+  return resumen;
+}
+
+/**
  * Arranca los trabajos que el backend se programa a sí mismo.
  *
  * Se llama desde `main.ts` y no desde `createApp`, a propósito: montar la app en una prueba no
@@ -71,6 +83,15 @@ export function programarTrabajos(c: Container): TrabajoPeriodico[] {
       primeraEn: ESPERA_INICIAL,
       trabajo: async () => {
         await evaluarCupos(c);
+      },
+      logger: c.logger,
+    }),
+    new TrabajoPeriodico({
+      nombre: 'avisar-pruebas',
+      cada: UN_DIA,
+      primeraEn: ESPERA_INICIAL,
+      trabajo: async () => {
+        await avisarPruebas(c);
       },
       logger: c.logger,
     }),

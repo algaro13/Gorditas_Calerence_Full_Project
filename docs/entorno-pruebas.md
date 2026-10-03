@@ -83,6 +83,10 @@ Zitadel siempre envía a Mailpit, que guarda copia de cada mensaje y lo retransm
 - Mientras el dominio no esté verificado en el proveedor, `override-from` reescribe el remitente por uno del propio proveedor. Al verificarlo se borra esa línea y los correos salen desde `no-reply@<APP_DOMAIN>`.
 - Sin `MAILPIT_RELAY_CONFIG`, Mailpit vuelve a ser solo una trampa: captura todo y no entrega nada.
 
+### Correos del backend
+
+El backend manda su propio correo —el aviso de fin de prueba, 3 días antes y el día que vence— a la misma Mailpit, con `SMTP_HOST=mailpit` y `SMTP_PORT=1025` en `Gorditas_Calerence_Backend/.env.production`. Corre como trabajo diario un minuto después de arrancar el backend; `docker compose -f docker-compose.behind-proxy.yaml restart backend` fuerza una corrida. Cada aviso enviado queda en la tabla `avisos_enviados`.
+
 ## Diferencias con producción
 
 - Los correos de los restaurantes de prueba se quedan en Mailpit y no salen a internet.

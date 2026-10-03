@@ -32,6 +32,11 @@ import { PrismaTenantRepository } from './modules/tenants/infrastructure/PrismaT
 import type { TenantRepository } from './shared/application/ports/TenantRepository';
 import { touchMember } from './modules/usuarios/infrastructure/member-mirror';
 import { EvaluarCupo } from './modules/usuarios/application/use-cases/EvaluarCupo';
+import { AvisarFinDePrueba } from './modules/billing/application/use-cases/AvisarFinDePrueba';
+import { PrismaAvisosEnviados } from './modules/billing/infrastructure/PrismaAvisosEnviados';
+import type { EnviadorDeCorreo } from './shared/application/ports/EnviadorDeCorreo';
+import { SmtpEnviador } from './infrastructure/correo/SmtpEnviador';
+import { CorreoEnRegistro } from './infrastructure/correo/CorreoEnRegistro';
 import { PrismaStaffRepository } from './modules/usuarios/infrastructure/PrismaStaffRepository';
 import { PrismaTenantScope } from './modules/usuarios/infrastructure/PrismaTenantScope';
 import type { BillingConfig } from './modules/billing/application/use-cases/Billing';
@@ -46,6 +51,7 @@ export interface ContainerOverrides {
   paymentProvider?: PaymentProvider;
   webhookVerifier?: WebhookVerifier;
   storage?: FileStorage;
+  enviadorDeCorreo?: EnviadorDeCorreo;
   /** JWKS local (pruebas). Si se pasa, ignora ZITADEL_JWKS_MODE. */
   localJwks?: JSONWebKeySet;
   silentLogs?: boolean;
@@ -67,6 +73,9 @@ export interface Container {
   billingConfig: BillingConfig;
   tenants: TenantRepository;
   evaluarCupo: EvaluarCupo;
+  enviadorDeCorreo: EnviadorDeCorreo;
+  /** Correo de fin de prueba. Lo corre el trabajo diario `avisar-pruebas`. */
+  avisarFinDePrueba: AvisarFinDePrueba;
   /** Personal activo de un restaurante: los mismos que cuenta el cupo. */
   contarUsuariosActivos: (tenantId: string) => Promise<number>;
   /** Correo guardado de un miembro del restaurante, para cuando el token no lo trae. */
@@ -86,6 +95,9 @@ class UnverifiedWebhook implements WebhookVerifier {
     throw new Error('Webhook de pagos no configurado (STRIPE_WEBHOOK_SECRET)');
   }
 }
+
+/** El espejo guarda un correo de relleno cuando no conoce el real: ese no le sirve a nadie. */
+const esCorreoReal = (email: string): boolean => !email.endsWith('@sin-correo.local');
 
 export function buildContainer(overrides: ContainerOverrides = {}): Container {
   const env: Env = { ...defaultEnv, ...(overrides.env ?? {}) };
@@ -178,6 +190,32 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     logger.child({ component: 'cupo' }),
   );
 
+  const enviadorDeCorreo: EnviadorDeCorreo =
+    overrides.enviadorDeCorreo ??
+    (env.SMTP_HOST
+      ? new SmtpEnviador({
+          host: env.SMTP_HOST,
+          port: env.SMTP_PORT,
+          secure: env.SMTP_SECURE,
+          user: env.SMTP_USER || undefined,
+          password: env.SMTP_PASSWORD || undefined,
+          from: env.SMTP_FROM || `Kustodela POS <no-reply@${env.APP_DOMAIN}>`,
+        })
+      : new CorreoEnRegistro(logger.child({ component: 'correo' })));
+  const avisarFinDePrueba = new AvisarFinDePrueba(
+    tenants,
+    (tenantId) =>
+      tenantScope.run(tenantId, async () =>
+        (await staffRepo.list()).filter((m) => m.activo && m.role === 'Admin' && esCorreoReal(m.email)).map((m) => m.email),
+      ),
+    new PrismaAvisosEnviados(prisma),
+    enviadorDeCorreo,
+    urls,
+    clock,
+    env.APP_TZ,
+    logger.child({ component: 'avisos' }),
+  );
+
   const errorHandler = createErrorHandler({ logger: logger.child({ component: 'http' }), exposeStack: !isProd });
 
   return {
@@ -196,12 +234,13 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     billingConfig,
     tenants,
     evaluarCupo,
+    enviadorDeCorreo,
+    avisarFinDePrueba,
     contarUsuariosActivos: (tenantId) => tenantScope.run(tenantId, async () => (await staffRepo.list()).filter((m) => m.activo).length),
     correoDelMiembro: (tenantId, userId) =>
       tenantScope.run(tenantId, async () => {
         const email = (await staffRepo.list()).find((m) => m.zitadelUserId === userId)?.email;
-        // El espejo guarda un correo de relleno cuando no conoce el real: ese no le sirve a Stripe.
-        return email && !email.endsWith('@sin-correo.local') ? email : null;
+        return email && esCorreoReal(email) ? email : null;
       }),
     middlewares: { authenticate, tenantContext, planGuard, emailVerificado, errorHandler },
     shutdown: async () => {

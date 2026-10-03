@@ -97,6 +97,7 @@ model Tenant {
   updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   users                 TenantUser[]
+  avisos                AvisoEnviado[]
   counters              Counter[]
   guisos                Guiso[]
   tiposProducto         TipoProducto[]
@@ -121,6 +122,23 @@ model Tenant {
 
   @@index([activo])
   @@map("tenants")
+}
+
+/// Avisos por correo que ya mandó el backend, para no repetirlos. Tabla de plataforma (sin RLS).
+model AvisoEnviado {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  /// `prueba-por-vencer` o `prueba-vencida`.
+  tipo          String
+  /// La fecha a la que se refiere el aviso: el fin de la prueba.
+  referencia    DateTime @db.Timestamptz(3)
+  destinatarios String
+  enviadoAt     DateTime @default(now()) @map("enviado_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, tipo, referencia])
+  @@map("avisos_enviados")
 }
 
 model StripeEvent {

@@ -43,6 +43,15 @@ const schema = Joi.object({
   STRIPE_PRICE_EMPRESARIAL: Joi.string().optional(),
 
   UPLOADS_DIR: Joi.string().default('uploads'),
+
+  // Correo del propio backend (los de Zitadel los envía Zitadel). Sin SMTP_HOST el correo solo se
+  // escribe en el registro. En local y en el VPS: Mailpit (puerto 1025).
+  SMTP_HOST: Joi.string().allow('').optional(),
+  SMTP_PORT: Joi.number().integer().min(1).max(65535).default(587),
+  SMTP_SECURE: Joi.boolean().default(false),
+  SMTP_USER: Joi.string().allow('').optional(),
+  SMTP_PASSWORD: Joi.string().allow('').optional(),
+  SMTP_FROM: Joi.string().allow('').optional(),
 }).unknown(true);
 
 export interface Env {
@@ -73,6 +82,12 @@ export interface Env {
   STRIPE_PRICE_PROFESIONAL?: string;
   STRIPE_PRICE_EMPRESARIAL?: string;
   UPLOADS_DIR: string;
+  SMTP_HOST?: string;
+  SMTP_PORT: number;
+  SMTP_SECURE: boolean;
+  SMTP_USER?: string;
+  SMTP_PASSWORD?: string;
+  SMTP_FROM?: string;
 }
 
 const { value, error } = schema.validate(process.env, { abortEarly: false, stripUnknown: false });

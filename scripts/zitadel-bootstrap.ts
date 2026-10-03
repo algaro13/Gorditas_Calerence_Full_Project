@@ -414,6 +414,10 @@ async function main(): Promise<void> {
   const existingBackendEnv = loadDotEnv(backendEnvPath);
   // Sin claves de Stripe el backend usa el proveedor de pagos falso (se cambia a 'stripe' al agregar STRIPE_*).
   const paymentProvider = existingBackendEnv.STRIPE_SECRET_KEY && existingBackendEnv.STRIPE_WEBHOOK_SECRET ? 'stripe' : 'fake';
+  // En desarrollo el backend manda sus correos (fin de prueba) a la misma Mailpit que Zitadel, que
+  // en local se publica en el 1025. Si ya hay un SMTP_HOST escrito, se respeta.
+  const smtpValues: Record<string, string> =
+    !IS_PROD && SMTP_MODE === 'mailpit' && !existingBackendEnv.SMTP_HOST ? { SMTP_HOST: 'localhost', SMTP_PORT: '1025' } : {};
 
   upsertEnvFile(backendEnvPath, {
     NODE_ENV: envSuffix,
@@ -433,6 +437,7 @@ async function main(): Promise<void> {
     ZITADEL_SPA_APP_ID: spa.appId,
     ZITADEL_PAT: pat,
     FRONTEND_BASE_URL: FRONTEND_ORIGIN,
+    ...smtpValues,
   });
 
   if (!IS_PROD) {

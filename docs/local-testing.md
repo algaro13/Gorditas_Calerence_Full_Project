@@ -51,7 +51,7 @@ En producción el restaurante se identifica por el subdominio `<slug>.<APP_DOMAI
 2. Zitadel (login v2) pide usuario y contraseña y regresa a `/callback`; el SPA carga `GET /api/tenants/me` y entra a la ruta del rol (Admin/Encargado → `/`, Mesero → `/nueva-orden`, Despachador/Cocinero → `/surtir-orden`).
 3. Los roles salen del access token (claim `urn:zitadel:iam:org:project:<PROJECT_ID>:roles`); el backend nunca confía en el rol enviado por el cliente.
 4. Una organización sin restaurante (`NO_TENANT`) lleva a `/sin-restaurante`.
-5. Los correos de verificación e invitación llegan a Mailpit (http://localhost:8025). La política de contraseñas de Zitadel exige 8+ caracteres con mayúscula, minúscula, número y símbolo.
+5. Los correos de verificación e invitación llegan a Mailpit (http://localhost:8025). También los del backend —el aviso de fin de prueba—, por `SMTP_HOST=localhost` y `SMTP_PORT=1025`, que escribe el bootstrap. Para forzar el trabajo diario: `npx dotenv -e .env.development -- npx tsx scripts/avisar-pruebas.ts` desde `Gorditas_Calerence_Backend`. La política de contraseñas de Zitadel exige 8+ caracteres con mayúscula, minúscula, número y símbolo.
 6. Sin claves de Stripe, "Elegir plan" responde `PLAN_NO_CONFIGURADO`; para probar cobros usa Stripe en modo test (sección siguiente) y define `STRIPE_PRICE_*`.
 
 ## Pruebas
