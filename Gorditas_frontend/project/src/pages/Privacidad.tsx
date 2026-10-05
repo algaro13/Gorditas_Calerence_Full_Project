@@ -11,7 +11,7 @@ const Privacidad: React.FC = () => (
   <DocumentoLegal titulo="Aviso de privacidad">
     <Seccion titulo="1. Quién es responsable de tus datos">
       <p>
-        <Dato>{D.responsable}</Dato> (RFC <Dato>{D.rfc}</Dato>), con domicilio en <Dato>{D.domicilio}</Dato>, es responsable de
+        <Dato>{D.responsable}</Dato>, con domicilio en <Dato>{D.domicilio}</Dato>, es responsable de
         los datos personales que se recaban a través de Kustodela POS (en adelante, «Kustodela»). Para cualquier tema de
         privacidad escríbenos a <Dato>{D.correoPrivacidad}</Dato>.
       </p>

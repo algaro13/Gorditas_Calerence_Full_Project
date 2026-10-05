@@ -10,9 +10,9 @@
 export const VERSION_LEGAL = '2026-10-05';
 
 export const DATOS_LEGALES = {
-  responsable: '[NOMBRE O RAZÓN SOCIAL DEL RESPONSABLE]',
-  rfc: '[RFC]',
-  domicilio: '[CALLE, NÚMERO, COLONIA, CÓDIGO POSTAL, MUNICIPIO, ESTADO, MÉXICO]',
+  // Persona física: su nombre completo. Si después opera una sociedad, va su razón social.
+  responsable: '[NOMBRE COMPLETO]',
+  domicilio: 'C. Cantera 700, Parque la Talaverna, 66473 San Nicolás de los Garza, N.L., México',
   correoPrivacidad: '[privacidad@ejemplo.com]',
   correoContacto: '[contacto@ejemplo.com]',
   hospedaje: '[PROVEEDOR DE SERVIDORES Y PAÍS]',
