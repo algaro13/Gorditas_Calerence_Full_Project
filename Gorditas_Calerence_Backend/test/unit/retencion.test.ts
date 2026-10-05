@@ -6,7 +6,7 @@ import { FakeEnviador } from '../../src/infrastructure/correo/FakeEnviador';
 import { createDomainUrls } from '../../src/shared/config/domain';
 import type { Logger } from '../../src/shared/application/ports/Logger';
 import type { TenantRepository } from '../../src/shared/application/ports/TenantRepository';
-import type { AvisosEnviados } from '../../src/modules/billing/application/ports/AvisosEnviados';
+import type { AvisosEnviados } from '../../src/shared/application/ports/AvisosEnviados';
 import type { TenantInfo } from '../../src/shared/domain/Tenant';
 
 const DIA = 86_400_000;
@@ -135,7 +135,7 @@ describe('RevisarInactividad', () => {
       avisos,
       async (id) => admins[id] ?? [],
       enviador,
-      createDomainUrls({ appDomain: 'kustodela.com', scheme: 'https' }),
+      createDomainUrls({ appDomain: 'cuadranova.com', scheme: 'https' }),
       { now: () => AHORA },
       'America/Mexico_City',
       loggerMudo(),
@@ -163,7 +163,7 @@ describe('RevisarInactividad', () => {
     ]);
     expect(enviador.enviados.map((c) => c.para[0])).toEqual(['a@r0.test', 'a@r1.test']);
     expect(enviador.enviados[0].asunto).toContain('R0');
-    expect(enviador.enviados[0].texto).toContain('https://r0.kustodela.com/');
+    expect(enviador.enviados[0].texto).toContain('https://r0.cuadranova.com/');
   });
 
   it('sin a quién escribir, el ciclo avanza igual', async () => {

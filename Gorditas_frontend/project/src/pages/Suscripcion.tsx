@@ -191,13 +191,18 @@ const Suscripcion: React.FC = () => {
                 : 'Cuando contrates un plan podrás ver aquí tus recibos y tu método de pago.'}
             </p>
             {/* Mientras la facturación no sea automática, se pide por correo (ver /terminos). */}
-            <p className="text-meta text-gray-500">
-              ¿Necesitas factura (CFDI)? Escribe a{' '}
-              <a href={`mailto:${DATOS_LEGALES.correoContacto}`} className="text-orange-700 underline">
+            <div className="text-meta text-gray-500">
+              <p>
+                ¿Necesitas factura (CFDI)? Pídela dentro del mismo mes del cobro, con tu RFC, nombre o razón social, régimen
+                fiscal, código postal y uso del CFDI:
+              </p>
+              <a
+                href={`mailto:${DATOS_LEGALES.correoContacto}`}
+                className="inline-flex min-h-[44px] items-center text-cuerpo text-orange-700 underline"
+              >
                 {DATOS_LEGALES.correoContacto}
-              </a>{' '}
-              dentro del mismo mes del cobro, con tu RFC, nombre o razón social, régimen fiscal, código postal y uso del CFDI.
-            </p>
+              </a>
+            </div>
           </section>
         </>
       )}

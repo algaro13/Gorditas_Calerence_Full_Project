@@ -8,7 +8,7 @@ import type { DomainUrls } from '../../../shared/config/domain';
 import type { AuthInfo } from '../../../shared/domain/Auth';
 import { ConflictError, ExternalServiceError, NotFoundError, ValidationError } from '../../../shared/domain/DomainError';
 import type { TenantInfo } from '../../../shared/domain/Tenant';
-import type { AvisosEnviados } from '../../billing/application/ports/AvisosEnviados';
+import type { AvisosEnviados } from '../../../shared/application/ports/AvisosEnviados';
 import { diasSinUso, situacion } from '../domain/resumen';
 import { categoriaRetencion, correoRetencion, fechaDeArchivo, recuperableHasta, siguientePaso, ultimoUso } from '../domain/retencion';
 import type { Bitacora, LecturaPlataforma } from './ResumenPlataforma';

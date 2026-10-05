@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-import type { AvisosEnviados } from '../application/ports/AvisosEnviados';
+import type { AvisosEnviados } from '../../../shared/application/ports/AvisosEnviados';
 
 /** Usa el cliente global: `avisos_enviados` es tabla de plataforma y no tiene RLS. */
 export class PrismaAvisosEnviados implements AvisosEnviados {

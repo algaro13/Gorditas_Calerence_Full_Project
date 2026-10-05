@@ -4,7 +4,7 @@ import type { Logger } from '../../../../shared/application/ports/Logger';
 import type { TenantRepository } from '../../../../shared/application/ports/TenantRepository';
 import type { DomainUrls } from '../../../../shared/config/domain';
 import { avisoQueToca, correoFinDePrueba } from '../../domain/aviso-prueba';
-import type { AvisosEnviados } from '../ports/AvisosEnviados';
+import type { AvisosEnviados } from '../../../../shared/application/ports/AvisosEnviados';
 
 /** Correos de los administradores activos de un restaurante, solo los reales. */
 export type CorreosDeAdmins = (tenantId: string) => Promise<string[]>;
