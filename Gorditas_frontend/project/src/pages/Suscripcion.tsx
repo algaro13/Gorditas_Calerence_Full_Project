@@ -6,6 +6,7 @@ import { AvisoSobreCupo } from '../components/AvisoSobreCupo';
 import { apiService } from '../services/api';
 import type { EstadoDeCupo, EstadoSuscripcion, PlanStatus } from '../types';
 import { cuandoTerminaLaPrueba, etiquetaDeEstadoDePlan, fechaLarga, nombreDePlan, pruebaVencida } from '../utils/plan';
+import { DATOS_LEGALES } from '../legal/datos';
 
 const PASTILLA: Record<PlanStatus, string> = {
   trial: 'bg-blue-100 text-blue-800',
@@ -179,15 +180,23 @@ const Suscripcion: React.FC = () => {
                   }`}
                 >
                   <CreditCard className="w-5 h-5" />
-                  {abriendoPortal ? 'Abriendo…' : estado.planStatus === 'past_due' ? 'Actualizar método de pago' : 'Administrar pago y facturas'}
+                  {abriendoPortal ? 'Abriendo…' : estado.planStatus === 'past_due' ? 'Actualizar método de pago' : 'Administrar pago y recibos'}
                   <ExternalLink className="w-4 h-4 opacity-70" aria-hidden />
                 </button>
               )}
             </div>
             <p className="text-meta text-gray-500">
               {estado.tieneClienteStripe
-                ? 'El método de pago, las facturas y la cancelación se gestionan en el portal seguro de Stripe.'
-                : 'Cuando contrates un plan podrás ver aquí tus facturas y tu método de pago.'}
+                ? 'El método de pago, los recibos y la cancelación se gestionan en el portal seguro de Stripe.'
+                : 'Cuando contrates un plan podrás ver aquí tus recibos y tu método de pago.'}
+            </p>
+            {/* Mientras la facturación no sea automática, se pide por correo (ver /terminos). */}
+            <p className="text-meta text-gray-500">
+              ¿Necesitas factura (CFDI)? Escribe a{' '}
+              <a href={`mailto:${DATOS_LEGALES.correoContacto}`} className="text-orange-700 underline">
+                {DATOS_LEGALES.correoContacto}
+              </a>{' '}
+              dentro del mismo mes del cobro, con tu RFC, nombre o razón social, régimen fiscal, código postal y uso del CFDI.
             </p>
           </section>
         </>

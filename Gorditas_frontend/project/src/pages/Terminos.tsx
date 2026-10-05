@@ -60,8 +60,10 @@ const Terminos: React.FC = () => (
           en pausa hasta regularizarlo.
         </li>
         <li>
-          Los comprobantes que envía Stripe son recibos de pago. Factura fiscal (CFDI) de tu suscripción:{' '}
-          <Dato>{D.facturacionFiscal}</Dato>.
+          Los comprobantes que envía Stripe son recibos de pago, no facturas fiscales. Si necesitas factura (CFDI) de tu
+          suscripción, pídela a <Dato>{D.correoContacto}</Dato> dentro del mismo mes del cobro, con tu RFC, nombre o razón
+          social, régimen fiscal, código postal y uso del CFDI. Los cobros que no se facturen así se incluyen en la factura
+          global al público en general.
         </li>
         <li>Si cambian los precios, te avisaremos por correo con al menos 30 días de anticipación.</li>
       </ul>

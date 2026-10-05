@@ -19,7 +19,6 @@ export const DATOS_LEGALES = {
   respaldos: 'Cloudflare, con su servicio R2',
   correo: 'Resend',
   ivaEnPrecios: 'incluyen',
-  facturacionFiscal: '[CÓMO SE SOLICITA LA FACTURA FISCAL (CFDI) DE LA SUSCRIPCIÓN]',
   limiteResponsabilidad: '12',
   jurisdiccion: 'Monterrey, Nuevo León',
 } as const;
