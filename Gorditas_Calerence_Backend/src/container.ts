@@ -33,6 +33,8 @@ import type { TenantRepository } from './shared/application/ports/TenantReposito
 import { touchMember } from './modules/usuarios/infrastructure/member-mirror';
 import { EvaluarCupo } from './modules/usuarios/application/use-cases/EvaluarCupo';
 import { AvisarFinDePrueba } from './modules/billing/application/use-cases/AvisarFinDePrueba';
+import { RevisarInactividad } from './modules/plataforma/application/Retencion';
+import { PrismaLecturaPlataforma } from './modules/plataforma/infrastructure/PrismaLecturaPlataforma';
 import { VerificarPrecios } from './modules/billing/application/use-cases/VerificarPrecios';
 import { PrismaAvisosEnviados } from './modules/billing/infrastructure/PrismaAvisosEnviados';
 import type { EnviadorDeCorreo } from './shared/application/ports/EnviadorDeCorreo';
@@ -77,6 +79,8 @@ export interface Container {
   enviadorDeCorreo: EnviadorDeCorreo;
   /** Correo de fin de prueba. Lo corre el trabajo diario `avisar-pruebas`. */
   avisarFinDePrueba: AvisarFinDePrueba;
+  /** Avisos de inactividad y archivado. Lo corre el trabajo diario `revisar-inactividad`. */
+  revisarInactividad: RevisarInactividad;
   /** Compara los precios de Stripe con el catálogo. Lo corre `main.ts` al arrancar. */
   verificarPrecios: VerificarPrecios;
   /** Personal activo de un restaurante: los mismos que cuenta el cupo. */
@@ -206,18 +210,34 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
           from: env.SMTP_FROM || `Kustodela POS <no-reply@${env.APP_DOMAIN}>`,
         })
       : new CorreoEnRegistro(logger.child({ component: 'correo' })));
+  const correosDeAdmins = (tenantId: string): Promise<string[]> =>
+    tenantScope.run(tenantId, async () =>
+      (await staffRepo.list()).filter((m) => m.activo && m.role === 'Admin' && esCorreoReal(m.email)).map((m) => m.email),
+    );
+  const avisosEnviados = new PrismaAvisosEnviados(prisma);
   const avisarFinDePrueba = new AvisarFinDePrueba(
     tenants,
-    (tenantId) =>
-      tenantScope.run(tenantId, async () =>
-        (await staffRepo.list()).filter((m) => m.activo && m.role === 'Admin' && esCorreoReal(m.email)).map((m) => m.email),
-      ),
-    new PrismaAvisosEnviados(prisma),
+    correosDeAdmins,
+    avisosEnviados,
     enviadorDeCorreo,
     urls,
     clock,
     env.APP_TZ,
     logger.child({ component: 'avisos' }),
+  );
+
+  // Sin invalidar la caché del contexto: el trabajo corre fuera de la app y la caché dura un
+  // minuto, así que el archivado se nota a más tardar al minuto.
+  const revisarInactividad = new RevisarInactividad(
+    new PrismaLecturaPlataforma(prisma),
+    tenants,
+    avisosEnviados,
+    correosDeAdmins,
+    enviadorDeCorreo,
+    urls,
+    clock,
+    env.APP_TZ,
+    logger.child({ component: 'retencion' }),
   );
 
   const errorHandler = createErrorHandler({ logger: logger.child({ component: 'http' }), exposeStack: !isProd });
@@ -240,6 +260,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
     evaluarCupo,
     enviadorDeCorreo,
     avisarFinDePrueba,
+    revisarInactividad,
     verificarPrecios: new VerificarPrecios(paymentProvider, billingConfig),
     contarUsuariosActivos: (tenantId) => tenantScope.run(tenantId, async () => (await staffRepo.list()).filter((m) => m.activo).length),
     correoDelMiembro: (tenantId, userId) =>

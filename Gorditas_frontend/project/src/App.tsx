@@ -14,6 +14,7 @@ import Landing from './pages/Landing';
 import Configuracion from './pages/Configuracion';
 import Suscripcion from './pages/Suscripcion';
 import Plataforma from './pages/Plataforma';
+import Archivado from './pages/Archivado';
 import Dashboard from './pages/Dashboard';
 import NuevaOrden from './pages/NuevaOrden';
 import SurtirOrden from './pages/SurtirOrden';
@@ -41,6 +42,7 @@ const AuthenticatedApp: React.FC = () => {
   if (correoPorVerificar) return <Navigate to="/verificar-correo" replace />;
   // Sin plan que lo permita, el POS no puede operar: el backend contesta 403 a cada pantalla.
   // Antes eso se veia como listas vacias y botones que no hacian nada.
+  if (accesoBloqueado === 'RESTAURANTE_ARCHIVADO') return <Navigate to="/archivado" replace />;
   if (accesoBloqueado) return <Navigate to="/planes" replace />;
   if (!user) return <Navigate to="/login" replace />;
 
@@ -208,6 +210,14 @@ function App() {
           {getTenantSlug() === null && <Route path="/" element={<Landing />} />}
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/billing/success" element={<BillingSuccess />} />
+          <Route
+            path="/archivado"
+            element={
+              <BasicProtectedRoute>
+                <Archivado />
+              </BasicProtectedRoute>
+            }
+          />
           <Route
             path="/planes"
             element={

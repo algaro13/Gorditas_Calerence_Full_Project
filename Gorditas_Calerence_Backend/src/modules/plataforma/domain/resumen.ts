@@ -1,4 +1,5 @@
 import type { PlanId, PlanStatus } from '../../../shared/domain/Tenant';
+import { categoriaRetencion, faseRetencion, recuperableHasta, siguientePaso, type CategoriaRetencion, type FaseRetencion, type PasoRetencion } from './retencion';
 
 /** Lo que se lee de cada restaurante para la consola. */
 export interface DatosRestaurante {
@@ -17,6 +18,10 @@ export interface DatosRestaurante {
   ultimoAcceso: Date | null;
   ultimaOrden: Date | null;
   ordenes30d: number;
+  archivadoAt: Date | null;
+  retencionPausada: boolean;
+  /** Pasos del ciclo de inactividad ya enviados para su último uso actual. */
+  enviadosRetencion: Partial<Record<PasoRetencion, Date>>;
 }
 
 /**
@@ -66,6 +71,14 @@ export interface FilaConsola extends DatosRestaurante {
   situacion: Situacion;
   diasSinUso: number;
   tramo: TramoActividad;
+  retencion: {
+    categoria: CategoriaRetencion;
+    fase: FaseRetencion;
+    /** Hasta cuándo puede recuperarse; solo si está archivado. */
+    recuperableHasta: Date | null;
+    /** Lo que haría hoy el trabajo diario, o null. */
+    siguientePaso: PasoRetencion | null;
+  };
 }
 
 export interface ResumenConsola {
@@ -79,6 +92,7 @@ export interface ResumenConsola {
   /** De los restaurantes cuya prueba ya terminó, cuántos llegaron a pagar. */
   conversion: { terminaronPrueba: number; pagaron: number; porcentaje: number | null };
   porTramo: Record<TramoActividad, number>;
+  porFase: Record<FaseRetencion, number>;
   restaurantes: FilaConsola[];
 }
 
@@ -90,6 +104,7 @@ export function resumir(datos: DatosRestaurante[], precios: Record<string, numbe
   const porSituacion: Record<Situacion, number> = { prueba: 0, 'prueba-vencida': 0, pago: 0, 'pago-pendiente': 0, cancelado: 0, 'plan-sin-stripe': 0 };
   const pagoPorPlan = { basico: 0, profesional: 0, empresarial: 0 };
   const porTramo: Record<TramoActividad, number> = { 'hasta-7': 0, 'de-8-a-30': 0, 'de-31-a-90': 0, 'mas-de-90': 0 };
+  const porFase: Record<FaseRetencion, number> = { 'en-uso': 0, 'aviso-1': 0, 'aviso-2': 0, archivado: 0, 'listo-para-borrar': 0 };
   let ingresoMensual = 0;
   let terminaronPrueba = 0;
   let pagaron = 0;
@@ -111,7 +126,19 @@ export function resumir(datos: DatosRestaurante[], precios: Record<string, numbe
       terminaronPrueba += 1;
       if (r.tieneSuscripcionStripe) pagaron += 1;
     }
-    return { ...r, situacion: s, diasSinUso: dias, tramo: t };
+    const categoria = categoriaRetencion(s, r.tieneSuscripcionStripe);
+    const fase = faseRetencion({ archivadoAt: r.archivadoAt, enviados: r.enviadosRetencion }, ahora);
+    porFase[fase] += 1;
+    const retencion = {
+      categoria,
+      fase,
+      recuperableHasta: r.archivadoAt ? recuperableHasta(r.archivadoAt) : null,
+      siguientePaso: siguientePaso(
+        { categoria, diasSinUso: dias, archivadoAt: r.archivadoAt, pausada: r.retencionPausada, enviados: r.enviadosRetencion },
+        ahora,
+      ),
+    };
+    return { ...r, situacion: s, diasSinUso: dias, tramo: t, retencion };
   });
 
   // Los que más tiempo llevan sin uso, primero: son los que hay que mirar.
@@ -125,6 +152,7 @@ export function resumir(datos: DatosRestaurante[], precios: Record<string, numbe
     ingresoMensual,
     conversion: { terminaronPrueba, pagaron, porcentaje: terminaronPrueba > 0 ? Math.round((pagaron / terminaronPrueba) * 100) : null },
     porTramo,
+    porFase,
     restaurantes,
   };
 }

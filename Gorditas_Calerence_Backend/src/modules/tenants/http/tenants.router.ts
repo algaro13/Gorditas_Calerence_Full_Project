@@ -10,8 +10,10 @@ import type { TenantRepository } from '../../../shared/application/ports/TenantR
 import type { IdentityProvider } from '../../../shared/application/ports/IdentityProvider';
 import type { VerificadorDeCorreo } from '../../../shared/http/express/email-verificado';
 import type { ActualizarConfigTenant, SubirLogoTenant } from '../application/use-cases/ConfiguracionTenant';
-import { accessBlockReason, PALETAS } from '../../../shared/domain/Tenant';
+import { accessBlockReason, DIAS_PARA_RECUPERAR, PALETAS } from '../../../shared/domain/Tenant';
 import type { Clock } from '../../../shared/application/ports/Clock';
+import type { TenantInfo } from '../../../shared/domain/Tenant';
+import type { AuthInfo } from '../../../shared/domain/Auth';
 
 export interface TenantsRouterDeps {
   tenants: TenantRepository;
@@ -32,6 +34,8 @@ export interface TenantsRouterDeps {
    */
   timeZone: string;
   clock: Clock;
+  /** El administrador recupera su restaurante archivado por falta de uso. */
+  recuperar: (tenant: TenantInfo, auth: AuthInfo) => Promise<void>;
 }
 
 const configSchema = Joi.object({
@@ -93,6 +97,8 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
           cancelAt: tenant.cancelAt,
           maxUsuarios: tenant.maxUsuarios,
           activo: tenant.activo,
+          archivadoAt: tenant.archivadoAt,
+          recuperableHasta: tenant.archivadoAt ? new Date(tenant.archivadoAt.getTime() + DIAS_PARA_RECUPERAR * 86_400_000) : null,
           config: tenant.config,
           url: deps.urls.tenantUrl(tenant.slug),
         },
@@ -142,6 +148,18 @@ export function createTenantsRouter(deps: TenantsRouterDeps): Router {
       }
       const result = await deps.subirLogo.execute(req.tenant!, { buffer: req.file.buffer, mimeType: req.file.mimetype, size: req.file.size });
       sendOk(res, result, 'Logo actualizado');
+    }),
+  );
+
+  // Sin el guard de plan: es justo lo que necesita un restaurante archivado.
+  router.post(
+    '/me/recuperar',
+    deps.authenticate,
+    deps.tenantContext,
+    isAdmin,
+    asyncHandler(async (req, res) => {
+      await deps.recuperar(req.tenant!, req.auth!);
+      sendOk(res, { recuperado: true }, 'Tu restaurante está de vuelta.');
     }),
   );
 

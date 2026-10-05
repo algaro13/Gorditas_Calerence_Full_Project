@@ -1,4 +1,5 @@
 import { PLAN_LIMITS, USUARIOS_ILIMITADOS, type TenantInfo } from '../../../shared/domain/Tenant';
+import { MARCA, plantillaCorreo } from '../../../shared/domain/plantilla-correo';
 
 export type TipoAvisoPrueba = 'prueba-por-vencer' | 'prueba-vencida';
 
@@ -39,8 +40,6 @@ export interface ContenidoCorreo {
   html: string;
 }
 
-const MARCA = 'Kustodela POS';
-
 const NOMBRES_PLAN: Record<keyof typeof PLAN_LIMITS, string> = {
   basico: 'Básico',
   profesional: 'Profesional',
@@ -56,9 +55,6 @@ function lineasDePlanes(): string[] {
   });
 }
 
-const escapar = (s: string): string =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
 /**
  * Los dos correos de fin de prueba.
  *
@@ -67,7 +63,6 @@ const escapar = (s: string): string =>
  */
 export function correoFinDePrueba(tipo: TipoAvisoPrueba, d: DatosAviso): ContenidoCorreo {
   const fecha = d.trialEndsAt.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric', timeZone: d.timeZone });
-  const planes = lineasDePlanes();
 
   const porVencer = tipo === 'prueba-por-vencer';
   const asunto = porVencer
@@ -82,36 +77,13 @@ export function correoFinDePrueba(tipo: TipoAvisoPrueba, d: DatosAviso): Conteni
         `La prueba gratuita de ${d.nombreRestaurante} en ${MARCA} terminó el ${fecha}, así que el punto de venta está en pausa.`,
         'Tus datos están intactos: tus mesas, tus platillos, tus órdenes y tus reportes. En cuanto elijas un plan, todo vuelve a donde estaba.',
       ];
-  const llamada = porVencer ? 'Elegir mi plan' : 'Reactivar mi punto de venta';
 
-  const texto = [
-    'Hola:',
-    '',
-    ...parrafos.flatMap((p) => [p, '']),
-    `${llamada}: ${d.urlPlanes}`,
-    '',
-    'Planes:',
-    ...planes.map((p) => `- ${p}`),
-    '',
-    `— ${MARCA}`,
-    '',
-    'Recibes este correo porque eres administrador de este restaurante.',
-  ].join('\n');
-
-  const html = `<!doctype html>
-<html lang="es"><body style="margin:0;padding:24px;background:#f9fafb;font-family:Arial,Helvetica,sans-serif;color:#111827">
-<div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px">
-<p style="font-size:16px;margin:0 0 16px">Hola:</p>
-${parrafos.map((p) => `<p style="font-size:16px;line-height:1.5;margin:0 0 16px">${escapar(p)}</p>`).join('\n')}
-<p style="margin:24px 0"><a href="${escapar(d.urlPlanes)}" style="display:inline-block;background:#ea580c;color:#ffffff;text-decoration:none;font-size:16px;font-weight:bold;padding:12px 20px;border-radius:8px">${llamada}</a></p>
-<p style="font-size:14px;color:#4b5563;margin:0 0 8px">Planes:</p>
-<ul style="font-size:14px;color:#4b5563;margin:0 0 16px;padding-left:20px">
-${planes.map((p) => `<li>${escapar(p)}</li>`).join('\n')}
-</ul>
-<p style="font-size:14px;color:#6b7280;margin:16px 0 0">— ${MARCA}</p>
-</div>
-<p style="max-width:560px;margin:12px auto 0;font-size:12px;color:#9ca3af">Recibes este correo porque eres administrador de este restaurante.</p>
-</body></html>`;
-
-  return { asunto, texto, html };
+  return {
+    asunto,
+    ...plantillaCorreo({
+      parrafos,
+      botones: [{ texto: porVencer ? 'Elegir mi plan' : 'Reactivar mi punto de venta', url: d.urlPlanes, principal: true }],
+      lista: { titulo: 'Planes', items: lineasDePlanes() },
+    }),
+  };
 }

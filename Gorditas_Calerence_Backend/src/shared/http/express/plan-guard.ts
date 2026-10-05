@@ -6,6 +6,7 @@ import { sendError } from './respond';
 const MESSAGES = {
   TRIAL_EXPIRED: 'Tu periodo de prueba ha expirado. Selecciona un plan para continuar.',
   SUBSCRIPTION_INACTIVE: 'Suscripción inactiva. Reactiva tu plan para continuar.',
+  RESTAURANTE_ARCHIVADO: 'Este restaurante está archivado por falta de uso. Su administrador puede recuperarlo.',
 } as const;
 
 /**

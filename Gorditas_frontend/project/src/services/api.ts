@@ -15,7 +15,8 @@ export interface OnboardingPayload {
 }
 
 /** Por que el plan no deja operar; `null` cuando deja. */
-export type MotivoBloqueo = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE';
+export type MotivoBloqueo = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE' | 'RESTAURANTE_ARCHIVADO';
+const MOTIVOS_DE_BLOQUEO: readonly string[] = ['TRIAL_EXPIRED', 'SUBSCRIPTION_INACTIVE', 'RESTAURANTE_ARCHIVADO'];
 
 export interface TenantMeResponse {
   tenant: TenantInfo;
@@ -66,7 +67,7 @@ class ApiService {
       if (response.status === 401) this.onUnauthorized?.();
       // Un plan puede vencer con la sesion abierta. Sin esto, cada pantalla se quedaba con su
       // lista vacia y el operador veia un sistema roto en vez de saber que hay que pagar.
-      if (response.status === 403 && (body?.code === 'TRIAL_EXPIRED' || body?.code === 'SUBSCRIPTION_INACTIVE')) {
+      if (response.status === 403 && body?.code && MOTIVOS_DE_BLOQUEO.includes(body.code)) {
         this.onPlanBloqueado?.(body.code as MotivoBloqueo);
       }
       if (!response.ok || !body?.success) {
@@ -170,6 +171,19 @@ class ApiService {
   }
   getPlataformaResumen() {
     return this.request<ResumenConsola>('/plataforma/resumen');
+  }
+  restaurarRestaurante(id: string) {
+    return this.request(`/plataforma/restaurantes/${id}/restaurar`, { method: 'POST' });
+  }
+  pausarRetencion(id: string, pausada: boolean) {
+    return this.request(`/plataforma/restaurantes/${id}/pausa`, this.json('POST', { pausada }));
+  }
+  borrarRestaurante(id: string, confirmacion: string) {
+    return this.request(`/plataforma/restaurantes/${id}/borrar`, this.json('POST', { confirmacion }));
+  }
+  /** El administrador recupera su restaurante archivado por falta de uso. */
+  recuperarRestaurante() {
+    return this.request('/tenants/me/recuperar', { method: 'POST' });
   }
 
   // ---------- Usuarios (personal) ----------

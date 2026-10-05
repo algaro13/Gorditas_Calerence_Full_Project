@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth as useOidc } from 'react-oidc-context';
-import { Activity, ChefHat, LogOut, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Activity, Archive, ChefHat, LogOut, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { scopesForOrg } from '../config/auth-config';
 import { apiService } from '../services/api';
-import type { FilaConsola, ResumenConsola, SituacionRestaurante, TramoActividad } from '../types';
+import type { FaseRetencion, FilaConsola, ResumenConsola, SituacionRestaurante, TramoActividad } from '../types';
 import { decodeJwtPayload, orgIdFromClaims } from '../utils/claims';
 import { fechaLarga, nombreDePlan } from '../utils/plan';
 
@@ -23,6 +23,20 @@ const TRAMOS: Record<TramoActividad, string> = {
   'mas-de-90': 'Sin uso hace más de 90 días',
 };
 
+const FASES: Record<FaseRetencion, { texto: string; estilo: string }> = {
+  'en-uso': { texto: 'Sin avisos', estilo: 'bg-gray-100 text-gray-700' },
+  'aviso-1': { texto: 'Primer aviso enviado', estilo: 'bg-amber-100 text-amber-800' },
+  'aviso-2': { texto: 'Segundo aviso enviado', estilo: 'bg-orange-100 text-orange-800' },
+  archivado: { texto: 'Archivado', estilo: 'bg-red-100 text-red-800' },
+  'listo-para-borrar': { texto: 'Listo para borrar', estilo: 'bg-red-600 text-white' },
+};
+
+const PASOS: Record<string, string> = {
+  'inactividad-1': 'mandará el primer aviso',
+  'inactividad-2': 'mandará el segundo aviso',
+  archivado: 'lo archivará',
+};
+
 const fechaCorta = (f: string | null) => (f ? new Date(f).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const pesos = (n: number) => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN', maximumFractionDigits: 0 });
 
@@ -35,8 +49,106 @@ function fechaClave(r: FilaConsola): string {
 }
 
 /**
+ * Lo que el operador puede hacer con la retención de un restaurante. Borrar pide escribir el
+ * subdominio: no hay vuelta atrás.
+ */
+const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<void> }> = ({ r, alCambiar }) => {
+  const [ocupado, setOcupado] = useState(false);
+  const [error, setError] = useState('');
+  const [borrando, setBorrando] = useState(false);
+  const [confirmacion, setConfirmacion] = useState('');
+  const { fase, categoria, siguientePaso, recuperableHasta } = r.retencion;
+
+  const hacer = async (accion: () => Promise<{ success: boolean; error?: string }>) => {
+    setOcupado(true);
+    setError('');
+    const res = await accion();
+    if (res.success) {
+      setBorrando(false);
+      setConfirmacion('');
+      await alCambiar();
+    } else setError(res.error || 'No se pudo completar');
+    setOcupado(false);
+  };
+
+  const cancelarBorrado = () => {
+    setBorrando(false);
+    setConfirmacion('');
+  };
+
+  if (categoria === 'protegida' && !r.archivadoAt) return null;
+
+  let nota = '';
+  if (recuperableHasta) {
+    nota = fase === 'listo-para-borrar' ? `Se pudo recuperar hasta el ${fechaLarga(recuperableHasta)}` : `Se puede recuperar hasta el ${fechaLarga(recuperableHasta)}`;
+  } else if (siguientePaso) {
+    nota = `Hoy el sistema ${PASOS[siguientePaso]}`;
+  }
+
+  return (
+    <div className="mt-sp-2 border-t pt-sp-2">
+      <div className="flex flex-wrap items-center gap-sp-2">
+        {fase !== 'en-uso' && <span className={`rounded-full px-3 py-1 text-meta font-medium ${FASES[fase].estilo}`}>{FASES[fase].texto}</span>}
+        {r.retencionPausada && <span className="rounded-full bg-blue-100 px-3 py-1 text-meta font-medium text-blue-800">Avisos en pausa</span>}
+        {nota && <span className="text-meta text-gray-500">{nota}</span>}
+      </div>
+      <div className="mt-sp-2 flex flex-wrap gap-sp-2">
+        {r.archivadoAt && (
+          <button disabled={ocupado} onClick={() => hacer(() => apiService.restaurarRestaurante(r.id))} className="btn border border-gray-300 bg-white text-gray-800 disabled:opacity-50">
+            <RotateCcw className="h-4 w-4" /> Restaurar
+          </button>
+        )}
+        {!r.archivadoAt && (
+          <button
+            disabled={ocupado}
+            onClick={() => hacer(() => apiService.pausarRetencion(r.id, !r.retencionPausada))}
+            className="btn border border-gray-300 bg-white text-gray-800 disabled:opacity-50"
+          >
+            {r.retencionPausada ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            {r.retencionPausada ? 'Reanudar avisos' : 'Pausar avisos'}
+          </button>
+        )}
+        {fase === 'listo-para-borrar' && !borrando && (
+          <button disabled={ocupado} onClick={() => setBorrando(true)} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
+            <Trash2 className="h-4 w-4" /> Aprobar borrado
+          </button>
+        )}
+      </div>
+      {borrando && (
+        <div className="mt-sp-2 rounded-lg border border-red-200 bg-red-50 p-3">
+          <p className="text-cuerpo text-red-900">
+            Se borran para siempre sus datos, sus usuarios y sus archivos. No se puede deshacer. Escribe <strong>{r.slug}</strong> para confirmar.
+          </p>
+          <input
+            className="campo mt-sp-2"
+            aria-label={`Escribe ${r.slug} para confirmar`}
+            value={confirmacion}
+            onChange={(e) => setConfirmacion(e.target.value)}
+            autoComplete="off"
+          />
+          <div className="mt-sp-2 flex flex-wrap gap-sp-2">
+            <button
+              disabled={ocupado || confirmacion !== r.slug}
+              onClick={() => hacer(() => apiService.borrarRestaurante(r.id, confirmacion))}
+              className="btn bg-red-600 text-white disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" /> Borrar para siempre
+            </button>
+            <button disabled={ocupado} onClick={cancelarBorrado} className="btn border border-gray-300 bg-white text-gray-800">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+      {error && <p className="mt-sp-2 text-cuerpo text-red-700">{error}</p>}
+    </div>
+  );
+};
+
+/**
  * Consola de plataforma: todos los restaurantes, su plan y su actividad. Solo para quien opera la
- * plataforma (rol «Plataforma» en la organización de la plataforma), y solo lee.
+ * plataforma (rol «Plataforma» en la organización de la plataforma). Además de leer, lleva el ciclo
+ * de inactividad: restaurar, pausar los avisos y aprobar el borrado; todo queda en la bitácora.
  *
  * Vive fuera del resto de la aplicación: el operador no pertenece a ningún restaurante, así que
  * no pasa por las pantallas que necesitan uno.
@@ -50,6 +162,7 @@ const Plataforma: React.FC = () => {
   const [error, setError] = useState('');
   const [filtroSituacion, setFiltroSituacion] = useState<SituacionRestaurante | ''>('');
   const [filtroTramo, setFiltroTramo] = useState<TramoActividad | ''>('');
+  const [filtroFase, setFiltroFase] = useState<FaseRetencion | ''>('');
   const [busqueda, setBusqueda] = useState('');
 
   useEffect(() => {
@@ -92,9 +205,10 @@ const Plataforma: React.FC = () => {
       (r) =>
         (!filtroSituacion || r.situacion === filtroSituacion) &&
         (!filtroTramo || r.tramo === filtroTramo) &&
+        (!filtroFase || r.retencion.fase === filtroFase) &&
         (!q || r.nombre.toLowerCase().includes(q) || r.slug.includes(q)),
     );
-  }, [resumen, filtroSituacion, filtroTramo, busqueda]);
+  }, [resumen, filtroSituacion, filtroTramo, filtroFase, busqueda]);
 
   const encabezado = (
     <header className="border-b bg-white">
@@ -217,6 +331,29 @@ const Plataforma: React.FC = () => {
               </div>
             </section>
 
+            <section className="rounded-xl bg-white p-4 shadow-sm" aria-label="Retención">
+              <h2 className="mb-1 flex items-center gap-2 text-titulo font-semibold">
+                <Archive className="h-5 w-5 text-gray-500" /> Retención
+              </h2>
+              <p className="mb-sp-2 text-meta text-gray-500">
+                Prueba sin pago: avisos a los 30 y 60 días sin uso, archivo a los 90. Pago cancelado: a los 365, 395 y 425. Lo que paga
+                nunca entra. Borrar solo lo apruebas tú, 30 días después de archivar.
+              </p>
+              <div className="grid grid-cols-2 gap-sp-2 lg:grid-cols-4">
+                {(['aviso-1', 'aviso-2', 'archivado', 'listo-para-borrar'] as FaseRetencion[]).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFiltroFase(filtroFase === f ? '' : f)}
+                    aria-pressed={filtroFase === f}
+                    className={`rounded-lg border p-3 text-left ${filtroFase === f ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-gray-50 text-gray-800'}`}
+                  >
+                    <span className="block text-titulo font-bold">{resumen.porFase[f]}</span>
+                    <span className="block text-meta">{FASES[f].texto}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
             <section className="space-y-sp-2" aria-label="Lista de restaurantes">
               <div className="grid gap-sp-2 sm:grid-cols-3">
                 <input
@@ -282,6 +419,7 @@ const Plataforma: React.FC = () => {
                       Alta el {fechaLarga(r.creadoEl)}
                       {fechaClave(r) ? ` · ${fechaClave(r)}` : ''}
                     </p>
+                    <AccionesRetencion r={r} alCambiar={cargar} />
                   </li>
                 ))}
               </ul>

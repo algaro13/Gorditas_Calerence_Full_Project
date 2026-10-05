@@ -14,6 +14,7 @@ export function toTenantInfo(row: TenantRow): TenantInfo {
     trialEndsAt: row.trialEndsAt,
     currentPeriodEnd: row.currentPeriodEnd,
     cancelAt: row.cancelAt,
+    archivadoAt: row.archivadoAt,
     maxUsuarios: row.maxUsuarios,
     sobreCupoDesde: row.sobreCupoDesde,
     config: (row.config ?? {}) as TenantConfig,
@@ -97,6 +98,14 @@ export class PrismaTenantRepository implements TenantRepository {
 
   listActive(): Promise<TenantInfo[]> {
     return this.prisma.tenant.findMany({ where: { activo: true }, orderBy: { slug: "asc" } }).then((rows) => rows.map(toTenantInfo));
+  }
+
+  async setArchivado(id: string, at: Date | null): Promise<TenantInfo> {
+    return toTenantInfo(await this.prisma.tenant.update({ where: { id }, data: { archivadoAt: at } }));
+  }
+
+  async setRetencionPausada(id: string, pausada: boolean): Promise<void> {
+    await this.prisma.tenant.update({ where: { id }, data: { retencionPausada: pausada } });
   }
 
   async setSobreCupoDesde(id: string, desde: Date | null): Promise<void> {

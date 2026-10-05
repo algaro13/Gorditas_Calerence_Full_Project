@@ -91,6 +91,10 @@ model Tenant {
   currentPeriodEnd      DateTime?          @map("current_period_end") @db.Timestamptz(3)
   /// Cuándo termina una suscripción que se canceló desde el portal. Null si no hay cancelación.
   cancelAt              DateTime?          @map("cancel_at") @db.Timestamptz(3)
+  /// Cuándo se archivó por inactividad. Bloqueado con sus datos; se recupera durante 30 días.
+  archivadoAt           DateTime?          @map("archivado_at") @db.Timestamptz(3)
+  /// El operador lo excluyó del ciclo de avisos y archivado.
+  retencionPausada      Boolean            @default(false) @map("retencion_pausada")
   config                Json               @default("{}")
   activo                Boolean            @default(true)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)

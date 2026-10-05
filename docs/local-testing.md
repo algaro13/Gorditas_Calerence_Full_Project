@@ -66,6 +66,20 @@ npm run plataforma:operador -- --email operador@kustodela.local --nombre "Operad
 Es idempotente. Sin `--password`, Zitadel manda a Mailpit un enlace para crear la contraseña. Cada
 consulta queda en la tabla `bitacora_plataforma`.
 
+### Retención de restaurantes sin uso
+
+El trabajo diario `revisar-inactividad` avisa y archiva; nunca borra. Prueba sin pago: avisos a los
+30 y 60 días sin uso y archivo a los 90. Pago cancelado: 365, 395 y 425. Lo que paga o tiene un plan
+dado no entra nunca. Entre paso y paso pasan al menos 7 días, y los correos llegan a Mailpit.
+
+```bash
+npx dotenv -e .env.development -- npx tsx scripts/revisar-inactividad.ts   # desde Gorditas_Calerence_Backend
+```
+
+Un restaurante archivado ve `/archivado` y su Admin lo recupera durante 30 días. Pasado ese plazo,
+la consola ofrece «Aprobar borrado», que pide escribir el subdominio y borra datos, organización de
+Zitadel y archivos. Restaurar, pausar los avisos y borrar quedan en `bitacora_plataforma`.
+
 ## Pruebas
 
 ```bash

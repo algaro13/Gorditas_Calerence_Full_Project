@@ -21,6 +21,7 @@ import { ResumenPlataforma } from './modules/plataforma/application/ResumenPlata
 import { createPlataformaRouter } from './modules/plataforma/http/plataforma.router';
 import { PrismaBitacora } from './modules/plataforma/infrastructure/PrismaBitacora';
 import { PrismaLecturaPlataforma } from './modules/plataforma/infrastructure/PrismaLecturaPlataforma';
+import { GestionRetencion } from './modules/plataforma/application/Retencion';
 
 export function createApp(c: Container): Express {
   const app = express();
@@ -64,6 +65,19 @@ export function createApp(c: Container): Express {
     if (tenant.zitadelOrgId) tenantContext.invalidate(tenant.zitadelOrgId);
   };
 
+  const correoDeOperador = async (userId: string) => (await c.identityProvider.getUserProfile(userId))?.email ?? null;
+  const bitacora = new PrismaBitacora(c.prisma);
+  const retencion = new GestionRetencion(
+    c.tenants,
+    c.identityProvider,
+    c.storage,
+    bitacora,
+    c.clock,
+    c.logger.child({ module: 'retencion' }),
+    correoDeOperador,
+    invalidateTenant,
+  );
+
   const billing = createBillingModule({
     prisma: c.prisma,
     tenants: c.tenants,
@@ -102,6 +116,7 @@ export function createApp(c: Container): Express {
       subirLogo: new SubirLogoTenant(c.tenants, c.storage, invalidateTenant),
       timeZone,
       clock: c.clock,
+      recuperar: (tenant, auth) => retencion.recuperarPorRestaurante(tenant, auth),
     }),
   );
 
@@ -123,11 +138,12 @@ export function createApp(c: Container): Express {
     createPlataformaRouter({
       resumen: new ResumenPlataforma(
         new PrismaLecturaPlataforma(c.prisma),
-        new PrismaBitacora(c.prisma),
+        bitacora,
         c.clock,
         Object.fromEntries(PLAN_CATALOG.map((p) => [p.id, p.price])),
-        async (userId) => (await c.identityProvider.getUserProfile(userId))?.email ?? null,
+        correoDeOperador,
       ),
+      retencion,
       authenticate,
       platformOrgId: c.env.ZITADEL_DEFAULT_ORG_ID,
     }),

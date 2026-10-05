@@ -22,6 +22,9 @@ function restaurante(r: Partial<DatosRestaurante>): DatosRestaurante {
     ultimoAcceso: null,
     ultimaOrden: null,
     ordenes30d: 0,
+    archivadoAt: null,
+    retencionPausada: false,
+    enviadosRetencion: {},
     ...r,
   };
 }

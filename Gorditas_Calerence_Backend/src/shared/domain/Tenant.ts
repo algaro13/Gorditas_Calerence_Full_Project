@@ -21,6 +21,8 @@ export interface TenantInfo {
   currentPeriodEnd: Date | null;
   /** Cuándo termina una suscripción con cancelación programada; null si no hay. */
   cancelAt: Date | null;
+  /** Archivado por inactividad: bloqueado con sus datos. Null si está en uso. */
+  archivadoAt: Date | null;
   maxUsuarios: number;
   /** Desde cuándo excede su cupo. Null si cabe. Arranca el plazo de `DIAS_SOBRE_CUPO`. */
   sobreCupoDesde: Date | null;
@@ -57,8 +59,17 @@ export function fechaLimiteDeCupo(sobreCupoDesde: Date | null): Date | null {
   return new Date(sobreCupoDesde.getTime() + DIAS_SOBRE_CUPO * 86_400_000);
 }
 
-/** Regla de acceso por plan. Devuelve null si puede operar, o el código de bloqueo. */
-export function accessBlockReason(t: Pick<TenantInfo, 'planStatus' | 'trialEndsAt'>, now: Date): 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE' | null {
+/** Días que un restaurante archivado puede recuperarse antes de que el operador apruebe borrarlo. */
+export const DIAS_PARA_RECUPERAR = 30;
+
+export type MotivoBloqueo = 'TRIAL_EXPIRED' | 'SUBSCRIPTION_INACTIVE' | 'RESTAURANTE_ARCHIVADO';
+
+/**
+ * Regla de acceso. Devuelve null si puede operar, o el código de bloqueo. El archivado manda sobre
+ * el plan: un restaurante archivado no opera aunque su plan lo permitiera.
+ */
+export function accessBlockReason(t: Pick<TenantInfo, 'planStatus' | 'trialEndsAt'> & { archivadoAt?: Date | null }, now: Date): MotivoBloqueo | null {
+  if (t.archivadoAt) return 'RESTAURANTE_ARCHIVADO';
   switch (t.planStatus) {
     case 'active':
     case 'past_due':

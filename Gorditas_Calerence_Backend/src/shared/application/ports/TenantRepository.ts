@@ -39,6 +39,10 @@ export interface TenantRepository {
   updateBilling(id: string, data: BillingUpdate): Promise<TenantInfo>;
   /** Restaurantes activos, para los trabajos que recorren la plataforma entera. */
   listActive(): Promise<TenantInfo[]>;
+  /** Archiva (fecha) o recupera (null) un restaurante. */
+  setArchivado(id: string, at: Date | null): Promise<TenantInfo>;
+  /** Excluye (o vuelve a incluir) un restaurante del ciclo de avisos y archivado. */
+  setRetencionPausada(id: string, pausada: boolean): Promise<void>;
   /** Marca (o limpia) desde cuándo el restaurante excede su cupo. */
   setSobreCupoDesde(id: string, desde: Date | null): Promise<void>;
 }

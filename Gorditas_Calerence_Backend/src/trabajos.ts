@@ -1,6 +1,7 @@
 import type { Container } from './container';
 import { TrabajoPeriodico } from './shared/infrastructure/scheduler/TrabajoPeriodico';
 import type { ResumenDeAvisos } from './modules/billing/application/use-cases/AvisarFinDePrueba';
+import type { ResumenDeRetencion } from './modules/plataforma/application/Retencion';
 
 const UN_DIA = 24 * 60 * 60 * 1000;
 /** Margen tras el arranque: deja que el servidor termine de levantar antes de la primera corrida. */
@@ -67,6 +68,17 @@ export async function avisarPruebas(c: Container): Promise<ResumenDeAvisos> {
 }
 
 /**
+ * Avisa a los restaurantes sin uso y archiva a los que cumplieron el plazo. Nunca borra.
+ *
+ * La usan el programador del backend y `scripts/revisar-inactividad.ts`.
+ */
+export async function revisarInactividad(c: Container): Promise<ResumenDeRetencion> {
+  const resumen = await c.revisarInactividad.ejecutar();
+  c.logger.child({ component: 'retencion' }).info('Inactividad revisada', { ...resumen });
+  return resumen;
+}
+
+/**
  * Arranca los trabajos que el backend se programa a sí mismo.
  *
  * Se llama desde `main.ts` y no desde `createApp`, a propósito: montar la app en una prueba no
@@ -92,6 +104,15 @@ export function programarTrabajos(c: Container): TrabajoPeriodico[] {
       primeraEn: ESPERA_INICIAL,
       trabajo: async () => {
         await avisarPruebas(c);
+      },
+      logger: c.logger,
+    }),
+    new TrabajoPeriodico({
+      nombre: 'revisar-inactividad',
+      cada: UN_DIA,
+      primeraEn: ESPERA_INICIAL,
+      trabajo: async () => {
+        await revisarInactividad(c);
       },
       logger: c.logger,
     }),

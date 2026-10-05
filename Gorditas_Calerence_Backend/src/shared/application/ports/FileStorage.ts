@@ -17,6 +17,8 @@ export interface FileStorage {
   saveTenantLogo(tenantId: string, file: UploadedImage): Promise<StoredFile>;
   /** Mueve un logo temporal (por su url) a la carpeta del tenant. null si la url no es temporal válida. */
   promoteTemporaryLogo(tempUrl: string, tenantId: string): Promise<StoredFile | null>;
+  /** Borra la carpeta del tenant con todo lo que tenga. Para el borrado definitivo. */
+  deleteTenantFiles(tenantId: string): Promise<void>;
   /** true si la url apunta dentro de la carpeta del tenant. */
   isTenantUrl(url: string, tenantId: string): boolean;
 }

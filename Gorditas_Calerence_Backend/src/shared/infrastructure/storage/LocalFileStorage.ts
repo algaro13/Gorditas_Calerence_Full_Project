@@ -57,6 +57,12 @@ export class LocalFileStorage implements FileStorage {
     }
   }
 
+  async deleteTenantFiles(tenantId: string): Promise<void> {
+    // El id llega de la base, pero se valida igual: con un id raro, un `rm -r` borra de más.
+    if (!SAFE_ID.test(tenantId)) throw new Error(`Id de tenant no válido para borrar archivos: ${tenantId}`);
+    await fs.rm(path.join(this.rootDir, tenantId), { recursive: true, force: true });
+  }
+
   isTenantUrl(url: string, tenantId: string): boolean {
     if (!SAFE_ID.test(tenantId)) return false;
     return new RegExp(`^/uploads/${tenantId}/logo\\.(jpg|png|webp)$`).test(url);

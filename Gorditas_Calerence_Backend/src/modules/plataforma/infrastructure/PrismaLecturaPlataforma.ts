@@ -1,6 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { runAsTenant } from '../../../shared/infrastructure/prisma/unit-of-work';
 import type { DatosRestaurante } from '../domain/resumen';
+import { ultimoUso, type PasoRetencion } from '../domain/retencion';
 
 const UN_DIA = 86_400_000;
 
@@ -31,6 +32,14 @@ export class PrismaLecturaPlataforma {
         return { usuariosActivos, ultimoAcceso: acceso._max.lastSeenAt, ultimaOrden: orden._max.fechaHora, ordenes30d };
       });
 
+      // Los pasos del ciclo de inactividad que cuentan son los del último uso actual: si el
+      // restaurante volvió, los de antes ya no.
+      const referencia = ultimoUso({ ultimoAcceso: uso.ultimoAcceso, ultimaOrden: uso.ultimaOrden, creadoEl: t.createdAt });
+      const avisos = await this.prisma.avisoEnviado.findMany({
+        where: { tenantId: t.id, referencia, tipo: { in: ['inactividad-1', 'inactividad-2', 'archivado'] } },
+        select: { tipo: true, enviadoAt: true },
+      });
+
       salida.push({
         id: t.id,
         slug: t.slug,
@@ -43,6 +52,9 @@ export class PrismaLecturaPlataforma {
         cancelAt: t.cancelAt,
         tieneSuscripcionStripe: t.stripeSubscriptionId !== null,
         activo: t.activo,
+        archivadoAt: t.archivadoAt,
+        retencionPausada: t.retencionPausada,
+        enviadosRetencion: Object.fromEntries(avisos.map((a) => [a.tipo, a.enviadoAt])) as Partial<Record<PasoRetencion, Date>>,
         ...uso,
       });
     }

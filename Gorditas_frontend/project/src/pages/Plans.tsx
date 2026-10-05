@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Aviso } from '../components/Aviso';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/api';
@@ -79,6 +79,9 @@ const Plans: React.FC = () => {
     setError(res.error || 'No se pudo abrir el portal de facturación');
     setLoading(null);
   };
+
+  // Archivado no se arregla pagando: primero se recupera.
+  if (accesoBloqueado === 'RESTAURANTE_ARCHIVADO') return <Navigate to="/archivado" replace />;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 py-12 px-4">

@@ -269,7 +269,18 @@ export interface FilaConsola {
   situacion: SituacionRestaurante;
   diasSinUso: number;
   tramo: TramoActividad;
+  archivadoAt: string | null;
+  retencionPausada: boolean;
+  retencion: {
+    categoria: CategoriaRetencion;
+    fase: FaseRetencion;
+    recuperableHasta: string | null;
+    siguientePaso: 'inactividad-1' | 'inactividad-2' | 'archivado' | null;
+  };
 }
+
+export type CategoriaRetencion = 'protegida' | 'prueba-sin-pago' | 'pago-cancelado';
+export type FaseRetencion = 'en-uso' | 'aviso-1' | 'aviso-2' | 'archivado' | 'listo-para-borrar';
 
 export interface ResumenConsola {
   generadoEl: string;
@@ -279,6 +290,7 @@ export interface ResumenConsola {
   ingresoMensual: number;
   conversion: { terminaronPrueba: number; pagaron: number; porcentaje: number | null };
   porTramo: Record<TramoActividad, number>;
+  porFase: Record<FaseRetencion, number>;
   restaurantes: FilaConsola[];
 }
 
@@ -319,6 +331,9 @@ export interface TenantInfo {
   cancelAt: string | null;
   maxUsuarios: number;
   activo: boolean;
+  /** Archivado por falta de uso; se recupera hasta `recuperableHasta`. */
+  archivadoAt?: string | null;
+  recuperableHasta?: string | null;
   config: TenantConfig;
   url: string;
 }
