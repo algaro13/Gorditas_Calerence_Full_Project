@@ -12,6 +12,10 @@ export interface OnboardingPayload {
   mesas: { nombre: string }[];
   platillos: { nombre: string; precio: number }[];
   guisos: { nombre: string }[];
+  /** Aceptó el aviso de privacidad y los términos; el backend rechaza el registro sin esto. */
+  aceptaLegal: boolean;
+  /** La versión de los textos que vio (`VERSION_LEGAL`). */
+  versionLegal: string;
 }
 
 /** Por que el plan no deja operar; `null` cuando deja. */

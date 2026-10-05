@@ -6,6 +6,7 @@ import { palettes } from '../config/palettes';
 import { apiService } from '../services/api';
 import { appConfig } from '../config/app-config';
 import { isLocalHost, isValidSlug, setDevTenantSlug, tenantHostLabel } from '../config/tenant-host';
+import { VERSION_LEGAL } from '../legal/datos';
 
 interface PlatilloItem {
   nombre: string;
@@ -24,6 +25,8 @@ const Onboarding: React.FC = () => {
 
   // Paso 1: cuenta del administrador
   const [admin, setAdmin] = useState({ nombre: '', apellido: '', email: '', password: '', confirm: '' });
+  // La ley pide el aviso de privacidad antes de recabar datos: sin aceptarlo no se avanza.
+  const [aceptaLegal, setAceptaLegal] = useState(false);
 
   // Paso 2: negocio
   const [nombre, setNombre] = useState('');
@@ -110,7 +113,8 @@ const Onboarding: React.FC = () => {
     admin.apellido.trim().length > 0 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(admin.email.trim()) &&
     PASSWORD_RULE.test(admin.password) &&
-    admin.confirm === admin.password;
+    admin.confirm === admin.password &&
+    aceptaLegal;
 
   const handleComplete = async () => {
     setLoading(true);
@@ -136,6 +140,8 @@ const Onboarding: React.FC = () => {
         mesas: Array.from({ length: numMesas }, (_, i) => ({ nombre: `Mesa ${i + 1}` })),
         platillos,
         guisos: guisos.map((g) => ({ nombre: g })),
+        aceptaLegal,
+        versionLegal: VERSION_LEGAL,
       });
 
       if (res.success && res.data) {
@@ -258,6 +264,26 @@ const Onboarding: React.FC = () => {
             <input type="password" value={admin.password} onChange={(e) => setAdmin({ ...admin, password: e.target.value })} className={`${inputCls} mb-3`} placeholder="Contraseña" autoComplete="new-password" />
             <input type="password" value={admin.confirm} onChange={(e) => setAdmin({ ...admin, confirm: e.target.value })} className={inputCls} placeholder="Confirmar contraseña" autoComplete="new-password" />
             <p className={`text-meta mt-2 ${passwordError() ? 'text-red-600' : 'text-gray-400'}`}>{passwordError() ?? PASSWORD_HINT}</p>
+            <label className="mt-4 flex min-h-[44px] cursor-pointer items-start gap-3 text-cuerpo text-gray-700">
+              <input
+                type="checkbox"
+                checked={aceptaLegal}
+                onChange={(e) => setAceptaLegal(e.target.checked)}
+                className="mt-0.5 h-6 w-6 flex-shrink-0 accent-orange-600"
+              />
+              <span>
+                Leí y acepto el{' '}
+                {/* En otra pestaña: aquí se perdería lo que lleva capturado. */}
+                <a href="/privacidad" target="_blank" rel="noopener" className="text-orange-700 underline">
+                  aviso de privacidad
+                </a>{' '}
+                y los{' '}
+                <a href="/terminos" target="_blank" rel="noopener" className="text-orange-700 underline">
+                  términos del servicio
+                </a>
+                .
+              </span>
+            </label>
             <p className="text-meta text-gray-400 mt-3">
               ¿Ya tienes restaurante?{' '}
               <Link to="/login" className="text-orange-600 hover:underline">

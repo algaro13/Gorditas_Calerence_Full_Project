@@ -3,7 +3,7 @@ import { useAuth as useOidc } from 'react-oidc-context';
 import { Activity, Archive, ChefHat, LogOut, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Trash2 } from 'lucide-react';
 import { scopesForOrg } from '../config/auth-config';
 import { apiService } from '../services/api';
-import type { FaseRetencion, FilaConsola, ResumenConsola, SituacionRestaurante, TramoActividad } from '../types';
+import type { ApiResponse, FaseRetencion, FilaConsola, ResumenConsola, SituacionRestaurante, TramoActividad } from '../types';
 import { decodeJwtPayload, orgIdFromClaims } from '../utils/claims';
 import { fechaLarga, nombreDePlan } from '../utils/plan';
 
@@ -59,7 +59,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
   const [confirmacion, setConfirmacion] = useState('');
   const { fase, categoria, siguientePaso, recuperableHasta } = r.retencion;
 
-  const hacer = async (accion: () => Promise<{ success: boolean; error?: string }>) => {
+  const hacer = async (accion: () => Promise<ApiResponse<unknown>>) => {
     setOcupado(true);
     setError('');
     const res = await accion();

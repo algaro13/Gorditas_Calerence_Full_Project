@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ChefHat, LogIn } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { LoginError } from '../context/login-error';
@@ -154,7 +154,17 @@ const Login: React.FC = () => {
             </div>
           )}
 
-          <p className="text-center text-cuerpo text-gray-500 mt-6">Al iniciar sesión, aceptas los términos y condiciones del servicio.</p>
+          <p className="text-center text-cuerpo text-gray-500 mt-6">
+            Al iniciar sesión aceptas los{' '}
+            <Link to="/terminos" className="text-orange-700 underline">
+              términos del servicio
+            </Link>{' '}
+            y el{' '}
+            <Link to="/privacidad" className="text-orange-700 underline">
+              aviso de privacidad
+            </Link>
+            .
+          </p>
         </div>
       </div>
     </div>

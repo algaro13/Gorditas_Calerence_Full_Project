@@ -41,6 +41,13 @@ export const completeSchema = Joi.object({
     .max(200)
     .default([]),
   guisos: Joi.array().items(Joi.object({ nombre: Joi.string().trim().min(1).max(120).required() })).max(200).default([]),
+  // Sin aceptar el aviso de privacidad y los términos no se recaba nada: así lo pide la ley.
+  aceptaLegal: Joi.boolean().valid(true).required().messages({
+    'any.only': 'Para crear tu cuenta debes aceptar el aviso de privacidad y los términos del servicio',
+    'any.required': 'Para crear tu cuenta debes aceptar el aviso de privacidad y los términos del servicio',
+  }),
+  // La fecha que identifica la versión de los textos que vio la persona.
+  versionLegal: Joi.string().trim().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
 });
 
 export interface OnboardingRouterDeps {

@@ -20,6 +20,8 @@ const payload = (slug: string, extra: Record<string, unknown> = {}) => ({
     { nombre: 'Quesadilla', precio: 20 },
   ],
   guisos: [{ nombre: 'Chicharrón prensado' }, { nombre: 'Rajas' }],
+  aceptaLegal: true,
+  versionLegal: '2026-10-05',
   ...extra,
 });
 
@@ -67,6 +69,11 @@ describe('Onboarding público', () => {
     expect(adminUser).toMatchObject({ email: `${slug}@test.local`, role: 'Admin' });
     expect(fake.redirectUris.has(t.container.urls.tenantCallbackUrl(slug))).toBe(true);
 
+    // Aceptación del aviso de privacidad y los términos
+    const fila = await t.container.prisma.tenant.findUnique({ where: { id: data.tenant.id } });
+    expect(fila).toMatchObject({ legalVersion: '2026-10-05', legalAceptadoPor: `${slug}@test.local` });
+    expect(fila?.legalAceptadoAt).toBeInstanceOf(Date);
+
     // Base de datos
     const row = await t.container.prisma.tenant.findUniqueOrThrow({ where: { slug } });
     expect(row).toMatchObject({ zitadelOrgId: org.id, provisioningStatus: 'ready', plan: 'trial', planStatus: 'trial', maxUsuarios: 3 });
@@ -102,6 +109,18 @@ describe('Onboarding público', () => {
     const weak = await api().post('/api/onboarding/complete').send(payload('debil-pass', { admin: { nombre: 'A', apellido: 'B', email: 'a@test.local', password: 'corta' } }));
     expect(weak.status).toBe(400);
     expect(weak.body.code).toBe('VALIDATION');
+    expect(fake.orgs.size).toBe(before);
+  });
+
+  it('sin aceptar el aviso de privacidad y los términos no se crea nada', async () => {
+    const before = fake.orgs.size;
+    const sinAceptar = await api().post('/api/onboarding/complete').send(payload('sin-aceptar', { aceptaLegal: false }));
+    expect(sinAceptar.status).toBe(400);
+    expect(JSON.stringify(sinAceptar.body)).toMatch(/aceptar el aviso de privacidad/);
+    const { aceptaLegal: _a, ...sinCampo } = payload('sin-campo');
+    expect((await api().post('/api/onboarding/complete').send(sinCampo)).status).toBe(400);
+    const { versionLegal: _v, ...sinVersion } = payload('sin-version');
+    expect((await api().post('/api/onboarding/complete').send(sinVersion)).status).toBe(400);
     expect(fake.orgs.size).toBe(before);
   });
 

@@ -95,6 +95,9 @@ model Tenant {
   archivadoAt           DateTime?          @map("archivado_at") @db.Timestamptz(3)
   /// El operador lo excluyó del ciclo de avisos y archivado.
   retencionPausada      Boolean            @default(false) @map("retencion_pausada")
+  legalVersion          String?            @map("legal_version")
+  legalAceptadoAt       DateTime?          @map("legal_aceptado_at") @db.Timestamptz(3)
+  legalAceptadoPor      String?            @map("legal_aceptado_por")
   config                Json               @default("{}")
   activo                Boolean            @default(true)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)

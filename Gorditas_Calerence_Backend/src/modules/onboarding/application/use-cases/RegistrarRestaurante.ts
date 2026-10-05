@@ -17,6 +17,8 @@ export interface RegistrarRestauranteInput {
   mesas?: Array<{ nombre: string }>;
   platillos?: Array<{ nombre: string; precio: number }>;
   guisos?: Array<{ nombre: string }>;
+  /** La versión del aviso de privacidad y de los términos que se aceptó. La ruta exige la aceptación. */
+  versionLegal: string;
 }
 
 export interface RegistrarRestauranteResult {
@@ -95,6 +97,7 @@ export class RegistrarRestaurante {
         trialEndsAt,
         maxUsuarios: TRIAL_MAX_USUARIOS,
         config: { paleta, imagen: null },
+        aceptacionLegal: { version: input.versionLegal, at: this.clock.now(), email },
       });
 
       try {

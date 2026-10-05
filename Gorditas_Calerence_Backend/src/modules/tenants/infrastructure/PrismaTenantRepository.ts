@@ -78,6 +78,9 @@ export class PrismaTenantRepository implements TenantRepository {
         trialEndsAt: data.trialEndsAt,
         maxUsuarios: data.maxUsuarios,
         config: data.config as object,
+        legalVersion: data.aceptacionLegal?.version ?? null,
+        legalAceptadoAt: data.aceptacionLegal?.at ?? null,
+        legalAceptadoPor: data.aceptacionLegal?.email ?? null,
       },
     });
     return toTenantInfo(row);

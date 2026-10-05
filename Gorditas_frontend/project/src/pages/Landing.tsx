@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   BarChart3,
@@ -527,6 +527,14 @@ const Landing: React.FC = () => {
             <ChefHat className="h-5 w-5 text-orange-500" />
             <span className="font-semibold text-gray-700">Kustodela POS</span>
           </div>
+          <nav className="flex flex-wrap justify-center gap-x-6" aria-label="Documentos legales">
+            <Link to="/privacidad" className="inline-flex min-h-[44px] items-center hover:text-gray-800 hover:underline">
+              Aviso de privacidad
+            </Link>
+            <Link to="/terminos" className="inline-flex min-h-[44px] items-center hover:text-gray-800 hover:underline">
+              Términos del servicio
+            </Link>
+          </nav>
           <p>© 2026 Kustodela. Todos los derechos reservados.</p>
         </div>
       </footer>

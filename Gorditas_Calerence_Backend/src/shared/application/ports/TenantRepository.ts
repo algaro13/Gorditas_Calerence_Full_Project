@@ -8,6 +8,8 @@ export interface NuevoTenant {
   trialEndsAt: Date;
   maxUsuarios: number;
   config: TenantConfig;
+  /** Qué versión del aviso de privacidad y de los términos se aceptó al registrarse, y quién. */
+  aceptacionLegal?: { version: string; at: Date; email: string };
 }
 
 export interface BillingUpdate {
