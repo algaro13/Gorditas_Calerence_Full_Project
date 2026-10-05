@@ -14,6 +14,19 @@
 :80 {
 	encode gzip zstd
 
+	# ---- Dominio anterior: se manda al mismo subdominio del dominio actual ----
+	# Mientras dura un cambio de dominio (Kustodela → Cuadranova). Sin OLD_APP_DOMAIN el compose pone
+	# un dominio inválido y estas reglas no coinciden con nada. 302 mientras se confirma el cambio;
+	# cuando sea definitivo puede pasar a 301.
+	@viejo_raiz host {$OLD_APP_DOMAIN}
+	handle @viejo_raiz {
+		redir https://{$APP_DOMAIN}{uri} 302
+	}
+	@viejo_sub host *.{$OLD_APP_DOMAIN}
+	handle @viejo_sub {
+		redir https://{http.request.host.labels.2}.{$APP_DOMAIN}{uri} 302
+	}
+
 	# ---- auth.<dominio>: Zitadel (Login v2 + API/consola) ----
 	@auth host auth.{$APP_DOMAIN}
 	handle @auth {

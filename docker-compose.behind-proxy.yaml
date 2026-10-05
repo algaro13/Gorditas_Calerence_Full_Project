@@ -177,6 +177,8 @@ services:
     restart: unless-stopped
     environment:
       APP_DOMAIN: ${APP_DOMAIN}
+      # Dominio anterior que se redirige al actual (ver Caddyfile.behind-proxy). Vacío: no redirige.
+      OLD_APP_DOMAIN: ${OLD_APP_DOMAIN:-dominio-anterior.invalid}
       MAILPIT_USER: ${MAILPIT_USER:-kustodela}
       MAILPIT_PASSWORD_HASH: ${MAILPIT_PASSWORD_HASH:?}
     volumes:
