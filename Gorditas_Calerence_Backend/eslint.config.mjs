@@ -38,11 +38,11 @@ export default tseslint.config(
       'no-restricted-syntax': [
         'error',
         {
-          selector: 'Literal[value=/kustodela\\.com/i]',
+          selector: 'Literal[value=/(kustodela|cuadranova)\\.com/i]',
           message: 'No escribas el dominio literal. Usa shared/config/domain.ts (APP_DOMAIN).',
         },
         {
-          selector: 'TemplateElement[value.raw=/kustodela\\.com/i]',
+          selector: 'TemplateElement[value.raw=/(kustodela|cuadranova)\\.com/i]',
           message: 'No escribas el dominio literal. Usa shared/config/domain.ts (APP_DOMAIN).',
         },
       ],

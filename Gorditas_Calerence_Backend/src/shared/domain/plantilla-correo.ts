@@ -1,5 +1,5 @@
 /** Marca que firman los correos del backend. */
-export const MARCA = 'Kustodela POS';
+export const MARCA = 'Cuadranova';
 
 export interface Boton {
   texto: string;

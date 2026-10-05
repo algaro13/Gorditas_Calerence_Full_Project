@@ -110,9 +110,9 @@ describe('ResumenPlataforma', () => {
     const pasos: string[] = [];
     const bitacora = { registrar: async (e: { operadorEmail: string; accion: string }) => void pasos.push(`bitácora:${e.accion}:${e.operadorEmail}`) };
     const lectura = { restaurantes: async () => (pasos.push('lectura'), []) };
-    const uc = new ResumenPlataforma(lectura, bitacora, { now: () => AHORA }, {}, async () => 'op@kustodela.com');
+    const uc = new ResumenPlataforma(lectura, bitacora, { now: () => AHORA }, {}, async () => 'op@cuadranova.com');
 
     await uc.ejecutar({ userId: 'u1', orgId: 'plat', roles: [], primaryRole: null, email: '', name: '', plataforma: true });
-    expect(pasos).toEqual(['bitácora:ver-resumen:op@kustodela.com', 'lectura']);
+    expect(pasos).toEqual(['bitácora:ver-resumen:op@cuadranova.com', 'lectura']);
   });
 });

@@ -1,7 +1,7 @@
 const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
 export const appConfig = {
-  brandName: import.meta.env.VITE_BRAND_NAME || 'Kustodela POS',
+  brandName: import.meta.env.VITE_BRAND_NAME || 'Cuadranova',
   apiBaseUrl,
   /** Origen del API sin el sufijo /api, para archivos servidos por el backend (logos). */
   assetsBaseUrl: apiBaseUrl.replace(/\/api$/, ''),

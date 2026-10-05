@@ -217,7 +217,7 @@ const Landing: React.FC = () => {
               <ChefHat className="h-5 w-5 text-white" />
             </div>
             <span className="text-titulo font-bold">
-              Kustodela <span className="text-orange-500">POS</span>
+              Cuadranova
             </span>
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
@@ -268,7 +268,7 @@ const Landing: React.FC = () => {
               <p className="mb-8 text-titulo text-gray-600">
                 Toma órdenes, manda a cocina y cobra desde el celular. Sin
                 instalar nada y sin capacitaciones largas: si sabes usar tu
-                teléfono, sabes usar Kustodela.
+                teléfono, sabes usar Cuadranova.
               </p>
               <div className="flex flex-col justify-center gap-3 sm:flex-row md:justify-start">
                 <button
@@ -525,7 +525,7 @@ const Landing: React.FC = () => {
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-cuerpo text-gray-500 md:flex-row">
           <div className="flex items-center gap-2">
             <ChefHat className="h-5 w-5 text-orange-500" />
-            <span className="font-semibold text-gray-700">Kustodela POS</span>
+            <span className="font-semibold text-gray-700">Cuadranova</span>
           </div>
           <nav className="flex flex-wrap justify-center gap-x-6" aria-label="Documentos legales">
             <Link to="/privacidad" className="inline-flex min-h-[44px] items-center hover:text-gray-800 hover:underline">
@@ -535,7 +535,7 @@ const Landing: React.FC = () => {
               Términos del servicio
             </Link>
           </nav>
-          <p>© 2026 Kustodela. Todos los derechos reservados.</p>
+          <p>© 2026 Cuadranova. Todos los derechos reservados.</p>
         </div>
       </footer>
     </div>

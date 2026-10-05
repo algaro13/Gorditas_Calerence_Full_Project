@@ -1,7 +1,7 @@
 {
   "name": "kustodela-pos-api",
   "version": "2.0.0",
-  "description": "API de Kustodela POS: punto de venta multi-tenant para restaurantes (Express + Prisma + PostgreSQL RLS + Zitadel)",
+  "description": "API de Cuadranova: punto de venta multi-tenant para restaurantes (Express + Prisma + PostgreSQL RLS + Zitadel)",
   "main": "dist/main.js",
   "engines": {
     "node": ">=22"

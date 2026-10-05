@@ -13,8 +13,8 @@ export const DATOS_LEGALES = {
   // Persona física: su nombre completo. Si después opera una sociedad, va su razón social.
   responsable: 'Alfredo Gallegos Rodríguez',
   domicilio: 'C. Cantera 700, Parque la Talaverna, 66473 San Nicolás de los Garza, N.L., México',
-  correoPrivacidad: 'privacidad@kustodela.com',
-  correoContacto: 'contacto@kustodela.com',
+  correoPrivacidad: 'privacidad@cuadranova.com',
+  correoContacto: 'contacto@cuadranova.com',
   hospedaje: 'Contabo (servidores en Estados Unidos)',
   respaldos: 'Cloudflare, con su servicio R2',
   correo: 'Resend',

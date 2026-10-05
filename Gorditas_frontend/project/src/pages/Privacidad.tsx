@@ -12,7 +12,7 @@ const Privacidad: React.FC = () => (
     <Seccion titulo="1. Quién es responsable de tus datos">
       <p>
         <Dato>{D.responsable}</Dato>, con domicilio en <Dato>{D.domicilio}</Dato>, es responsable de
-        los datos personales que se recaban a través de Kustodela POS (en adelante, «Kustodela»). Para cualquier tema de
+        los datos personales que se recaban a través de Cuadranova. Para cualquier tema de
         privacidad escríbenos a <Dato>{D.correoPrivacidad}</Dato>.
       </p>
     </Seccion>
@@ -58,7 +58,7 @@ const Privacidad: React.FC = () => (
     <Seccion titulo="4. Los datos que tu restaurante registra">
       <p>
         Lo que tu restaurante captura en el sistema —por ejemplo, el nombre de un cliente en una orden para llevar, o los datos
-        de tu personal— es información de tu restaurante. Respecto de esos datos, tu restaurante es el responsable y Kustodela
+        de tu personal— es información de tu restaurante. Respecto de esos datos, tu restaurante es el responsable y Cuadranova
         los trata solo por su cuenta y siguiendo sus instrucciones, para prestarle el servicio.
       </p>
     </Seccion>

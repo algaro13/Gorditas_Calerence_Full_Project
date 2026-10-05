@@ -1,4 +1,4 @@
-# Kustodela POS API
+# Cuadranova API
 
 API del punto de venta multi-tenant para restaurantes. Express + TypeScript, PostgreSQL con Prisma y Row Level Security, identidad con Zitadel.
 

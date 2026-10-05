@@ -8,7 +8,7 @@ export interface ConfigSmtp {
   secure: boolean;
   user?: string;
   password?: string;
-  /** Remitente: `Kustodela POS <no-reply@dominio>`. */
+  /** Remitente: `Cuadranova <no-reply@dominio>`. */
   from: string;
 }
 

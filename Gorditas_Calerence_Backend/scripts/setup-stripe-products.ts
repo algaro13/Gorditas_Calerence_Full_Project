@@ -16,9 +16,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 });
 
 const plans = [
-  { id: 'basico', name: 'Kustodela POS - Básico', price: 29900, description: '3 usuarios, órdenes, cobro, inventario básico' },
-  { id: 'profesional', name: 'Kustodela POS - Profesional', price: 59900, description: '10 usuarios, reportes, múltiples mesas, extras' },
-  { id: 'empresarial', name: 'Kustodela POS - Empresarial', price: 99900, description: 'Usuarios ilimitados, múltiples sucursales, soporte prioritario' },
+  { id: 'basico', name: 'Cuadranova - Básico', price: 29900, description: '3 usuarios, órdenes, cobro, inventario básico' },
+  { id: 'profesional', name: 'Cuadranova - Profesional', price: 59900, description: '10 usuarios, reportes, múltiples mesas, extras' },
+  { id: 'empresarial', name: 'Cuadranova - Empresarial', price: 99900, description: 'Usuarios ilimitados, múltiples sucursales, soporte prioritario' },
 ];
 
 async function setupProducts() {

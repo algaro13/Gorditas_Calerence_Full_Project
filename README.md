@@ -1,4 +1,4 @@
-# Kustodela POS
+# Cuadranova
 
 Punto de venta multi-tenant para restaurantes: cada negocio vive en `https://<slug>.<dominio>`, con su organización en Zitadel, sus datos aislados por Row Level Security en una sola base PostgreSQL y su suscripción en Stripe.
 

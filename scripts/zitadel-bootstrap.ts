@@ -244,7 +244,7 @@ async function ensureSmtp(pat: string): Promise<void> {
   if (!id) {
     const created = await api<{ id: string }>(pat, 'POST', '/admin/v1/email/smtp', {
       senderAddress: rootEnv.SMTP_SENDER ?? `no-reply@${APP_DOMAIN}`,
-      senderName: 'Kustodela POS',
+      senderName: 'Cuadranova',
       host: SMTP_HOST,
       tls: false,
       description: 'mailpit',
@@ -473,7 +473,7 @@ async function main(): Promise<void> {
     VITE_ZITADEL_AUTHORITY: ZITADEL_URL,
     VITE_ZITADEL_CLIENT_ID: spa.clientId,
     VITE_ZITADEL_PROJECT_ID: projectId,
-    VITE_BRAND_NAME: 'Kustodela POS',
+    VITE_BRAND_NAME: 'Cuadranova',
   });
 
   log('Listo.');

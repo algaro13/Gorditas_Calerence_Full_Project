@@ -59,7 +59,7 @@ describe('Aviso de fin de prueba', () => {
 
     const porVencer = enviadosA('por-vencer');
     expect(porVencer).toHaveLength(1);
-    expect(porVencer[0].asunto).toMatch(/^Tu prueba de Kustodela POS termina el /);
+    expect(porVencer[0].asunto).toMatch(/^Tu prueba de Cuadranova termina el /);
     expect(porVencer[0].texto).toMatch(/https?:\/\/\S+\/planes/);
     // Ni el administrador inactivo ni el mesero.
     expect(porVencer[0].para).toEqual([correo('por-vencer')]);

@@ -207,7 +207,7 @@ export function buildContainer(overrides: ContainerOverrides = {}): Container {
           secure: env.SMTP_SECURE,
           user: env.SMTP_USER || undefined,
           password: env.SMTP_PASSWORD || undefined,
-          from: env.SMTP_FROM || `Kustodela POS <no-reply@${env.APP_DOMAIN}>`,
+          from: env.SMTP_FROM || `Cuadranova <no-reply@${env.APP_DOMAIN}>`,
         })
       : new CorreoEnRegistro(logger.child({ component: 'correo' })));
   const correosDeAdmins = (tenantId: string): Promise<string[]> =>

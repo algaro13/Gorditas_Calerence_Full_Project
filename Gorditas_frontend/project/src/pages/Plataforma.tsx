@@ -218,7 +218,7 @@ const Plataforma: React.FC = () => {
             <ChefHat className="h-5 w-5 text-white" />
           </div>
           <span className="text-titulo font-bold">
-            Kustodela <span className="text-gray-500">· Plataforma</span>
+            Cuadranova <span className="text-gray-500">· Plataforma</span>
           </span>
         </div>
         {sesionDePlataforma && (
@@ -249,7 +249,7 @@ const Plataforma: React.FC = () => {
           ) : (
             <>
               <p className="mb-6 text-cuerpo text-gray-600">
-                Restaurantes, planes y actividad. Solo para quien opera Kustodela; cada consulta queda registrada.
+                Restaurantes, planes y actividad. Solo para quien opera Cuadranova; cada consulta queda registrada.
               </p>
               <button onClick={entrar} disabled={!orgPlataforma} className="btn btn-lg btn-primario w-full disabled:opacity-50">
                 Entrar como operador

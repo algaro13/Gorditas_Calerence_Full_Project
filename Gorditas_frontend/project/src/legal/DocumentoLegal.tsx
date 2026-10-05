@@ -17,7 +17,7 @@ export const Seccion: React.FC<{ titulo: string; children: React.ReactNode }> = 
 /** Marco común del aviso de privacidad y de los términos: legible en teléfono y sin sesión. */
 const DocumentoLegal: React.FC<{ titulo: string; children: React.ReactNode }> = ({ titulo, children }) => {
   useEffect(() => {
-    document.title = `${titulo} · Kustodela POS`;
+    document.title = `${titulo} · Cuadranova`;
     window.scrollTo(0, 0);
   }, [titulo]);
 
@@ -27,7 +27,7 @@ const DocumentoLegal: React.FC<{ titulo: string; children: React.ReactNode }> = 
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
           <Link to="/" className="flex min-h-[44px] items-center gap-2">
             <ChefHat className="h-6 w-6 text-orange-500" />
-            <span className="text-titulo font-bold text-gray-900">Kustodela POS</span>
+            <span className="text-titulo font-bold text-gray-900">Cuadranova</span>
           </Link>
         </div>
       </header>

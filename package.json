@@ -1,7 +1,7 @@
 {
   "name": "kustodela-pos",
   "private": true,
-  "description": "Orquestación del entorno local de Kustodela POS (backend + frontend + Zitadel + PostgreSQL)",
+  "description": "Orquestación del entorno local de Cuadranova (backend + frontend + Zitadel + PostgreSQL)",
   "scripts": {
     "dev:up": "docker compose -f docker-compose.dev.yaml up -d --wait && tsx scripts/zitadel-bootstrap.ts && npm --prefix Gorditas_Calerence_Backend run migrate:deploy",
     "dev:bootstrap": "tsx scripts/zitadel-bootstrap.ts",

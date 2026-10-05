@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 
 /**
- * Estándar de tamaños de Kustodela.
+ * Estándar de tamaños de Cuadranova.
  *
  * Los nombres describen la FUNCIÓN, no la medida: `control` y no `h-12`. Si mañana el mínimo
  * táctil cambia, se cambia aquí y no en cada pantalla.

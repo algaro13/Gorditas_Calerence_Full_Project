@@ -1,4 +1,4 @@
-// Kustodela POS: una sola base PostgreSQL, tenant_id en toda tabla de negocio y
+// Cuadranova: una sola base PostgreSQL, tenant_id en toda tabla de negocio y
 // Row Level Security forzada (ver prisma/sql/rls.sql). La aplicación nunca escribe
 // tenant_id: lo pone el DEFAULT current_tenant_id() a partir de SET LOCAL app.tenant_id.
 

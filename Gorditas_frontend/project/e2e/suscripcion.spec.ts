@@ -44,7 +44,7 @@ test('el administrador llega a su suscripción desde el menú', async ({ page })
   // Nunca el identificador interno.
   await expect(page.locator('main')).not.toContainText(/\b(trial|past_due)\b/);
   // Mientras la facturación no sea automática, la pantalla dice a dónde pedirla.
-  await expect(page.getByRole('link', { name: 'contacto@kustodela.com' })).toHaveAttribute('href', 'mailto:contacto@kustodela.com');
+  await expect(page.getByRole('link', { name: 'contacto@cuadranova.com' })).toHaveAttribute('href', 'mailto:contacto@cuadranova.com');
 });
 
 test('con un pago rechazado, el panel y la suscripción lo dicen', async ({ page }) => {

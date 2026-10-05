@@ -11,7 +11,7 @@ const Terminos: React.FC = () => (
   <DocumentoLegal titulo="Términos del servicio">
     <Seccion titulo="1. Aceptación">
       <p>
-        Estos términos regulan el uso de Kustodela POS («Kustodela»), que presta <Dato>{D.responsable}</Dato>. Al crear una cuenta
+        Estos términos regulan el uso de Cuadranova, que presta <Dato>{D.responsable}</Dato>. Al crear una cuenta
         o usar el sistema aceptas estos términos y el{' '}
         <Link to="/privacidad" className="text-orange-700 underline">
           aviso de privacidad
@@ -22,8 +22,8 @@ const Terminos: React.FC = () => (
 
     <Seccion titulo="2. El servicio">
       <p>
-        Kustodela es un punto de venta en línea para restaurantes que se paga por suscripción: órdenes, cobro, inventario,
-        promociones y reportes. Kustodela no emite facturas fiscales (CFDI) a los clientes de tu restaurante ni sustituye tu
+        Cuadranova es un punto de venta en línea para restaurantes que se paga por suscripción: órdenes, cobro, inventario,
+        promociones y reportes. Cuadranova no emite facturas fiscales (CFDI) a los clientes de tu restaurante ni sustituye tu
         contabilidad: tus obligaciones fiscales siguen siendo tuyas.
       </p>
     </Seccion>
@@ -131,7 +131,7 @@ const Terminos: React.FC = () => (
 
     <Seccion titulo="9. Uso aceptable">
       <p>
-        No puedes usar Kustodela para actividades ilegales, intentar entrar a la información de otros restaurantes, afectar el
+        No puedes usar Cuadranova para actividades ilegales, intentar entrar a la información de otros restaurantes, afectar el
         funcionamiento del sistema ni revender el servicio sin nuestro permiso por escrito.
       </p>
     </Seccion>
@@ -145,14 +145,14 @@ const Terminos: React.FC = () => (
 
     <Seccion titulo="11. Responsabilidad">
       <p>
-        En la medida que la ley lo permita, la responsabilidad de Kustodela por cualquier reclamación se limita a lo que pagaste
+        En la medida que la ley lo permita, la responsabilidad de Cuadranova por cualquier reclamación se limita a lo que pagaste
         por el servicio en los últimos <Dato>{D.limiteResponsabilidad}</Dato> meses. No respondemos por daños indirectos, como
         ganancias perdidas, ni por decisiones fiscales o comerciales que tomes con la información del sistema.
       </p>
     </Seccion>
 
     <Seccion titulo="12. Propiedad intelectual">
-      <p>El software, la marca y el diseño de Kustodela son nuestros. Te damos un permiso de uso mientras tu suscripción esté vigente.</p>
+      <p>El software, la marca y el diseño de Cuadranova son nuestros. Te damos un permiso de uso mientras tu suscripción esté vigente.</p>
     </Seccion>
 
     <Seccion titulo="13. Terminación">

@@ -9,7 +9,7 @@ async function main(): Promise<void> {
   await container.prisma.$connect();
   const app = createApp(container);
   const server = app.listen(env.PORT, () => {
-    logger.info('Kustodela POS API escuchando', {
+    logger.info('Cuadranova API escuchando', {
       port: env.PORT,
       env: env.NODE_ENV,
       appDomain: env.APP_DOMAIN,

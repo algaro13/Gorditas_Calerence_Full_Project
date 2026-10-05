@@ -32,18 +32,18 @@ describe('correoFinDePrueba', () => {
     nombreRestaurante: 'Gorditas <Doña> & Hijos',
     // 01:30 UTC del 26 de octubre es todavía el 25 en Ciudad de México.
     trialEndsAt: new Date('2026-10-26T01:30:00Z'),
-    urlPlanes: 'https://dona.kustodela.com/planes',
+    urlPlanes: 'https://dona.cuadranova.com/planes',
     timeZone: 'America/Mexico_City',
   };
 
   it('«termina»: la fecha del negocio, el enlace y los planes', () => {
     const c = correoFinDePrueba('prueba-por-vencer', datos);
-    expect(c.asunto).toBe('Tu prueba de Kustodela POS termina el 25 de octubre de 2026');
+    expect(c.asunto).toBe('Tu prueba de Cuadranova termina el 25 de octubre de 2026');
     expect(c.texto).toContain('termina el 25 de octubre de 2026');
-    expect(c.texto).toContain('https://dona.kustodela.com/planes');
+    expect(c.texto).toContain('https://dona.cuadranova.com/planes');
     expect(c.texto).toContain('Básico: $299 MXN al mes, hasta 3 usuarios');
     expect(c.texto).toContain('Empresarial: $999 MXN al mes, usuarios ilimitados');
-    expect(c.html).toContain('href="https://dona.kustodela.com/planes"');
+    expect(c.html).toContain('href="https://dona.cuadranova.com/planes"');
   });
 
   it('«terminó»: dice que los datos están intactos', () => {

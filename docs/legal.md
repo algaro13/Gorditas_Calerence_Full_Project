@@ -8,9 +8,9 @@ la fecha y el correo (`tenants.legal_version`, `legal_aceptado_at`, `legal_acept
 
 1. Que un abogado revise los textos (`src/pages/Privacidad.tsx` y `src/pages/Terminos.tsx`). Puntos
    a confirmar: la autoridad ante la que se reclama, los plazos de respuesta de los derechos ARCO,
-   el papel de Kustodela como encargado de los datos que registra cada restaurante y que los
+   el papel de Cuadranova como encargado de los datos que registra cada restaurante y que los
    servidores y respaldos están fuera de México.
-2. Factura (CFDI): por ahora se pide por correo a `contacto@kustodela.com` dentro del mes del cobro
+2. Factura (CFDI): por ahora se pide por correo a `contacto@cuadranova.com` dentro del mes del cobro
    y se emite a mano; lo demás va a la factura global. Que el contador confirme el plazo y la
    periodicidad de la global. Cuando la facturación sea automática (Facturapi), cambia el texto de
    los términos y el de la pantalla de Suscripción.
