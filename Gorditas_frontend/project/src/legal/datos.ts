@@ -11,7 +11,7 @@ export const VERSION_LEGAL = '2026-10-05';
 
 export const DATOS_LEGALES = {
   // Persona física: su nombre completo. Si después opera una sociedad, va su razón social.
-  responsable: '[NOMBRE COMPLETO]',
+  responsable: 'Alfredo Gallegos Rodríguez',
   domicilio: 'C. Cantera 700, Parque la Talaverna, 66473 San Nicolás de los Garza, N.L., México',
   correoPrivacidad: '[privacidad@ejemplo.com]',
   correoContacto: '[contacto@ejemplo.com]',
@@ -20,8 +20,8 @@ export const DATOS_LEGALES = {
   correo: '[PROVEEDOR DE ENVÍO DE CORREO]',
   ivaEnPrecios: '[incluyen / no incluyen]',
   facturacionFiscal: '[CÓMO SE SOLICITA LA FACTURA FISCAL (CFDI) DE LA SUSCRIPCIÓN]',
-  limiteResponsabilidad: '[12]',
-  jurisdiccion: '[CIUDAD, ESTADO]',
+  limiteResponsabilidad: '12',
+  jurisdiccion: 'Monterrey, Nuevo León',
 } as const;
 
 export const ES_BORRADOR = Object.values(DATOS_LEGALES).some((v) => v.startsWith('['));
