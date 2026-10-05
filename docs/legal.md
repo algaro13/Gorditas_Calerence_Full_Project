@@ -7,7 +7,7 @@ la fecha y el correo (`tenants.legal_version`, `legal_aceptado_at`, `legal_acept
 ## Antes de publicarlos de verdad
 
 1. Completa los datos de ejemplo de `Gorditas_frontend/project/src/legal/datos.ts` (`DATOS_LEGALES`):
-   correos de contacto, si los
+   si los
    precios incluyen IVA, cómo se pide la factura (CFDI) de la suscripción, el límite de
    responsabilidad y la ciudad de los tribunales. Cuando ninguno quede entre corchetes, desaparece
    el aviso de borrador.
