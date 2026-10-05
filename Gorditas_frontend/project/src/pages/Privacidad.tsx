@@ -77,6 +77,10 @@ const Privacidad: React.FC = () => (
           <Dato>{D.correo}</Dato>, para enviar los correos del servicio.
         </li>
       </ul>
+      <p>
+        Algunos de estos proveedores guardan los datos fuera de México, por ejemplo en Estados Unidos. Solo los usan para
+        prestarnos su servicio.
+      </p>
       <p>No transferimos tus datos a nadie más, salvo que una autoridad competente lo requiera conforme a la ley.</p>
     </Seccion>
 
