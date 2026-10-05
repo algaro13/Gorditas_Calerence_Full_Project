@@ -17,7 +17,7 @@ export const DATOS_LEGALES = {
   correoContacto: '[contacto@ejemplo.com]',
   hospedaje: 'Contabo (servidores en Estados Unidos)',
   respaldos: 'Cloudflare, con su servicio R2',
-  correo: '[PROVEEDOR DE ENVÍO DE CORREO]',
+  correo: 'Resend',
   ivaEnPrecios: '[incluyen / no incluyen]',
   facturacionFiscal: '[CÓMO SE SOLICITA LA FACTURA FISCAL (CFDI) DE LA SUSCRIPCIÓN]',
   limiteResponsabilidad: '12',
