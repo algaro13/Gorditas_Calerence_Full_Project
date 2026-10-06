@@ -115,4 +115,50 @@ describe('Retención: restaurar, pausar, borrar y recuperar', () => {
     expect(res.status).toBe(409);
     expect(res.body.code).toBe('PROTEGIDO');
   });
+
+  describe('borrar un restaurante de prueba (nunca pagó)', () => {
+    const borrarPrueba = (id: string, confirmacion: string) =>
+      api().post(`/api/plataforma/restaurantes/${id}/borrar-prueba`).set(auth(operador)).send({ confirmacion });
+
+    it('se borra sin archivar ni esperar, con el subdominio exacto, y queda en la bitácora', async () => {
+      const r = await restaurante();
+      expect((await borrarPrueba(r.id, 'otro')).body.code).toBe('CONFIRMACION_INCORRECTA');
+
+      const ok = await borrarPrueba(r.id, r.slug);
+      expect(ok.status).toBe(200);
+      expect(await t.container.prisma.tenant.findUnique({ where: { id: r.id } })).toBeNull();
+
+      const admin = adminPrisma();
+      const entrada = await admin.bitacoraPlataforma.findFirst({ where: { operadorId: `operador-${RUN}`, accion: 'borrar-restaurante-prueba' } });
+      await admin.$disconnect();
+      expect(entrada?.detalle).toMatchObject({ slug: r.slug });
+    });
+
+    it('con la prueba vencida también', async () => {
+      const r = await restaurante({ trialEndsAt: new Date(Date.now() - 40 * DIA) });
+      expect((await borrarPrueba(r.id, r.slug)).status).toBe(200);
+    });
+
+    it('no: uno que paga, uno con plan dado sin Stripe ni uno cancelado que alguna vez pagó', async () => {
+      const pagaConStripe = await restaurante({ planStatus: 'active', trialEndsAt: null });
+      await t.container.prisma.tenant.update({ where: { id: pagaConStripe.id }, data: { stripeSubscriptionId: `sub_paga_${RUN}` } });
+      const planSinStripe = await restaurante({ planStatus: 'active', trialEndsAt: null });
+      const canceladoQuePago = await restaurante({ planStatus: 'canceled', trialEndsAt: null });
+      await t.container.prisma.tenant.update({ where: { id: canceladoQuePago.id }, data: { stripeSubscriptionId: `sub_cancelado_${RUN}` } });
+
+      for (const r of [pagaConStripe, planSinStripe, canceladoQuePago]) {
+        const res = await borrarPrueba(r.id, r.slug);
+        expect(res.status).toBe(409);
+        expect(res.body.code).toBe('NO_ES_PRUEBA');
+        expect(await t.container.prisma.tenant.findUnique({ where: { id: r.id } })).not.toBeNull();
+      }
+    });
+
+    it('solo el operador', async () => {
+      const r = await restaurante();
+      const admin = await tokenFor(t.keys, { userId: `adm3-${RUN}`, orgId: r.orgId, roles: ['Admin'] });
+      const res = await api().post(`/api/plataforma/restaurantes/${r.id}/borrar-prueba`).set(auth(admin)).send({ confirmacion: r.slug });
+      expect(res.status).toBe(403);
+    });
+  });
 });

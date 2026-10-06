@@ -67,5 +67,17 @@ export function createPlataformaRouter(deps: {
     }),
   );
 
+  // Restaurantes de prueba (nunca pagaron): sin esperar al archivado. Ver GestionRetencion.borrarPrueba.
+  router.post(
+    '/restaurantes/:id/borrar-prueba',
+    deps.authenticate,
+    soloPlataforma,
+    validateBody(borrarSchema),
+    asyncHandler(async (req, res) => {
+      await deps.retencion.borrarPrueba(req.auth!, String(req.params.id), req.body.confirmacion);
+      sendOk(res, { borrado: true });
+    }),
+  );
+
   return router;
 }

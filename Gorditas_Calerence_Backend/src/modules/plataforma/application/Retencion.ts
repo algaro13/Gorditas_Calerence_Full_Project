@@ -139,9 +139,6 @@ export class GestionRetencion {
   /**
    * Borra un restaurante para siempre. Solo archivado, pasado el plazo para recuperarlo, sin
    * suscripción viva y con su subdominio escrito para confirmar.
-   *
-   * Primero la organización de Zitadel: si falla, no se ha borrado nada y se puede reintentar.
-   * Después los archivos y al final los datos (en cascada). Los cobros siguen en Stripe.
    */
   async borrar(operador: AuthInfo, id: string, confirmacion: unknown): Promise<void> {
     const t = await this.restaurante(id);
@@ -154,7 +151,30 @@ export class GestionRetencion {
       throw new ConflictError('Todavía está en su plazo para recuperarlo', 'AUN_RECUPERABLE');
     }
     if (confirmacion !== t.slug) throw new ValidationError('Escribe el subdominio del restaurante para confirmar', 'CONFIRMACION_INCORRECTA');
+    await this.borrarDefinitivo(operador, t, 'borrar-restaurante');
+  }
 
+  /**
+   * Borra un restaurante de prueba: uno que nunca pagó, sin esperar al archivado ni a sus 30 días.
+   * Es para limpiar las pruebas; uno que paga, tiene pago pendiente, tiene un plan dado sin Stripe
+   * o tuvo alguna vez una suscripción no entra, aunque esté cancelado.
+   */
+  async borrarPrueba(operador: AuthInfo, id: string, confirmacion: unknown): Promise<void> {
+    const t = await this.restaurante(id);
+    const tuvoSuscripcion = (await this.tenants.getStripeSubscriptionId(id)) !== null;
+    const categoria = categoriaRetencion(situacion({ ...t, tieneSuscripcionStripe: tuvoSuscripcion }, this.clock.now()), tuvoSuscripcion);
+    if (categoria !== 'prueba-sin-pago') {
+      throw new ConflictError('Solo se borra así un restaurante que nunca pagó', 'NO_ES_PRUEBA');
+    }
+    if (confirmacion !== t.slug) throw new ValidationError('Escribe el subdominio del restaurante para confirmar', 'CONFIRMACION_INCORRECTA');
+    await this.borrarDefinitivo(operador, t, 'borrar-restaurante-prueba');
+  }
+
+  /**
+   * Primero la organización de Zitadel: si falla, no se ha borrado nada y se puede reintentar.
+   * Después los archivos y al final los datos (en cascada). Los cobros siguen en Stripe.
+   */
+  private async borrarDefinitivo(operador: AuthInfo, t: TenantInfo, accion: string): Promise<void> {
     if (t.zitadelOrgId) {
       try {
         await this.identity.deleteOrganization(t.zitadelOrgId);
@@ -165,7 +185,7 @@ export class GestionRetencion {
     await this.storage.deleteTenantFiles(t.id).catch((err) => this.logger.warn('No se pudieron borrar los archivos', { slug: t.slug, err: String(err) }));
     await this.tenants.delete(t.id);
     this.onTenantChanged?.(t);
-    await this.registrar(operador, 'borrar-restaurante', {
+    await this.registrar(operador, accion, {
       slug: t.slug,
       nombre: t.nombre,
       plan: t.plan,
@@ -173,7 +193,7 @@ export class GestionRetencion {
       archivadoAt: t.archivadoAt,
       zitadelOrgId: t.zitadelOrgId,
     });
-    this.logger.info('Restaurante borrado por el operador', { slug: t.slug, operador: operador.userId });
+    this.logger.info('Restaurante borrado por el operador', { slug: t.slug, accion, operador: operador.userId });
   }
 
   /** El administrador del propio restaurante lo recupera. Sin efecto si no está archivado. */

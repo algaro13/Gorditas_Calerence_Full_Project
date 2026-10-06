@@ -185,6 +185,10 @@ class ApiService {
   borrarRestaurante(id: string, confirmacion: string) {
     return this.request(`/plataforma/restaurantes/${id}/borrar`, this.json('POST', { confirmacion }));
   }
+  /** Restaurante de prueba (nunca pagó): sin esperar al archivado. */
+  borrarRestaurantePrueba(id: string, confirmacion: string) {
+    return this.request(`/plataforma/restaurantes/${id}/borrar-prueba`, this.json('POST', { confirmacion }));
+  }
   /** El administrador recupera su restaurante archivado por falta de uso. */
   recuperarRestaurante() {
     return this.request('/tenants/me/recuperar', { method: 'POST' });

@@ -55,7 +55,8 @@ function fechaClave(r: FilaConsola): string {
 const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<void> }> = ({ r, alCambiar }) => {
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState('');
-  const [borrando, setBorrando] = useState(false);
+  // Qué borrado se está confirmando: el de un archivado que cumplió su plazo, o el de uno de prueba.
+  const [borrando, setBorrando] = useState<null | 'archivado' | 'prueba'>(null);
   const [confirmacion, setConfirmacion] = useState('');
   const { fase, categoria, siguientePaso, recuperableHasta } = r.retencion;
 
@@ -64,7 +65,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
     setError('');
     const res = await accion();
     if (res.success) {
-      setBorrando(false);
+      setBorrando(null);
       setConfirmacion('');
       await alCambiar();
     } else setError(res.error || 'No se pudo completar');
@@ -72,7 +73,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
   };
 
   const cancelarBorrado = () => {
-    setBorrando(false);
+    setBorrando(null);
     setConfirmacion('');
   };
 
@@ -109,14 +110,20 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
           </button>
         )}
         {fase === 'listo-para-borrar' && !borrando && (
-          <button disabled={ocupado} onClick={() => setBorrando(true)} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
+          <button disabled={ocupado} onClick={() => setBorrando('archivado')} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
             <Trash2 className="h-4 w-4" /> Aprobar borrado
+          </button>
+        )}
+        {categoria === 'prueba-sin-pago' && fase !== 'listo-para-borrar' && !borrando && (
+          <button disabled={ocupado} onClick={() => setBorrando('prueba')} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
+            <Trash2 className="h-4 w-4" /> Borrar restaurante de prueba
           </button>
         )}
       </div>
       {borrando && (
         <div className="mt-sp-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <p className="text-cuerpo text-red-900">
+            {borrando === 'prueba' && 'Este restaurante nunca pagó; úsalo para limpiar pruebas. '}
             Se borran para siempre sus datos, sus usuarios y sus archivos. No se puede deshacer. Escribe <strong>{r.slug}</strong> para confirmar.
           </p>
           <input
@@ -129,7 +136,11 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
           <div className="mt-sp-2 flex flex-wrap gap-sp-2">
             <button
               disabled={ocupado || confirmacion !== r.slug}
-              onClick={() => hacer(() => apiService.borrarRestaurante(r.id, confirmacion))}
+              onClick={() =>
+                hacer(() =>
+                  borrando === 'prueba' ? apiService.borrarRestaurantePrueba(r.id, confirmacion) : apiService.borrarRestaurante(r.id, confirmacion),
+                )
+              }
               className="btn bg-red-600 text-white disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" /> Borrar para siempre
