@@ -64,9 +64,13 @@ export const SECCIONES: Seccion[] = [
         pie: 'Agrega platillos y productos.',
       },
       {
-        texto: 'Revisa el total y pulsa «Crear orden». La orden llega sola a la cocina.',
+        texto:
+          'Antes de crear la orden puedes seguir agregando: más platillos con «+ Platillo», bebidas con «+ Producto» y, si en la misma mesa otra persona pide aparte, pulsa «+ Cliente» para tomar su orden por separado.',
         imagen: 'orden-4-crear.jpg',
-        pie: 'El total y el botón «Crear orden».',
+        pie: '«+ Platillo» (1), «+ Cliente» (2) y «Crear orden» (3).',
+      },
+      {
+        texto: 'Cuando esté todo, revisa el total y pulsa «Crear orden». La orden se envía a «Surtir orden» para que la cocina la prepare.',
       },
     ],
     consejos: [
@@ -87,19 +91,6 @@ export const SECCIONES: Seccion[] = [
       },
       {
         texto: 'Cuando esté listo, pulsa «Surtir todas» en la mesa, o abre la mesa con la flecha para surtir una orden a la vez.',
-      },
-    ],
-  },
-  {
-    id: 'entregar',
-    titulo: 'Entregar en la mesa',
-    resumen: 'El mesero lleva lo que ya salió de cocina.',
-    pasos: [
-      {
-        texto:
-          'Lo hace el mesero desde «Despachar», en su menú: ahí aparecen las mesas con órdenes listas. Pulsa «Entregar» cuando las lleves a la mesa.',
-        imagen: 'entregar.jpg',
-        pie: 'Las órdenes surtidas, listas para entregar.',
       },
     ],
   },

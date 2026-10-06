@@ -13,7 +13,7 @@ test('Ayuda: desde el menú, con índice que lleva a cada sección y capturas qu
   await expect(page.getByRole('heading', { name: 'Ayuda', level: 1 })).toBeVisible({ timeout: 15_000 });
 
   const indice = page.getByRole('navigation', { name: 'Índice de la ayuda' });
-  await expect(indice.getByRole('link')).toHaveCount(14);
+  await expect(indice.getByRole('link')).toHaveCount(13);
 
   await indice.getByRole('link', { name: /cobrar/i }).click();
   await expect(page.getByRole('heading', { name: /cobrar/i, level: 2 })).toBeInViewport();
@@ -21,7 +21,7 @@ test('Ayuda: desde el menú, con índice que lleva a cada sección y capturas qu
   // Todas las capturas cargan: una ruta equivocada deja naturalWidth en 0.
   const imagenes = page.locator('main img');
   const total = await imagenes.count();
-  expect(total).toBeGreaterThanOrEqual(15);
+  expect(total).toBeGreaterThanOrEqual(16);
   for (let i = 0; i < total; i++) {
     const img = imagenes.nth(i);
     await img.scrollIntoViewIfNeeded();

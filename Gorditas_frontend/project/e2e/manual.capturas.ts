@@ -96,7 +96,11 @@ test('capturas del manual de Ayuda', async ({ page }) => {
   await page.getByRole('button', { name: /sin extras/i }).click();
   await page.getByRole('button', { name: /^Agregar$/ }).click();
   await expect(page.getByText(/platillos seleccionados \(1\)/i)).toBeVisible();
-  await capturar(page, 'orden-4-crear.jpg', [page.getByRole('button', { name: /crear orden/i })]);
+  await capturar(page, 'orden-4-crear.jpg', [
+    page.getByRole('button', { name: /platillo/i }).first(),
+    page.getByRole('button', { name: /cliente/i }).first(),
+    page.getByRole('button', { name: /crear orden/i }),
+  ]);
   const fallidas: string[] = [];
   page.on('response', async (r) => {
     if (r.url().includes('/api/') && r.status() >= 400) fallidas.push(`${r.status()} ${r.request().method()} ${new URL(r.url()).pathname} → ${await r.text().catch(() => '')}`);
@@ -120,11 +124,10 @@ test('capturas del manual de Ayuda', async ({ page }) => {
   await tarjetaDe(page, pedido, /surtir todas/i).click();
   await expect(page.getByText(pedido)).toBeHidden({ timeout: 15_000 });
 
-  // 4. Entregar
+  // Se entrega para que llegue a Cobrar. No va en el manual: Despachar es del menú del mesero.
   await page.goto('/despachar');
   const entregar = tarjetaDe(page, MESA, /entregar/i);
   await expect(entregar).toBeVisible({ timeout: 15_000 });
-  await capturar(page, 'entregar.jpg', [entregar]);
   await entregar.click();
   await page.waitForLoadState('networkidle');
 
