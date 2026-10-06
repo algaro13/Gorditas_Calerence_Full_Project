@@ -21,9 +21,23 @@ export interface Seccion {
   pasos: Paso[];
   /** Consejos al final de la sección. */
   consejos?: string[];
+  /** Muestra el diagrama del flujo de una orden antes de los pasos. */
+  diagrama?: boolean;
 }
 
 export const SECCIONES: Seccion[] = [
+  {
+    id: 'flujo',
+    titulo: 'El flujo de una orden',
+    resumen: 'Tres pasos: se toma, la cocina la surte y se cobra.',
+    diagrama: true,
+    pasos: [
+      { texto: 'El mesero o el encargado toma la orden en «Nueva orden». Llega sola a la cocina.' },
+      { texto: 'La cocina la prepara en «Surtir orden» y la marca como surtida.' },
+      { texto: 'En cuanto está surtida, la mesa aparece en «Cobrar» y ya se puede cobrar.' },
+    ],
+    consejos: ['¿Hay que cambiar algo? Usa «Editar orden» mientras no se haya cobrado.'],
+  },
   {
     id: 'inicio',
     titulo: 'Conoce la pantalla',
@@ -90,7 +104,8 @@ export const SECCIONES: Seccion[] = [
         pie: 'Las órdenes por preparar, con su color de prioridad.',
       },
       {
-        texto: 'Cuando esté listo, pulsa «Surtir todas» en la mesa, o abre la mesa con la flecha para surtir una orden a la vez.',
+        texto:
+          'Cuando esté listo, pulsa «Surtir todas» en la mesa, o abre la mesa con la flecha para surtir una orden a la vez. La orden surtida pasa directo a «Cobrar».',
       },
     ],
   },
@@ -100,7 +115,7 @@ export const SECCIONES: Seccion[] = [
     resumen: 'Cierra la cuenta de la mesa.',
     pasos: [
       {
-        texto: 'Abre «Cobrar». Cada mesa muestra su total. Puedes descargar la cuenta en PDF o imprimirla.',
+        texto: 'Abre «Cobrar». Aparecen las mesas cuyas órdenes ya surtió la cocina, con su total. Puedes descargar la cuenta en PDF o imprimirla.',
         imagen: 'cobrar.jpg',
         pie: 'La mesa con su total y el botón «Cobrar».',
       },

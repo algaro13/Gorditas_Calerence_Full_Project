@@ -13,9 +13,15 @@ test('Ayuda: desde el menú, con índice que lleva a cada sección y capturas qu
   await expect(page.getByRole('heading', { name: 'Ayuda', level: 1 })).toBeVisible({ timeout: 15_000 });
 
   const indice = page.getByRole('navigation', { name: 'Índice de la ayuda' });
-  await expect(indice.getByRole('link')).toHaveCount(13);
+  await expect(indice.getByRole('link')).toHaveCount(14);
 
-  await indice.getByRole('link', { name: /cobrar/i }).click();
+  // El diagrama del flujo, en tres pasos y sin Despachar.
+  const flujo = page.getByRole('figure', { name: /flujo de una orden/i });
+  await expect(flujo).toBeVisible();
+  await expect(flujo.getByText('Surtir orden')).toBeVisible();
+  await expect(flujo.getByText(/despach/i)).toHaveCount(0);
+
+  await indice.getByRole('link', { name: /cierra la cuenta/i }).click();
   await expect(page.getByRole('heading', { name: /cobrar/i, level: 2 })).toBeInViewport();
 
   // Todas las capturas cargan: una ruta equivocada deja naturalWidth en 0.

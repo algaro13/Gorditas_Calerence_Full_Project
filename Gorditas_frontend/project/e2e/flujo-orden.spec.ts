@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { cliente, llevarACaja, tarjetaDe, tomarOrden } from './ordenes';
 
 /**
- * El camino completo de una orden: tomarla, surtirla, despacharla y cobrarla.
+ * El camino completo de una orden: tomarla, surtirla y cobrarla.
  *
  * Es el que da de comer al restaurante. Si este se rompe da igual que los botones midan bien,
  * y ya se rompió una vez sin que nada avisara: la pantalla mandaba un `idTipoOrden` fijo y
@@ -18,9 +18,9 @@ test('una orden llega de la mesa a la caja', async ({ page }) => {
     await tomarOrden(page, nombre);
   });
 
-  await test.step('se surte y se despacha', async () => {
-    // Los dos pasos viven en `ordenes.ts`: la prueba de promociones necesita lo mismo para ver
-    // el descuento donde se cobra, y dos copias divergirían al primer cambio de pantalla.
+  await test.step('se surte y pasa directo a cobrar', async () => {
+    // Vive en `ordenes.ts`: la prueba de promociones necesita lo mismo para ver el descuento donde
+    // se cobra, y dos copias divergirían al primer cambio de pantalla.
     await llevarACaja(page, nombre);
   });
 

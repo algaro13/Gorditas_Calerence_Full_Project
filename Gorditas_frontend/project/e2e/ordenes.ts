@@ -66,7 +66,7 @@ export async function tomarOrden(page: Page, nombre: string) {
 
   // Crear la orden son varias peticiones: la cabecera, la suborden y cada platillo. Navegar en
   // cuanto responde la primera las aborta y deja una orden vacía de $0.00 — pasó, y el fallo
-  // aparecía tres pasos después, en despachar, sin pista de la causa.
+  // aparecía tres pasos después, al cobrar, sin pista de la causa.
   // La señal de que terminó es que reaparece la rejilla de mesas, que solo existe en el paso 1.
   // Esperar el texto «Seleccionar Mesa» NO sirve: está también en el indicador de pasos, así que
   // está visible siempre y la espera no esperaba nada — de ahí salían las órdenes de $0.00.
@@ -83,7 +83,7 @@ export async function tomarOrden(page: Page, nombre: string) {
 }
 
 /**
- * Lleva una orden recién tomada hasta la pantalla de cobro: se surte y se despacha.
+ * Lleva una orden recién tomada hasta la pantalla de cobro: basta con surtirla.
  *
  * Lo usan la prueba del ciclo completo y la de promociones, que necesita ver el descuento donde
  * se cobra. Una orden en recepción no aparece en Cobrar, así que sin estos dos pasos la prueba
@@ -94,14 +94,4 @@ export async function llevarACaja(page: Page, nombre: string): Promise<void> {
   await expect(page.getByText(nombre)).toBeVisible({ timeout: 15_000 });
   await tarjetaDe(page, nombre, /surtir todas/i).click();
   await expect(page.getByText(nombre)).toBeHidden({ timeout: 15_000 });
-
-  await page.goto('/despachar');
-  await page.waitForLoadState('networkidle');
-  // Se entrega todo lo pendiente en vez de buscar esta orden: Despachar agrupa por mesa y no
-  // muestra el cliente hasta expandir. En una base de pruebas entregar de más es inocuo.
-  const entregar = page.getByRole('button', { name: /entregar/i });
-  while (await entregar.count()) {
-    await entregar.first().click();
-    await page.waitForLoadState('networkidle');
-  }
 }

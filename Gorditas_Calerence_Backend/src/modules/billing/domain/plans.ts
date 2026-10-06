@@ -32,7 +32,7 @@ function entrada(id: PaidPlanId, name: string, popular: boolean, features: strin
  */
 export const PLAN_CATALOG: PlanCatalogEntry[] = [
   entrada('basico', 'Básico', false, [
-    'Órdenes, cocina y despacho',
+    'Órdenes y cocina',
     'Cobro y caja',
     'Inventario y reportes (con Excel)',
     'Tu logo y colores',

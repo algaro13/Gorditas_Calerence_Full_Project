@@ -49,17 +49,17 @@ const Catalogos: React.FC = () => {
     {
       value: 'Despachador',
       label: 'Despachador',
-      descripcion: 'Atiende y despacha órdenes. Acceso: Surtir Orden, Despachar, Catálogos.'
+      descripcion: 'Prepara las órdenes en cocina. Acceso: Surtir Orden.'
     },
     {
       value: 'Mesero',
       label: 'Mesero',
-      descripcion: 'Toma pedidos y atiende mesas. Acceso: Nueva Orden, Editar Orden.'
+      descripcion: 'Toma pedidos y cobra. Acceso: Nueva Orden, Editar Orden, Cobrar.'
     },
     {
       value: 'Encargado',
       label: 'Encargado',
-      descripcion: 'Gestiona inventario y reportes. Acceso: Inventario, Recibir Producto.'
+      descripcion: 'Supervisa el servicio. Acceso: Panel, órdenes, Surtir, Cobrar, Recibir Productos y Configuración.'
     },
     {
       value: 'Admin',

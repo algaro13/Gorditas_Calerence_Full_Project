@@ -13,24 +13,22 @@ import type { MenuItem } from '../../types';
 export type EntradaMenu = MenuItem;
 
 /**
- * Las tareas del servicio, en el orden en que ocurren: tomar la orden, editarla, prepararla o
- * despacharla, y cobrar. Son las que lleva la barra de abajo.
+ * Las tareas del servicio, en el orden en que ocurren: tomar la orden, editarla, prepararla y
+ * cobrarla. Son las que lleva la barra de abajo.
  *
  * Antes la barra llevaba los primeros cuatro del menú, y el primero era el Panel Principal —que
  * se mira una o dos veces por turno— mientras Cobrar, que cierra cada mesa, quedaba detrás de
  * «Más». Un sitio al alcance del pulgar vale lo que se pulsa durante el turno.
  *
- * Están «surtir» y «despachar» las dos porque son el mismo momento del servicio para roles
- * distintos: el encargado surte, el mesero despacha. Con una sola, el mesero perdería la suya.
+ * No hay paso de despacho: en cuanto la cocina surte, la orden se puede cobrar.
  */
-export const SERVICIO: string[] = ['nueva-orden', 'editar-orden', 'surtir-orden', 'despachar', 'cobrar'];
+export const SERVICIO: string[] = ['nueva-orden', 'editar-orden', 'surtir-orden', 'cobrar'];
 
 export const MENU: MenuItem[] = [
   { id: 'dashboard', label: 'Panel Principal', icon: 'Home', path: '/', roles: ['Admin', 'Encargado'] },
   { id: 'nueva-orden', label: 'Nueva Orden', icon: 'PlusCircle', path: '/nueva-orden', roles: ['Admin', 'Encargado', 'Mesero'] },
   { id: 'editar-orden', label: 'Editar Orden', icon: 'Edit3', path: '/editar-orden', roles: ['Admin', 'Encargado', 'Mesero'] },
   { id: 'surtir-orden', label: 'Surtir Orden', icon: 'ChefHat', path: '/surtir-orden', roles: ['Admin', 'Encargado', 'Despachador', 'Cocinero'] },
-  { id: 'despachar', label: 'Despachar', icon: 'Truck', path: '/despachar', roles: ['Mesero'] },
   { id: 'recibir-productos', label: 'Recibir Productos', icon: 'Package', path: '/recibir-productos', roles: ['Admin', 'Encargado'] },
   { id: 'cobrar', label: 'Cobrar', icon: 'CreditCard', path: '/cobrar', roles: ['Admin', 'Encargado', 'Mesero'] },
   { id: 'promociones', label: 'Promociones', icon: 'Tag', path: '/promociones', roles: ['Admin'] },

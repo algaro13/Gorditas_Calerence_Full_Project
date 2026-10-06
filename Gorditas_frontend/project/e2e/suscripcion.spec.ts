@@ -237,7 +237,7 @@ test('los precios salen del catálogo del backend, en /planes y en la landing', 
 
   await page.goto('/planes');
   await expect(page.getByText('$777')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText('Órdenes, cocina y despacho').first()).toBeVisible();
+  await expect(page.getByText('Órdenes y cocina').first()).toBeVisible();
   // Lo que no existe ya no se promete.
   await expect(page.getByText(/sucursales|Dashboard avanzado/)).toHaveCount(0);
 

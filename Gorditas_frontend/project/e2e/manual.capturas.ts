@@ -112,7 +112,7 @@ test('capturas del manual de Ayuda', async ({ page }) => {
   await page.waitForLoadState('networkidle');
   expect(fallidas, 'peticiones rechazadas al crear la orden').toEqual([]);
   const pedido = cliente;
-  // Una orden de $0.00 es una orden sin platillos: en Despachar no tendría nada que entregar.
+  // Una orden de $0.00 es una orden sin platillos: no habría nada que surtir ni que cobrar.
   await page.goto('/editar-orden');
   await expect(page.getByText(pedido)).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/\$(?!0\.00)\d+\.\d{2}/).first()).toBeVisible({ timeout: 10_000 });
@@ -123,13 +123,6 @@ test('capturas del manual de Ayuda', async ({ page }) => {
   await capturar(page, 'cocina-surtir.jpg', [tarjetaDe(page, pedido, /surtir todas/i)]);
   await tarjetaDe(page, pedido, /surtir todas/i).click();
   await expect(page.getByText(pedido)).toBeHidden({ timeout: 15_000 });
-
-  // Se entrega para que llegue a Cobrar. No va en el manual: Despachar es del menú del mesero.
-  await page.goto('/despachar');
-  const entregar = tarjetaDe(page, MESA, /entregar/i);
-  await expect(entregar).toBeVisible({ timeout: 15_000 });
-  await entregar.click();
-  await page.waitForLoadState('networkidle');
 
   // 5. Cobrar (sin cobrar: solo se señala el botón)
   await page.goto('/cobrar');

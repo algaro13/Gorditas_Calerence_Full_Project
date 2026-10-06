@@ -1403,7 +1403,7 @@ const NuevaOrden: React.FC = () => {
                     <p className="text-meta break-words">
                       {isOrderComplete 
                         ? (platillosSeleccionados.length === 0 && productosSeleccionados.length > 0
-                            ? '✓ La orden solo contiene productos y será enviada directamente a despacho (Estado: Surtida)'
+                            ? '✓ La orden solo contiene productos y quedará lista para cobrar (Estado: Surtida)'
                             : '✓ La orden será enviada directamente a preparación (Estado: Recepción)'
                           )
                         : '⚠ La orden será marcada como pendiente para revisión (Estado: Pendiente)'

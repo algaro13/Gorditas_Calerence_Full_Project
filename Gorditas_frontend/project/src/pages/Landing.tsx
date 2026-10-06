@@ -64,8 +64,8 @@ const FUNCIONES = [
   {
     icon: ChefHat,
     color: "bg-red-100 text-red-600",
-    title: "Cocina y despacho",
-    desc: "La cocina ve qué preparar en su propia pantalla y el mesero sabe qué ya está listo para llevar.",
+    title: "Cocina",
+    desc: "La cocina ve qué preparar en su propia pantalla y, en cuanto lo surte, la cuenta queda lista para cobrar.",
   },
   {
     icon: CreditCard,

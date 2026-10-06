@@ -1,11 +1,46 @@
 import React from 'react';
-import { ChevronRight, HelpCircle, Lightbulb } from 'lucide-react';
+import { ArrowDown, ArrowRight, ChefHat, ChevronRight, CreditCard, Edit3, HelpCircle, Lightbulb, PlusCircle } from 'lucide-react';
 import { PREGUNTAS, SECCIONES } from './contenido';
 
 const irA = (id: string) => (e: React.MouseEvent) => {
   e.preventDefault();
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
+
+const PASOS_FLUJO = [
+  { icono: PlusCircle, titulo: 'Nueva orden', quien: 'Mesero o encargado', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+  { icono: ChefHat, titulo: 'Surtir orden', quien: 'Cocina', color: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { icono: CreditCard, titulo: 'Cobrar', quien: 'Mesero, encargado o caja', color: 'bg-green-50 text-green-700 border-green-200' },
+];
+
+/** El flujo de una orden en tres cajas: de arriba abajo en el teléfono, de izquierda a derecha en la computadora. */
+const DiagramaFlujo: React.FC = () => (
+  <figure className="mb-5" aria-label="Flujo de una orden: Nueva orden, Surtir orden, Cobrar">
+    <ol className="flex flex-col items-stretch gap-1 sm:flex-row sm:items-center">
+      {PASOS_FLUJO.map((p, i) => (
+        <React.Fragment key={p.titulo}>
+          <li className={`flex flex-1 items-center gap-3 rounded-xl border p-3 ${p.color}`}>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white text-meta font-bold">{i + 1}</span>
+            <p.icono className="h-6 w-6 shrink-0" aria-hidden />
+            <span className="min-w-0">
+              <span className="block text-cuerpo font-bold">{p.titulo}</span>
+              <span className="block text-meta">{p.quien}</span>
+            </span>
+          </li>
+          {i < PASOS_FLUJO.length - 1 && (
+            <li aria-hidden className="flex justify-center text-gray-400">
+              <ArrowDown className="h-5 w-5 sm:hidden" />
+              <ArrowRight className="hidden h-5 w-5 sm:block" />
+            </li>
+          )}
+        </React.Fragment>
+      ))}
+    </ol>
+    <figcaption className="mt-2 flex items-center gap-2 text-meta text-gray-600">
+      <Edit3 className="h-4 w-4 shrink-0" aria-hidden /> Mientras no se cobre, la orden se puede cambiar en «Editar orden».
+    </figcaption>
+  </figure>
+);
 
 /**
  * Manual de uso para el administrador: índice, una sección por tarea con pasos numerados y la
@@ -60,6 +95,7 @@ const Ayuda: React.FC = () => (
           {i + 1}. {s.titulo}
         </h2>
         <p className="mb-4 text-cuerpo text-gray-600">{s.resumen}</p>
+        {s.diagrama && <DiagramaFlujo />}
         <ol className="space-y-5">
           {s.pasos.map((p, j) => (
             <li key={j} className="flex gap-3">

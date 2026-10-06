@@ -22,7 +22,6 @@ import Dashboard from './pages/Dashboard';
 import NuevaOrden from './pages/NuevaOrden';
 import SurtirOrden from './pages/SurtirOrden';
 import EditarOrden from './pages/EditarOrden';
-import Despachar from './pages/Despachar';
 import RecibirProducto from './pages/RecibirProducto';
 import Cobrar from './pages/Cobrar';
 import Catalogos from './pages/Catalogos';
@@ -92,15 +91,6 @@ const AuthenticatedApp: React.FC = () => {
           }
         />
 
-        {/* Despachar - Admin, Encargado, Mesero, Despachador */}
-        <Route
-          path="/despachar"
-          element={
-            <ProtectedRoute allowedRoles={['Admin', 'Encargado', 'Mesero', 'Despachador']}>
-              <Despachar />
-            </ProtectedRoute>
-          }
-        />
 
         {/* Recibir Productos - Admin, Encargado */}
         <Route
