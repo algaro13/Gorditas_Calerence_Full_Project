@@ -47,7 +47,7 @@ const VerificarCorreo: React.FC = () => {
         <h1 className="text-titulo font-bold text-gray-900 mb-2">Confirma tu correo</h1>
         <p className="text-cuerpo text-gray-600 mb-6">
           Te enviamos un enlace a <strong className="break-all">{correoPendiente || user?.email}</strong>. Ábrelo para activar tu
-          cuenta y empezar a usar el sistema. Si no lo ves, revisa la carpeta de correo no deseado.
+          cuenta y empezar a usar el sistema. Si no lo ves, búscalo en <strong>Spam</strong> o <strong>Correo no deseado</strong>: con Hotmail y Outlook es común al principio.
         </p>
 
         {aviso && <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-cuerpo mb-4">{aviso}</div>}

@@ -156,7 +156,7 @@ const UsuariosPanel: React.FC = () => {
           {activos} activo{activos === 1 ? '' : 's'}
           {/* Del endpoint de cupo, no del contexto: el del contexto se carga al iniciar sesión
               y queda viejo si el plan cambia mientras la sesión está abierta. */}
-          {cupo ? ` de ${cupo.maxUsuarios} permitidos en tu plan` : ''}. Los usuarios reciben un correo para crear su contraseña.
+          {cupo ? ` de ${cupo.maxUsuarios} permitidos en tu plan` : ''}. Los usuarios reciben un correo para crear su contraseña; si no lo ven, que lo busquen en Spam o Correo no deseado.
         </p>
         {allowed.length > 0 && !sobreCupo && (
           <button

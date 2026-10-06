@@ -49,5 +49,17 @@ export default defineConfig({
       },
       dependencies: ['sesion'],
     },
+    // Las capturas del manual de Ayuda (docs/ayuda.md). Solo existe con CAPTURAS=1: no es una
+    // prueba, reescribe las imágenes de public/ayuda y no debe correr con la suite.
+    ...(process.env.CAPTURAS
+      ? [
+          {
+            name: 'manual',
+            testMatch: /manual\.capturas\.ts/,
+            use: { ...devices['iPhone 13'], browserName: 'chromium' as const, storageState: 'e2e/.sesion.json' },
+            dependencies: ['sesion'],
+          },
+        ]
+      : []),
   ],
 });

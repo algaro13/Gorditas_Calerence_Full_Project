@@ -23,6 +23,7 @@ const RUTAS = [
   '/reportes',
   '/configuracion',
   '/suscripcion',
+  '/ayuda',
   '/landing',
 ];
 

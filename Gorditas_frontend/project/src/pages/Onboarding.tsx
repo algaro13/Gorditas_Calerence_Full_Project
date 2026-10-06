@@ -196,7 +196,7 @@ const Onboarding: React.FC = () => {
     const localUrl = `${window.location.origin}/login`;
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
+        <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-8 max-w-lg w-full text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
             <Check className="w-8 h-8 text-green-600" />
           </div>
@@ -208,7 +208,9 @@ const Onboarding: React.FC = () => {
           <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg px-4 py-3 text-cuerpo text-left flex gap-2 mb-6">
             <Mail className="w-5 h-5 flex-shrink-0" />
             <span>
-              Enviamos un correo a <strong>{result.email}</strong> para verificar tu cuenta. Revísalo antes de iniciar sesión.
+              Enviamos un correo a <strong className="break-all">{result.email}</strong> para verificar tu cuenta. Revísalo antes de
+              iniciar sesión. Si no aparece en unos minutos, búscalo en <strong>Spam</strong> o <strong>Correo no deseado</strong>: con
+              Hotmail y Outlook es común al principio.
             </span>
           </div>
           <a
@@ -229,20 +231,21 @@ const Onboarding: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full">
-        {/* Progreso */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="bg-white rounded-2xl shadow-xl p-5 sm:p-8 max-w-lg w-full">
+        {/* Progreso. Los conectores se reparten el ancho que sobra: con ancho fijo, seis pasos
+            necesitaban 352 px y en un teléfono quedan menos de 300, así que el último se salía. */}
+        <div className="flex items-center mb-8" aria-label={`Paso ${step} de ${STEPS}`}>
           {Array.from({ length: STEPS }, (_, i) => (
-            <div key={i} className="flex items-center">
+            <React.Fragment key={i}>
               <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-cuerpo font-bold ${
+                className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-cuerpo font-bold ${
                   i + 1 < step ? 'bg-green-500 text-white' : i + 1 === step ? 'bg-orange-500 text-white' : 'bg-gray-200 text-gray-500'
                 }`}
               >
                 {i + 1 < step ? <Check className="w-4 h-4" /> : i + 1}
               </div>
-              {i < STEPS - 1 && <div className={`w-6 h-1 mx-1 ${i + 1 < step ? 'bg-green-500' : 'bg-gray-200'}`} />}
-            </div>
+              {i < STEPS - 1 && <div className={`h-1 flex-1 min-w-[6px] mx-1 ${i + 1 < step ? 'bg-green-500' : 'bg-gray-200'}`} />}
+            </React.Fragment>
           ))}
         </div>
 
@@ -410,11 +413,11 @@ const Onboarding: React.FC = () => {
               <button
                 onClick={() => {
                   setPlatillos([
-                    { nombre: 'Gordita de chicharrón', precio: 25 },
-                    { nombre: 'Gordita de rajas con queso', precio: 30 },
-                    { nombre: 'Gordita de picadillo', precio: 28 },
+                    { nombre: 'Gordita de harina', precio: 25 },
+                    { nombre: 'Gordita de maíz', precio: 25 },
                     { nombre: 'Quesadilla', precio: 20 },
-                    { nombre: 'Taco dorado', precio: 15 },
+                    { nombre: 'Taco', precio: 15 },
+                    { nombre: 'Burrito', precio: 35 },
                   ]);
                   setGuisos(['Chicharrón prensado', 'Rajas con queso', 'Picadillo', 'Mole verde', 'Frijoles con queso', 'Deshebrada', 'Papas con chorizo']);
                 }}
@@ -427,9 +430,9 @@ const Onboarding: React.FC = () => {
             <div className="mb-4">
               <label className="text-cuerpo font-medium text-gray-700 mb-1 block">Platillos</label>
               <div className="flex gap-2 mb-2">
-                <input type="text" placeholder="Ej: Gordita de chicharrón" value={newPlatillo.nombre} onChange={(e) => setNewPlatillo({ ...newPlatillo, nombre: e.target.value })} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
-                <input type="number" placeholder="$25" value={newPlatillo.precio || ''} onChange={(e) => setNewPlatillo({ ...newPlatillo, precio: parseInt(e.target.value) || 0 })} className="w-20 px-3 py-2 border rounded-lg text-cuerpo" />
-                <button onClick={addPlatillo} className="btn btn-neutro" aria-label="Agregar platillo">
+                <input type="text" placeholder="Ej: Gordita de harina" aria-label="Nombre del platillo" value={newPlatillo.nombre} onChange={(e) => setNewPlatillo({ ...newPlatillo, nombre: e.target.value })} className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-cuerpo" />
+                <input type="number" inputMode="numeric" placeholder="$25" aria-label="Precio del platillo" value={newPlatillo.precio || ''} onChange={(e) => setNewPlatillo({ ...newPlatillo, precio: parseInt(e.target.value) || 0 })} className="w-20 shrink-0 px-3 py-2 border rounded-lg text-cuerpo" />
+                <button onClick={addPlatillo} className="btn btn-neutro shrink-0" aria-label="Agregar platillo">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
@@ -449,8 +452,8 @@ const Onboarding: React.FC = () => {
             <div>
               <label className="text-cuerpo font-medium text-gray-700 mb-1 block">Guisos</label>
               <div className="flex gap-2 mb-2">
-                <input type="text" placeholder="Ej: Chicharrón prensado" value={newGuiso} onChange={(e) => setNewGuiso(e.target.value)} className="flex-1 px-3 py-2 border rounded-lg text-cuerpo" />
-                <button onClick={addGuiso} className="btn btn-primario" aria-label="Agregar guiso">
+                <input type="text" placeholder="Ej: Chicharrón prensado" aria-label="Nombre del guiso" value={newGuiso} onChange={(e) => setNewGuiso(e.target.value)} className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-cuerpo" />
+                <button onClick={addGuiso} className="btn btn-primario shrink-0" aria-label="Agregar guiso">
                   <Plus className="w-4 h-4" />
                 </button>
               </div>

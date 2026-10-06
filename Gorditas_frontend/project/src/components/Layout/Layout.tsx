@@ -44,8 +44,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
             onClick={closeSidebar}
           />
-          {/* Sidebar completo móvil */}
-          <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+          {/* Sidebar completo móvil. Con desplazamiento: con todas las opciones del administrador el
+              menú es más alto que un teléfono, y las últimas (Suscripción, Ayuda) quedaban fuera. */}
+          <div className="fixed inset-y-0 left-0 z-50 overflow-y-auto overscroll-contain lg:hidden">
             <Sidebar 
               minimized={false} 
               onToggleMinimized={closeSidebar}

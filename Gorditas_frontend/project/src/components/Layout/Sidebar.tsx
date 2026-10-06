@@ -13,7 +13,8 @@ import {
   PlusCircle,
   Settings,
   Tag,
-  Wallet
+  Wallet,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { MENU } from './menu';
@@ -34,6 +35,7 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   Settings,
   Tag,
   Wallet,
+  HelpCircle,
 };
 
 

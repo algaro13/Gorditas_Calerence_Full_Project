@@ -1,0 +1,34 @@
+import { test, expect } from '@playwright/test';
+
+/**
+ * El manual de Ayuda: se llega desde el menú, el índice lleva a cada sección y las capturas
+ * existen. Una imagen que falta se ve como un recuadro roto, y eso no lo detecta el typecheck.
+ */
+test('Ayuda: desde el menú, con índice que lleva a cada sección y capturas que cargan', async ({ page }) => {
+  await page.goto('/');
+  // En el teléfono el menú completo vive detrás de «Más».
+  await page.getByRole('button', { name: /más/i }).click();
+  await page.getByRole('link', { name: 'Ayuda' }).click();
+  await expect(page).toHaveURL(/\/ayuda$/);
+  await expect(page.getByRole('heading', { name: 'Ayuda', level: 1 })).toBeVisible({ timeout: 15_000 });
+
+  const indice = page.getByRole('navigation', { name: 'Índice de la ayuda' });
+  await expect(indice.getByRole('link')).toHaveCount(14);
+
+  await indice.getByRole('link', { name: /cobrar/i }).click();
+  await expect(page.getByRole('heading', { name: /cobrar/i, level: 2 })).toBeInViewport();
+
+  // Todas las capturas cargan: una ruta equivocada deja naturalWidth en 0.
+  const imagenes = page.locator('main img');
+  const total = await imagenes.count();
+  expect(total).toBeGreaterThanOrEqual(15);
+  for (let i = 0; i < total; i++) {
+    const img = imagenes.nth(i);
+    await img.scrollIntoViewIfNeeded();
+    await expect.poll(() => img.evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true);
+  }
+
+  // Las preguntas frecuentes se abren.
+  await page.getByText('No me llegó el correo', { exact: false }).click();
+  await expect(page.getByText(/Spam o Correo no deseado/).first()).toBeVisible();
+});

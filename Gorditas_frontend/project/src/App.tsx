@@ -15,6 +15,7 @@ import Configuracion from './pages/Configuracion';
 import Suscripcion from './pages/Suscripcion';
 import Plataforma from './pages/Plataforma';
 import Archivado from './pages/Archivado';
+import Ayuda from './pages/ayuda/Ayuda';
 import Privacidad from './pages/Privacidad';
 import Terminos from './pages/Terminos';
 import Dashboard from './pages/Dashboard';
@@ -176,6 +177,16 @@ const AuthenticatedApp: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={['Admin']}>
               <Suscripcion />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Ayuda - solo Admin: el manual de uso */}
+        <Route
+          path="/ayuda"
+          element={
+            <ProtectedRoute allowedRoles={['Admin']}>
+              <Ayuda />
             </ProtectedRoute>
           }
         />

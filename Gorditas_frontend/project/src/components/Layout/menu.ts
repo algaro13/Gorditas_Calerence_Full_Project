@@ -39,4 +39,6 @@ export const MENU: MenuItem[] = [
   { id: 'configuracion', label: 'Configuración', icon: 'Settings', path: '/configuracion', roles: ['Admin', 'Encargado'] },
   // Solo Admin: es quien puede pagar. El backend ya limita a Admin el checkout y el portal.
   { id: 'suscripcion', label: 'Suscripción', icon: 'Wallet', path: '/suscripcion', roles: ['Admin'] },
+  // El manual de uso. Para el administrador, que es quien configura y enseña al resto.
+  { id: 'ayuda', label: 'Ayuda', icon: 'HelpCircle', path: '/ayuda', roles: ['Admin'] },
 ];

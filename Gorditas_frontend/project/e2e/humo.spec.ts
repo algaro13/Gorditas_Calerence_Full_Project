@@ -20,6 +20,7 @@ const PANTALLAS = [
   { ruta: '/reportes', contiene: /reportes/i },
   { ruta: '/configuracion', contiene: /configuración/i },
   { ruta: '/suscripcion', contiene: /plan actual/i },
+  { ruta: '/ayuda', contiene: /tomar una orden/i },
   { ruta: '/landing', contiene: /práctico y fácil de usar/i },
 ];
 
