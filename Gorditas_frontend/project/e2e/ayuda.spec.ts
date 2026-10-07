@@ -21,6 +21,11 @@ test('Ayuda: desde el menú, con índice que lleva a cada sección y capturas qu
   await expect(flujo.getByText('Surtir orden')).toBeVisible();
   await expect(flujo.getByText(/despach/i)).toHaveCount(0);
 
+  // La tabla de roles: uno por fila y sin Despachador.
+  const roles = page.getByRole('table', { name: /qué puede hacer cada rol/i });
+  await expect(roles.getByRole('rowheader')).toHaveText(['Administrador', 'Encargado', 'Mesero', 'Cocinero']);
+  await expect(roles.getByText(/despach/i)).toHaveCount(0);
+
   await indice.getByRole('link', { name: /cierra la cuenta/i }).click();
   await expect(page.getByRole('heading', { name: /cobrar/i, level: 2 })).toBeInViewport();
 

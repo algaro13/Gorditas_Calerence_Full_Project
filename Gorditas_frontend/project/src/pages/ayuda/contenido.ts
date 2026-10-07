@@ -23,7 +23,20 @@ export interface Seccion {
   consejos?: string[];
   /** Muestra el diagrama del flujo de una orden antes de los pasos. */
   diagrama?: boolean;
+  /** Muestra la tabla de roles después de los pasos. */
+  roles?: boolean;
 }
+
+/** Qué puede hacer cada rol, en palabras del dueño. Refleja `components/Layout/menu.ts`. */
+export const ROLES: { rol: string; puede: string }[] = [
+  {
+    rol: 'Administrador',
+    puede: 'Todo: lo del encargado, más platillos y precios, personal, reportes, promociones, logo y colores, y la suscripción.',
+  },
+  { rol: 'Encargado', puede: 'Supervisa el turno: toma órdenes, surte, cobra y recibe productos. No ve reportes ni cambia precios.' },
+  { rol: 'Mesero', puede: 'Toma órdenes, las corrige y cobra.' },
+  { rol: 'Cocinero', puede: 'Prepara las órdenes en «Surtir orden».' },
+];
 
 export const SECCIONES: Seccion[] = [
   {
@@ -156,6 +169,7 @@ export const SECCIONES: Seccion[] = [
     id: 'personal',
     titulo: 'Tu personal',
     resumen: 'Invita a tus meseros, cocineros y encargados.',
+    roles: true,
     pasos: [
       {
         texto: 'En «Catálogos», elige «Usuarios». Ahí ves cuántos usuarios tienes y cuántos permite tu plan.',
@@ -168,7 +182,6 @@ export const SECCIONES: Seccion[] = [
       },
     ],
     consejos: [
-      'Cada rol ve solo lo suyo: el mesero toma órdenes y cobra, la cocina prepara y el encargado supervisa.',
       'Si alguien deja de trabajar contigo, desactívalo: deja de entrar, pero su historial se conserva.',
     ],
   },

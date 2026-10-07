@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowDown, ArrowRight, ChefHat, ChevronRight, CreditCard, Edit3, HelpCircle, Lightbulb, PlusCircle } from 'lucide-react';
-import { PREGUNTAS, SECCIONES } from './contenido';
+import { PREGUNTAS, ROLES, SECCIONES } from './contenido';
 
 const irA = (id: string) => (e: React.MouseEvent) => {
   e.preventDefault();
@@ -40,6 +40,27 @@ const DiagramaFlujo: React.FC = () => (
       <Edit3 className="h-4 w-4 shrink-0" aria-hidden /> Mientras no se cobre, la orden se puede cambiar en «Editar orden».
     </figcaption>
   </figure>
+);
+
+/** Qué puede hacer cada rol: dos columnas, para que quepa en el teléfono. */
+const TablaRoles: React.FC = () => (
+  <table className="mt-5 w-full text-left">
+    <caption className="mb-2 text-left text-cuerpo font-semibold text-gray-900">Qué puede hacer cada rol</caption>
+    <thead>
+      <tr className="border-b border-gray-200 text-meta text-gray-500">
+        <th scope="col" className="py-2 pr-3 font-medium">Rol</th>
+        <th scope="col" className="py-2 font-medium">Qué puede hacer</th>
+      </tr>
+    </thead>
+    <tbody>
+      {ROLES.map((r) => (
+        <tr key={r.rol} className="border-b border-gray-100 align-top">
+          <th scope="row" className="py-2 pr-3 text-cuerpo font-semibold text-gray-900">{r.rol}</th>
+          <td className="py-2 text-cuerpo text-gray-700">{r.puede}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
 );
 
 /**
@@ -117,6 +138,7 @@ const Ayuda: React.FC = () => (
             </li>
           ))}
         </ol>
+        {s.roles && <TablaRoles />}
         {s.consejos && (
           <div className="mt-5 space-y-2 rounded-lg bg-amber-50 p-3">
             {s.consejos.map((c) => (
