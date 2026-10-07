@@ -9,12 +9,16 @@ import type { EstadoDeCupo, UserRole, Usuario } from '../types';
 const ROLE_INFO: { value: UserRole; label: string; descripcion: string }[] = [
   { value: 'Admin', label: 'Administrador', descripcion: 'Acceso total a todos los componentes y configuraciones.' },
   { value: 'Encargado', label: 'Encargado', descripcion: 'Gestiona inventario, reportes y personal operativo.' },
-  { value: 'Mesero', label: 'Mesero', descripcion: 'Toma pedidos y atiende mesas.' },
+  { value: 'Mesero', label: 'Mesero', descripcion: 'Toma pedidos y cobra.' },
   { value: 'Despachador', label: 'Despachador', descripcion: 'Atiende y despacha órdenes.' },
-  { value: 'Cocinero', label: 'Cocinero', descripcion: 'Prepara y marca platillos listos.' },
+  { value: 'Cocinero', label: 'Cocinero', descripcion: 'Prepara las órdenes en «Surtir orden».' },
 ];
 
-const OPERATIVOS: UserRole[] = ['Mesero', 'Despachador', 'Cocinero'];
+/**
+ * Despachador ya no se ofrece: sin paso de despacho, su trabajo es el del cocinero. Sigue en
+ * ROLE_INFO para nombrar a quien ya lo tiene, y su lista lo conserva para no mostrarse en blanco.
+ */
+const OPERATIVOS: UserRole[] = ['Mesero', 'Cocinero'];
 
 /** Roles que el usuario actual puede asignar (misma regla que el backend). */
 function rolesAdministrables(roles: UserRole[]): UserRole[] {
@@ -59,7 +63,7 @@ const UsuariosPanel: React.FC = () => {
 
   // El espejo local expone su propio id, no el de Zitadel: el usuario actual se reconoce por correo.
   const isSelf = (u: Usuario) => Boolean(user?.email) && u.email.toLowerCase() === user!.email.toLowerCase();
-  const canManage = (u: Usuario) => allowed.includes(u.role) && !isSelf(u);
+  const canManage = (u: Usuario) => (allowed.includes(u.role) || (u.role === 'Despachador' && allowed.length > 0)) && !isSelf(u);
 
   const invitar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -255,7 +259,7 @@ const UsuariosPanel: React.FC = () => {
                           onChange={(e) => void cambiarRol(u, e.target.value as UserRole)}
                           className="px-2 py-1 border border-gray-300 rounded text-meta"
                         >
-                          {ROLE_INFO.filter((r) => allowed.includes(r.value)).map((r) => (
+                          {ROLE_INFO.filter((r) => allowed.includes(r.value) || r.value === u.role).map((r) => (
                             <option key={r.value} value={r.value}>
                               {r.label}
                             </option>

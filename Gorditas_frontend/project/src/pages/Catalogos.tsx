@@ -47,8 +47,8 @@ const Catalogos: React.FC = () => {
   // Tipos fijos para usuarios
   const tiposUsuarioFijos = [
     {
-      value: 'Despachador',
-      label: 'Despachador',
+      value: 'Cocinero',
+      label: 'Cocinero',
       descripcion: 'Prepara las órdenes en cocina. Acceso: Surtir Orden.'
     },
     {
