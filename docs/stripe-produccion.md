@@ -26,9 +26,9 @@ la app muestra en `/planes` y con `PLAN_LIMITS` (`src/shared/domain/Tenant.ts`):
 
 | Plan | Precio mensual | Usuarios | `metadata.planId` |
 |---|---|---|---|
-| Kustodela POS - Básico | $299 MXN | 3 | `basico` |
-| Kustodela POS - Profesional | $599 MXN | 10 | `profesional` |
-| Kustodela POS - Empresarial | $999 MXN | ilimitados | `empresarial` |
+| Cuadranova - Básico | $299 MXN | 3 | `basico` |
+| Cuadranova - Profesional | $599 MXN | 10 | `profesional` |
+| Cuadranova - Empresarial | $999 MXN | ilimitados | `empresarial` |
 
 Se pueden crear a mano o con el script del backend, usando la clave live:
 
@@ -94,7 +94,7 @@ SMTP_HOST=smtp.proveedor.com
 SMTP_PORT=587
 SMTP_USER=...
 SMTP_PASSWORD=...
-SMTP_FROM=Kustodela POS <no-reply@<APP_DOMAIN>>
+SMTP_FROM=Cuadranova <no-reply@<APP_DOMAIN>>
 ```
 
 Sin `SMTP_HOST` el aviso solo se escribe en el registro del backend.
@@ -117,6 +117,21 @@ propósito, para no aceptar webhooks sin verificar su firma.
    - cancelar desde el portal muestra «Cancelación programada».
 3. **Logs**: `docker compose logs backend | grep -i "suscripción\|webhook"`. Cada evento procesado
    queda también en la tabla `stripe_events` (`processed_at` y, si falló, `error`).
+
+## Estado (2026-10-08)
+
+Stripe cobra en modo live desde el 8 de octubre de 2026:
+
+- Cuenta activada; nombre público **Cuadranova**, dirección de soporte en San Nicolás de los Garza,
+  ligas a `/terminos` y `/privacidad`.
+- Productos, precios y webhook (`https://api.cuadranova.com/api/billing/webhook`) creados por la API
+  con la clave live; el portal, los correos y los reintentos, en el dashboard.
+- El `.env.production` de modo test quedó respaldado en el servidor como
+  `.env.production.respaldo-stripe-test-<fecha>`: para volver a test basta copiarlo y recrear el backend.
+- Al cambiar de modo se borraron `stripe_customer_id` y `stripe_subscription_id` de los restaurantes:
+  los de test no existen en live y el checkout fallaría con «No such customer».
+- Prueba hecha: un cobro real de Básico en `test`, portal y cancelación inmediata, sin errores en
+  `stripe_events`.
 
 ## Notas
 
