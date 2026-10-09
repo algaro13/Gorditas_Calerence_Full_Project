@@ -640,12 +640,7 @@ const EditarOrden: React.FC = () => {
           }
         }
 
-        // Actualizar la fecha y hora de la orden a la hora actual
-        try {
-          await apiService.updateOrdenFechaHora(selectedOrden._id!);
-        } catch (error) {
-          console.warn('Error actualizando fecha y hora de la orden:', error);
-        }
+        // La orden conserva su hora: agregar algo no la manda al final de la fila de cocina y caja.
 
         setSuccess('Platillo agregado exitosamente');
         // Refrescar solo el resumen de la orden expandida, sin hacer scroll

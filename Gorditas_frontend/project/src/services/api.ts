@@ -294,9 +294,6 @@ class ApiService {
   updatePlatilloNota(platilloId: string, notas: string) {
     return this.request(`/ordenes/platillo/${platilloId}/nota`, this.json('PUT', { notas }));
   }
-  updateOrdenFechaHora(ordenId: string) {
-    return this.request(`/ordenes/${ordenId}/fecha-hora`, this.json('PUT', { fechaHora: new Date().toISOString() }));
-  }
 
   // ---------- Inventario ----------
   getInventario() {

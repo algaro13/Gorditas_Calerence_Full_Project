@@ -11,6 +11,7 @@ import {
   Users
 } from 'lucide-react';
 import { apiService } from '../services/api';
+import { mesasPorLlegada, ordenesPorLlegada } from '../utils/orden-de-llegada';
 import { Orden, OrdenCompleta, MesaAgrupada } from '../types';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,7 +54,8 @@ const Cobrar: React.FC = () => {
   const groupOrdersByTable = (ordenes: OrdenCompleta[]): MesaAgrupada[] => {
     const grouped: { [idMesa: number]: MesaAgrupada } = {};
     
-    ordenes.forEach(orden => {
+    // Se recorren en orden de llegada para que la lista de clientes de cada mesa también lo esté.
+    ordenesPorLlegada(ordenes).forEach(orden => {
       const idMesa = orden.idMesa || 0; // 0 for orders without table
       const nombreMesa = orden.nombreMesa || 'Sin Mesa';
       
@@ -80,10 +82,8 @@ const Cobrar: React.FC = () => {
       grouped[idMesa].clientes[cliente].push(orden);
     });
     
-    // Mantener nombres de mesas como están (sin procesar)
-    const result = Object.values(grouped);
-    
-    return result.sort((a, b) => a.nombreMesa.localeCompare(b.nombreMesa));
+    // En orden de llegada, no por nombre: se cobra primero a quien pidió primero.
+    return mesasPorLlegada(Object.values(grouped));
   };
 
   const toggleMesaExpansion = (idMesa: number) => {
@@ -163,6 +163,7 @@ const Cobrar: React.FC = () => {
                 }));
                 return {
                   ...data,
+                  fechaHora: data.fechaHora ?? orden.fechaHora,
                   platillos: platillosConExtras,
                   extras: data.extras || []
                 };

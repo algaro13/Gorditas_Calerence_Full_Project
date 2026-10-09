@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../services/api';
 import { etiquetaDeEstatus } from '../utils/estatus';
+import { lineasPorCaptura, mesasPorLlegada, ordenesPorLlegada } from '../utils/orden-de-llegada';
 import { Orden, OrdenDetalleProducto, OrdenDetallePlatillo, MesaAgrupada } from '../types';
 
 interface OrdenConDetalles extends Orden {
@@ -68,18 +69,8 @@ const SurtirOrden: React.FC = () => {
       // Agrupación por cliente eliminada
     });
     
-    // Mantener nombres de mesas como están (sin procesar)
-    const result = Object.values(grouped);
-    
-    // Ordenar mesas: primero por la orden más antigua de cada mesa (más antiguas arriba)
-    return result.sort((a, b) => {
-      // Encontrar la orden más antigua de cada mesa
-      const fechaMasAntiguaA = Math.min(...a.ordenes.map(o => new Date(o.fechaHora || o.fecha || Date.now()).getTime()));
-      const fechaMasAntiguaB = Math.min(...b.ordenes.map(o => new Date(o.fechaHora || o.fecha || Date.now()).getTime()));
-      
-      // Ordenar por fecha más antigua primero (más antiguas arriba)
-      return fechaMasAntiguaA - fechaMasAntiguaB;
-    });
+    // En orden de llegada: la mesa que lleva más tiempo esperando, arriba.
+    return mesasPorLlegada(Object.values(grouped));
   };
 
   const toggleMesaExpansion = (idMesa: number) => {
@@ -124,19 +115,9 @@ const SurtirOrden: React.FC = () => {
               if (response.success) {
                 const data = response.data;
                 
-                // Ordenar platillos por más recientes primero (basado en createdAt o _id)
-                const platillosOrdenados = (data.platillos || []).sort((a: any, b: any) => {
-                  const dateA = new Date(a.createdAt || a._id).getTime();
-                  const dateB = new Date(b.createdAt || b._id).getTime();
-                  return dateB - dateA; // Más recientes primero
-                });
-                
-                // Ordenar productos por más recientes primero
-                const productosOrdenados = (data.productos || []).sort((a: any, b: any) => {
-                  const dateA = new Date(a.createdAt || a._id).getTime();
-                  const dateB = new Date(b.createdAt || b._id).getTime();
-                  return dateB - dateA; // Más recientes primero
-                });
+                // En el orden en que se capturaron: lo primero que se pidió se prepara primero.
+                const platillosOrdenados = lineasPorCaptura<OrdenDetallePlatillo & { createdAt?: string }>(data.platillos || []);
+                const productosOrdenados = lineasPorCaptura<OrdenDetalleProducto & { createdAt?: string }>(data.productos || []);
                 
                 return {
                   ...orden,
@@ -173,12 +154,8 @@ const SurtirOrden: React.FC = () => {
           return true;
         });
         
-        // Ordenar órdenes por más recientes primero (basado en fechaHora o fecha)
-        const ordenesOrdenadas = ordenesQueNecesitanPreparacion.sort((a: any, b: any) => {
-          const dateA = new Date(a.fechaHora || a.fecha || 0).getTime();
-          const dateB = new Date(b.fechaHora || b.fecha || 0).getTime();
-          return dateB - dateA; // Más recientes primero
-        });
+        // De la más antigua a la más nueva: el primero que pidió se atiende primero.
+        const ordenesOrdenadas = ordenesPorLlegada(ordenesQueNecesitanPreparacion);
         
         // Detectar nuevas órdenes comparando con el estado actual
         const currentOrderIds = ordenes.map(o => o._id);
