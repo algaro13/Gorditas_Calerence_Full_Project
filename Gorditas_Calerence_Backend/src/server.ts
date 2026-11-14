@@ -15,6 +15,7 @@ import ordenesRoutes from './routes/ordenes';
 import inventarioRoutes from './routes/inventario';
 import reportesRoutes from './routes/reportes';
 import catalogosRoutes from './routes/catalogos';
+import { streamEventos, emitirCambioTrasMutacion } from './realtime/eventos';
 import Mesa from './models/Mesa';
 import Orden from './models/Orden';
 dotenv.config();
@@ -60,10 +61,14 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Canal de tiempo real (SSE): avisa a las pantallas que algo cambió para que vuelvan a consultar.
+app.get('/api/eventos', streamEventos);
+
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/ordenes', ordenesRoutes);
-app.use('/api/inventario', inventarioRoutes);
+// Tras cada mutación exitosa de órdenes/inventario, se emite una señal de cambio por SSE.
+app.use('/api/ordenes', emitirCambioTrasMutacion('ordenes'), ordenesRoutes);
+app.use('/api/inventario', emitirCambioTrasMutacion('inventario'), inventarioRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/catalogos', catalogosRoutes);
 

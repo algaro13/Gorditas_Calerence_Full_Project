@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRealtimeOrdenes } from '../hooks/useRealtimeOrdenes';
 import { 
   Truck, 
   Package, 
@@ -42,12 +43,9 @@ const Despachar: React.FC = () => {
   // Ref for order details section
   const orderDetailsRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    loadData();
-    // Set up polling for real-time updates
-    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Tiempo real por SSE (antes: polling cada 30 s). Refresca al cambiar algo,
+  // se pausa con la pantalla oculta y no solapa consultas.
+  useRealtimeOrdenes(() => loadData());
 
   // Sincronizar detalles de la orden seleccionada si hay polling y cambia la orden
   useEffect(() => {

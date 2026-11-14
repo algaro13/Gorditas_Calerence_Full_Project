@@ -2,7 +2,7 @@
 import { ApiResponse } from '../types';
 import { mockApiService } from './mockApi';
 //const API_BASE_URL = `http://localhost:5000/api`;
-const API_BASE_URL = `https://calerence-api.neuralmane.com/api`;
+export const API_BASE_URL = `https://calerence-api.neuralmane.com/api`;
 
 class ApiService {
   /**

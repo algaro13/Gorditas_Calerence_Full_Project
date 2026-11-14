@@ -1,6 +1,7 @@
   // Estado y función para eliminar orden
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useRealtimeOrdenes } from '../hooks/useRealtimeOrdenes';
 import { 
   Edit3, 
   Plus, 
@@ -349,12 +350,9 @@ const EditarOrden: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadData();
-    // Set up polling for real-time updates
-    const interval = setInterval(loadData, 15000); // Refresh every 15 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Tiempo real por SSE (antes: polling cada 15 s). Refresca al cambiar algo,
+  // se pausa con la pantalla oculta y no solapa consultas.
+  useRealtimeOrdenes(() => loadData());
 
   const loadData = async () => {
   try {
