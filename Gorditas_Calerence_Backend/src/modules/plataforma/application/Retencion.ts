@@ -156,14 +156,15 @@ export class GestionRetencion {
 
   /**
    * Borra un restaurante de prueba: uno que nunca pagó, sin esperar al archivado ni a sus 30 días.
-   * Es para limpiar las pruebas; uno que paga, tiene pago pendiente, tiene un plan dado sin Stripe
-   * o tuvo alguna vez una suscripción no entra, aunque esté cancelado.
+   * Es para limpiar las pruebas. Entra también uno con un plan dado a mano, sin Stripe: nunca pagó,
+   * y es lo que son las cuentas de demostración. Uno que paga, tiene pago pendiente o tuvo alguna
+   * vez una suscripción de Stripe no entra, aunque esté cancelado.
    */
   async borrarPrueba(operador: AuthInfo, id: string, confirmacion: unknown): Promise<void> {
     const t = await this.restaurante(id);
     const tuvoSuscripcion = (await this.tenants.getStripeSubscriptionId(id)) !== null;
-    const categoria = categoriaRetencion(situacion({ ...t, tieneSuscripcionStripe: tuvoSuscripcion }, this.clock.now()), tuvoSuscripcion);
-    if (categoria !== 'prueba-sin-pago') {
+    const sit = situacion({ ...t, tieneSuscripcionStripe: tuvoSuscripcion }, this.clock.now());
+    if (categoriaRetencion(sit, tuvoSuscripcion) !== 'prueba-sin-pago' && sit !== 'plan-sin-stripe') {
       throw new ConflictError('Solo se borra así un restaurante que nunca pagó', 'NO_ES_PRUEBA');
     }
     if (confirmacion !== t.slug) throw new ValidationError('Escribe el subdominio del restaurante para confirmar', 'CONFIRMACION_INCORRECTA');

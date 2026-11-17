@@ -114,7 +114,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
             <Trash2 className="h-4 w-4" /> Aprobar borrado
           </button>
         )}
-        {categoria === 'prueba-sin-pago' && fase !== 'listo-para-borrar' && !borrando && (
+        {(categoria === 'prueba-sin-pago' || r.situacion === 'plan-sin-stripe') && fase !== 'listo-para-borrar' && !borrando && (
           <button disabled={ocupado} onClick={() => setBorrando('prueba')} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
             <Trash2 className="h-4 w-4" /> Borrar restaurante de prueba
           </button>
@@ -123,7 +123,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
       {borrando && (
         <div className="mt-sp-2 rounded-lg border border-red-200 bg-red-50 p-3">
           <p className="text-cuerpo text-red-900">
-            {borrando === 'prueba' && 'Este restaurante nunca pagó; úsalo para limpiar pruebas. '}
+            {borrando === 'prueba' && 'Este restaurante nunca pagó por Stripe; úsalo para limpiar pruebas. '}
             Se borran para siempre sus datos, sus usuarios y sus archivos. No se puede deshacer. Escribe <strong>{r.slug}</strong> para confirmar.
           </p>
           <input

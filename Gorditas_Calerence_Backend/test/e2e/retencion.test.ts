@@ -139,14 +139,19 @@ describe('Retención: restaurar, pausar, borrar y recuperar', () => {
       expect((await borrarPrueba(r.id, r.slug)).status).toBe(200);
     });
 
-    it('no: uno que paga, uno con plan dado sin Stripe ni uno cancelado que alguna vez pagó', async () => {
+    it('uno con plan dado sin Stripe también: nunca pagó', async () => {
+      const r = await restaurante({ planStatus: 'active', trialEndsAt: null });
+      expect((await borrarPrueba(r.id, r.slug)).status).toBe(200);
+      expect(await t.container.prisma.tenant.findUnique({ where: { id: r.id } })).toBeNull();
+    });
+
+    it('no: uno que paga ni uno cancelado que alguna vez pagó', async () => {
       const pagaConStripe = await restaurante({ planStatus: 'active', trialEndsAt: null });
       await t.container.prisma.tenant.update({ where: { id: pagaConStripe.id }, data: { stripeSubscriptionId: `sub_paga_${RUN}` } });
-      const planSinStripe = await restaurante({ planStatus: 'active', trialEndsAt: null });
       const canceladoQuePago = await restaurante({ planStatus: 'canceled', trialEndsAt: null });
       await t.container.prisma.tenant.update({ where: { id: canceladoQuePago.id }, data: { stripeSubscriptionId: `sub_cancelado_${RUN}` } });
 
-      for (const r of [pagaConStripe, planSinStripe, canceladoQuePago]) {
+      for (const r of [pagaConStripe, canceladoQuePago]) {
         const res = await borrarPrueba(r.id, r.slug);
         expect(res.status).toBe(409);
         expect(res.body.code).toBe('NO_ES_PRUEBA');
