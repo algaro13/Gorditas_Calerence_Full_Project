@@ -77,7 +77,9 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
     setConfirmacion('');
   };
 
-  if (categoria === 'protegida' && !r.archivadoAt) return null;
+  // Un restaurante con plan dado sin Stripe nunca pagó: es de «prueba» para poder borrarlo.
+  const borrableComoPrueba = categoria === 'prueba-sin-pago' || r.situacion === 'plan-sin-stripe';
+  if (categoria === 'protegida' && !r.archivadoAt && !borrableComoPrueba) return null;
 
   let nota = '';
   if (recuperableHasta) {
@@ -99,7 +101,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
             <RotateCcw className="h-4 w-4" /> Restaurar
           </button>
         )}
-        {!r.archivadoAt && (
+        {!r.archivadoAt && categoria !== 'protegida' && (
           <button
             disabled={ocupado}
             onClick={() => hacer(() => apiService.pausarRetencion(r.id, !r.retencionPausada))}
@@ -114,7 +116,7 @@ const AccionesRetencion: React.FC<{ r: FilaConsola; alCambiar: () => Promise<voi
             <Trash2 className="h-4 w-4" /> Aprobar borrado
           </button>
         )}
-        {(categoria === 'prueba-sin-pago' || r.situacion === 'plan-sin-stripe') && fase !== 'listo-para-borrar' && !borrando && (
+        {borrableComoPrueba && fase !== 'listo-para-borrar' && !borrando && (
           <button disabled={ocupado} onClick={() => setBorrando('prueba')} className="btn border border-red-300 bg-white text-red-700 disabled:opacity-50">
             <Trash2 className="h-4 w-4" /> Borrar restaurante de prueba
           </button>
