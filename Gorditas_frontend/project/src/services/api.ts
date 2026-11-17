@@ -44,6 +44,11 @@ class ApiService {
     this.tokenProvider = provider;
   }
 
+  /** Token vigente de la sesión (lo usa el canal SSE, que no pasa por `request`). */
+  getToken(): string | null {
+    return this.tokenProvider() ?? null;
+  }
+
   setOnUnauthorized(handler: (() => void) | null) {
     this.onUnauthorized = handler;
   }

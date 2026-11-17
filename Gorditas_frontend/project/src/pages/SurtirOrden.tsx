@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRealtimeOrdenes } from '../hooks/useRealtimeOrdenes';
 import { Aviso } from '../components/Aviso';
 import { 
   ChefHat, 
@@ -36,12 +37,8 @@ const SurtirOrden: React.FC = () => {
   const [hasNewOrders, setHasNewOrders] = useState(false);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date>(new Date());
 
-  useEffect(() => {
-    loadData();
-    // Set up polling for real-time updates - more frequent for better responsiveness
-    const interval = setInterval(loadData, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Tiempo real por SSE (antes: polling). Refresca al cambiar algo, se pausa con la pantalla oculta.
+  useRealtimeOrdenes(() => loadData());
 
   // Function to group orders by table
   const groupOrdersByTable = (ordenes: OrdenConDetalles[]): MesaAgrupada[] => {

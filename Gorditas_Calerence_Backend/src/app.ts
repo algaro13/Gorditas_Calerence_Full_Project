@@ -13,6 +13,7 @@ import { createCatalogosModule } from './modules/catalogos';
 import { createUsuariosModule } from './modules/usuarios';
 import { createInventarioModule } from './modules/inventario';
 import { createReportesModule } from './modules/reportes';
+import { BusEventos, emitirCambioTrasMutacion, streamEventos } from './modules/tiempo-real/eventos';
 import { createPromocionesModule } from './modules/promociones';
 import { createOnboardingModule } from './modules/onboarding';
 import { createBillingModule } from './modules/billing';
@@ -173,11 +174,15 @@ export function createApp(c: Container): Express {
   const inventario = createInventarioModule({ uow: c.uow });
   const reportes = createReportesModule({ uow: c.uow, clock: c.clock, timeZone });
 
-  app.use('/api/ordenes', pos, ordenes.router);
+  // Tiempo real (SSE): las mutaciones de órdenes/inventario avisan a las pantallas del mismo restaurante.
+  const bus = new BusEventos();
+  app.get('/api/eventos', pos, streamEventos(bus));
+
+  app.use('/api/ordenes', pos, emitirCambioTrasMutacion(bus, 'ordenes'), ordenes.router);
   app.use('/api/promociones', pos, promociones.router);
   app.use('/api/catalogos', pos, catalogos.router);
   app.use('/api/usuarios', pos, usuarios.router);
-  app.use('/api/inventario', pos, inventario.router);
+  app.use('/api/inventario', pos, emitirCambioTrasMutacion(bus, 'inventario'), inventario.router);
   app.use('/api/reportes', pos, reportes.router);
 
   app.use(notFound);

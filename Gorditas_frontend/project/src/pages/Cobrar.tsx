@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useRealtimeOrdenes } from '../hooks/useRealtimeOrdenes';
 import { Aviso } from '../components/Aviso';
 import { 
   Receipt, 
@@ -43,12 +44,8 @@ const Cobrar: React.FC = () => {
     return mesa.ordenes.length > 0 && mesa.ordenes.every(orden => esOrdenPagada(orden.nombreCliente));
   };
 
-  useEffect(() => {
-    loadOrdenesActivas();
-    // Set up polling for real-time updates
-    const interval = setInterval(loadOrdenesActivas, 12000); // Refresh every 12 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Tiempo real por SSE (antes: polling). Refresca al cambiar algo, se pausa con la pantalla oculta.
+  useRealtimeOrdenes(() => loadOrdenesActivas());
 
   // Function to group orders by table
   const groupOrdersByTable = (ordenes: OrdenCompleta[]): MesaAgrupada[] => {

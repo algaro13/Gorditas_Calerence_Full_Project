@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import { useRealtimeOrdenes } from '../hooks/useRealtimeOrdenes';
 import { Aviso } from '../components/Aviso';
 import { 
   ShoppingCart, 
@@ -151,12 +152,8 @@ const Dashboard: React.FC = () => {
   // Estado para la orden seleccionada (detalle)
   const [selectedOrden, setSelectedOrden] = useState<OrdenWorkflow | null>(null);
 
-  useEffect(() => {
-    loadDashboardData();
-    // Set up polling for real-time updates - more frequent for better responsiveness
-    const interval = setInterval(loadDashboardData, 8000); // Refresh every 8 seconds
-    return () => clearInterval(interval);
-  }, []);
+  // Tiempo real por SSE (antes: polling). Refresca al cambiar algo, se pausa con la pantalla oculta.
+  useRealtimeOrdenes(() => loadDashboardData());
 
 
   const loadDashboardData = async () => {
